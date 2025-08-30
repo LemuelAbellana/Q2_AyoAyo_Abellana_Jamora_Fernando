@@ -12,7 +12,7 @@ class CommunityHub extends StatelessWidget {
       child: Column(
         children: [
           const Text(
-            "MaayoPasa Community Hub",
+            "AyoAyo Community Hub",
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
@@ -25,7 +25,7 @@ class CommunityHub extends StatelessWidget {
                   Icon(LucideIcons.graduationCap, size: 40, color: Colors.blue),
                   SizedBox(height: 8),
                   Text(
-                    "MaayoPasa University",
+                    "AyoAyo University",
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   ListTile(

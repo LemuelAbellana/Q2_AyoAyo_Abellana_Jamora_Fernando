@@ -35,11 +35,11 @@ class _HomeScreenState extends State<HomeScreen> {
           TextSpan(
             children: [
               TextSpan(
-                text: 'Maayo',
+                text: 'Ayo',
                 style: TextStyle(color: Colors.green),
               ),
               TextSpan(
-                text: 'Pasa',
+                text: 'Ayo',
                 style: TextStyle(color: Colors.blue),
               ),
             ],

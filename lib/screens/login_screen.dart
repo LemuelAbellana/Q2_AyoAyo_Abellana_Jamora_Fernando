@@ -9,7 +9,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   // Controllers for text fields for better state management
-  final _emailController = TextEditingController(text: 'user@maayopasa.com');
+  final _emailController = TextEditingController(text: 'user@ayoayo.com');
   final _passwordController = TextEditingController(text: 'password123');
 
   @override
@@ -34,7 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextSpan(
                     children: [
                       TextSpan(
-                        text: 'Maayo',
+                        text: 'Ayo',
                         style: TextStyle(
                           color: Colors.green,
                           fontSize: 36,
@@ -42,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       TextSpan(
-                        text: 'Pasa',
+                        text: 'Ayo',
                         style: TextStyle(
                           color: Colors.blue,
                           fontSize: 36,

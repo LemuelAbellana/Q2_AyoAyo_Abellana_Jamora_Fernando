@@ -4,16 +4,16 @@ import '/screens/login_screen.dart';
 import '/utils/app_theme.dart';
 
 void main() {
-  runApp(const MaayoPasaApp());
+  runApp(const AyoAyoApp());
 }
 
-class MaayoPasaApp extends StatelessWidget {
-  const MaayoPasaApp({super.key});
+class AyoAyoApp extends StatelessWidget {
+  const AyoAyoApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'MaayoPasa',
+      title: 'AYOAYO',
       theme: AppTheme.lightTheme, // Using centralized theme
       debugShowCheckedModeBanner: false,
       initialRoute: '/login', // Set initial route

@@ -9,7 +9,7 @@ class AppFooter extends StatelessWidget {
       color: Colors.grey[800],
       child: const Center(
         child: Text(
-          "© 2025 MaayoPasa. Made with ❤️ in Davao City.",
+          "© 2025 AyoAyo. Made with ❤️ in Davao City.",
           style: TextStyle(color: Colors.white70),
         ),
       ),
