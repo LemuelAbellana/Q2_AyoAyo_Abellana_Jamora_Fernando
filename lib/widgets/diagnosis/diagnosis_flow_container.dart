@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '/models/pathway.dart';
 import '/widgets/diagnosis/diagnosis_form.dart';
 import '/widgets/diagnosis/loading_indicator.dart';
 import '/widgets/diagnosis/results_view.dart';
+import '/providers/diagnosis_provider.dart';
 
 enum DiagnosisState { form, loading, results }
 
@@ -19,12 +21,7 @@ class _DiagnosisFlowContainerState extends State<DiagnosisFlowContainer> {
   Pathway _selectedPathway = Pathway.none;
 
   void _startDiagnosis() {
-    setState(() => _currentState = DiagnosisState.loading);
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() => _currentState = DiagnosisState.results);
-      }
-    });
+    setState(() => _currentState = DiagnosisState.results);
   }
 
   void _selectPathway(Pathway pathway) {
@@ -32,17 +29,20 @@ class _DiagnosisFlowContainerState extends State<DiagnosisFlowContainer> {
   }
 
   Widget _buildCurrentStateWidget() {
-    switch (_currentState) {
-      case DiagnosisState.form:
-        return DiagnosisForm(onDiagnose: _startDiagnosis);
-      case DiagnosisState.loading:
-        return const LoadingIndicator();
-      case DiagnosisState.results:
-        return ResultsView(
-          selectedPathway: _selectedPathway,
-          onPathwaySelected: _selectPathway,
-        );
-    }
+    return Consumer<DiagnosisProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading) {
+          return const LoadingIndicator();
+        } else if (provider.currentResult != null) {
+          return ResultsView(
+            selectedPathway: _selectedPathway,
+            onPathwaySelected: _selectPathway,
+          );
+        } else {
+          return DiagnosisForm(onDiagnose: _startDiagnosis);
+        }
+      },
+    );
   }
 
   @override

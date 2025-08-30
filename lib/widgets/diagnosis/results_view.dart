@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
+import 'package:provider/provider.dart';
 import '/models/pathway.dart';
+import '/models/device_diagnosis.dart';
 import '/widgets/pathways/donate_detail.dart';
 import '/widgets/pathways/pathway_card.dart';
 import '/widgets/pathways/repair_detail.dart';
+import '/providers/diagnosis_provider.dart';
 
 class ResultsView extends StatelessWidget {
   final Pathway selectedPathway;
@@ -19,9 +22,17 @@ class ResultsView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const _DevicePassportCard(),
+        Consumer<DiagnosisProvider>(
+          builder: (context, provider, child) {
+            return _DevicePassportCard(provider: provider);
+          },
+        ),
         const SizedBox(height: 16),
-        const _ValueEngineCard(),
+        Consumer<DiagnosisProvider>(
+          builder: (context, provider, child) {
+            return _ValueEngineCard(provider: provider);
+          },
+        ),
         const SizedBox(height: 24),
         const Text(
           "2. Choose Your Pathway",
@@ -70,44 +81,159 @@ class ResultsView extends StatelessWidget {
         // Display details based on selected pathway
         if (selectedPathway == Pathway.repair) const RepairDetail(),
         if (selectedPathway == Pathway.donate) const DonateDetail(),
+        const SizedBox(height: 16),
+        Consumer<DiagnosisProvider>(
+          builder: (context, provider, child) {
+            if (provider.currentResult?.aiAnalysis != null) {
+              return _AIAnalysisCard(provider: provider);
+            }
+            return const SizedBox.shrink();
+          },
+        ),
       ],
     );
   }
 }
 
 class _DevicePassportCard extends StatelessWidget {
-  const _DevicePassportCard();
+  final DiagnosisProvider provider;
+  const _DevicePassportCard({required this.provider});
 
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: const Padding(
-        padding: EdgeInsets.all(16.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              "Device Passport",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                const Text(
+                  "Device Passport",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                if (provider.currentResult?.confidenceScore != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Confidence: ${(provider.currentResult!.confidenceScore * 100).toStringAsFixed(0)}%',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue.shade700,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+              ],
             ),
+            const SizedBox(height: 8),
             ListTile(
-              leading: Icon(LucideIcons.batteryWarning, color: Colors.red),
-              title: Text("Battery Health"),
+              leading: Icon(
+                LucideIcons.batteryWarning,
+                color: provider.getBatteryHealthColor(),
+              ),
+              title: const Text("Battery Health"),
               trailing: Text(
-                "78%",
-                style: TextStyle(fontWeight: FontWeight.bold),
+                provider.getFormattedBatteryHealth(),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: provider.getBatteryHealthColor(),
+                ),
               ),
             ),
             ListTile(
-              leading: Icon(LucideIcons.smartphone, color: Colors.green),
-              title: Text("Screen"),
+              leading: Icon(
+                LucideIcons.smartphone,
+                color: provider.getScreenConditionColor(),
+              ),
+              title: const Text("Screen Condition"),
               trailing: Text(
-                "Good",
-                style: TextStyle(fontWeight: FontWeight.bold),
+                provider.getScreenConditionText(),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: provider.getScreenConditionColor(),
+                ),
               ),
             ),
+            ListTile(
+              leading: Icon(
+                LucideIcons.cpu,
+                color: _getHardwareConditionColor(
+                  provider.currentResult?.deviceHealth.hardwareCondition,
+                ),
+              ),
+              title: const Text("Hardware"),
+              trailing: Text(
+                provider.getHardwareConditionText(),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: _getHardwareConditionColor(
+                    provider.currentResult?.deviceHealth.hardwareCondition,
+                  ),
+                ),
+              ),
+            ),
+            if (provider.currentResult?.confidenceScore != null) ...[
+              const Divider(),
+              ListTile(
+                leading: Icon(
+                  LucideIcons.brain,
+                  color: _getConfidenceColor(
+                    provider.currentResult!.confidenceScore,
+                  ),
+                ),
+                title: const Text("AI Confidence"),
+                trailing: Text(
+                  '${(provider.currentResult!.confidenceScore * 100).toStringAsFixed(0)}%',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: _getConfidenceColor(
+                      provider.currentResult!.confidenceScore,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            if (provider
+                    .currentResult
+                    ?.deviceHealth
+                    .identifiedIssues
+                    .isNotEmpty ==
+                true) ...[
+              const Divider(),
+              const Text(
+                "Identified Issues:",
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              ...provider.currentResult!.deviceHealth.identifiedIssues.map(
+                (issue) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.warning_amber,
+                        size: 16,
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(issue)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -116,7 +242,8 @@ class _DevicePassportCard extends StatelessWidget {
 }
 
 class _ValueEngineCard extends StatelessWidget {
-  const _ValueEngineCard();
+  final DiagnosisProvider provider;
+  const _ValueEngineCard({required this.provider});
 
   @override
   Widget build(BuildContext context) {
@@ -124,30 +251,33 @@ class _ValueEngineCard extends StatelessWidget {
       elevation: 2,
       color: Colors.blue[50],
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: const Padding(
-        padding: EdgeInsets.all(16.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              "Dynamic Value Engine",
+            const Text(
+              "AI-Powered Value Engine",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("As-Is Value:"),
-                Text("₱25,000", style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text("Current Value:"),
+                Text(
+                  provider.getFormattedCurrentValue(),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
               ],
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Post-Repair Value:"),
+                const Text("Post-Repair Value:"),
                 Text(
-                  "₱28,500",
-                  style: TextStyle(
+                  provider.getFormattedPostRepairValue(),
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.green,
                   ),
@@ -157,13 +287,181 @@ class _ValueEngineCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Parts Value:"),
-                Text("₱7,000", style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text("Parts Value:"),
+                Text(
+                  provider.getFormattedPartsValue(),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
               ],
             ),
+            if (provider.currentResult?.valueEstimation.repairCost != null) ...[
+              const Divider(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Estimated Repair Cost:"),
+                  Text(
+                    "${provider.currentResult!.valueEstimation.currency}${provider.currentResult!.valueEstimation.repairCost.toStringAsFixed(0)}",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
     );
   }
+}
+
+class _AIAnalysisCard extends StatelessWidget {
+  final DiagnosisProvider provider;
+  const _AIAnalysisCard({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      color: Colors.green[50],
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(LucideIcons.brain, color: Colors.green[700]),
+                const SizedBox(width: 8),
+                const Text(
+                  "AI Analysis & Recommendations",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              provider.currentResult?.aiAnalysis ?? '',
+              style: const TextStyle(height: 1.4),
+            ),
+            if (provider.currentResult?.recommendations.isNotEmpty == true) ...[
+              const SizedBox(height: 16),
+              const Text(
+                "Recommended Actions:",
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              ...provider
+                  .getSortedRecommendations()
+                  .take(3)
+                  .map(
+                    (recommendation) => Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.green.shade200),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                _getActionIcon(recommendation.type),
+                                size: 16,
+                                color: Colors.green[700],
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  recommendation.title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green[100],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'Priority: ${(recommendation.priority * 100).toStringAsFixed(0)}%',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.green[700],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            recommendation.description,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _getActionIcon(ActionType type) {
+    switch (type) {
+      case ActionType.repair:
+        return LucideIcons.wrench;
+      case ActionType.replace:
+        return LucideIcons.repeat;
+      case ActionType.donate:
+        return LucideIcons.heart;
+      case ActionType.recycle:
+        return LucideIcons.recycle;
+      case ActionType.sell:
+        return LucideIcons.dollarSign;
+      case ActionType.other:
+        return LucideIcons.info;
+    }
+  }
+}
+
+// Helper functions for enhanced Device Passport
+Color _getHardwareConditionColor(HardwareCondition? condition) {
+  switch (condition) {
+    case HardwareCondition.excellent:
+      return Colors.green;
+    case HardwareCondition.good:
+      return Colors.blue;
+    case HardwareCondition.fair:
+      return Colors.orange;
+    case HardwareCondition.poor:
+      return Colors.red;
+    case HardwareCondition.damaged:
+      return Colors.red.shade800;
+    case HardwareCondition.unknown:
+    case null:
+      return Colors.grey;
+  }
+}
+
+Color _getConfidenceColor(double confidence) {
+  if (confidence >= 0.8) return Colors.green;
+  if (confidence >= 0.6) return Colors.orange;
+  return Colors.red;
 }

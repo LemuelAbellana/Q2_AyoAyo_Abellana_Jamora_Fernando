@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 // --- Data Models ---
 
 class TechnicianReview {
@@ -53,49 +52,64 @@ class _RepairDetailState extends State<RepairDetail> {
   // --- State ---
   final List<Technician> _allTechnicians = [
     Technician(
-        id: 'tech1',
-        name: "Juan's Gadget Repair",
-        location: "Uyanguren",
-        address: "Rm 301, 123 San Pedro Street, Brgy. Poblacion, Davao City",
-        specialty: "Expert in Screen & Battery",
-        rating: 4.8,
-        priceRange: "₱1200 - ₱1800",
-        distance: 2.1,
-        operatingHours: "Open: 9:00 AM • Closes: 6:00 PM",
-        shopImageUrl: 'https://images.unsplash.com/photo-1521017432531-fbd92d768814?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-        reviews: [
-          TechnicianReview("Maria S.", "Fast and reliable screen replacement!", 5.0),
-          TechnicianReview("Pedro T.", "Very professional service.", 4.5),
-        ]),
+      id: 'tech1',
+      name: "Juan's Gadget Repair",
+      location: "Uyanguren",
+      address: "Rm 301, 123 San Pedro Street, Brgy. Poblacion, Davao City",
+      specialty: "Expert in Screen & Battery",
+      rating: 4.8,
+      priceRange: "₱1200 - ₱1800",
+      distance: 2.1,
+      operatingHours: "Open: 9:00 AM • Closes: 6:00 PM",
+      shopImageUrl:
+          'https://images.unsplash.com/photo-1521017432531-fbd92d768814?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+      reviews: [
+        TechnicianReview(
+          "Maria S.",
+          "Fast and reliable screen replacement!",
+          5.0,
+        ),
+        TechnicianReview("Pedro T.", "Very professional service.", 4.5),
+      ],
+    ),
     Technician(
-        id: 'tech2',
-        name: "TechFix Bankerohan",
-        location: "Bankerohan Public Market",
-        address: "Stall 42, Bankerohan Public Market, Marfori St, Davao City",
-        specialty: "Motherboard Specialist",
-        rating: 4.7,
-        priceRange: "₱1500 - ₱2500",
-        distance: 1.5,
-        operatingHours: "Open: 10:00 AM • Closes: 7:00 PM",
-        shopImageUrl: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-        reviews: [
-          TechnicianReview("Anna G.", "Fixed my water-damaged phone when others couldn't.", 5.0),
-        ]),
+      id: 'tech2',
+      name: "TechFix Bankerohan",
+      location: "Bankerohan Public Market",
+      address: "Stall 42, Bankerohan Public Market, Marfori St, Davao City",
+      specialty: "Motherboard Specialist",
+      rating: 4.7,
+      priceRange: "₱1500 - ₱2500",
+      distance: 1.5,
+      operatingHours: "Open: 10:00 AM • Closes: 7:00 PM",
+      shopImageUrl:
+          'https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+      reviews: [
+        TechnicianReview(
+          "Anna G.",
+          "Fixed my water-damaged phone when others couldn't.",
+          5.0,
+        ),
+      ],
+    ),
     Technician(
-        id: 'tech3',
-        name: "Davao Cellphone Hub",
-        location: "Gaisano Mall",
-        address: "3rd Floor, Cyberzone, Gaisano Mall of Davao, J.P. Laurel Ave, Davao City",
-        specialty: "All-Around Repairs",
-        rating: 4.9,
-        priceRange: "₱1000 - ₱3000",
-        distance: 3.5,
-        operatingHours: "Open: 10:00 AM • Closes: 9:00 PM",
-        shopImageUrl: 'https://images.unsplash.com/photo-1567880905822-56f8e06fe630?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-        reviews: [
-          TechnicianReview("John D.", "Best prices in town.", 5.0),
-          TechnicianReview("Lisa M.", "Quick and easy transaction.", 4.5),
-        ]),
+      id: 'tech3',
+      name: "Davao Cellphone Hub",
+      location: "Gaisano Mall",
+      address:
+          "3rd Floor, Cyberzone, Gaisano Mall of Davao, J.P. Laurel Ave, Davao City",
+      specialty: "All-Around Repairs",
+      rating: 4.9,
+      priceRange: "₱1000 - ₱3000",
+      distance: 3.5,
+      operatingHours: "Open: 10:00 AM • Closes: 9:00 PM",
+      shopImageUrl:
+          'https://images.unsplash.com/photo-1567880905822-56f8e06fe630?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+      reviews: [
+        TechnicianReview("John D.", "Best prices in town.", 5.0),
+        TechnicianReview("Lisa M.", "Quick and easy transaction.", 4.5),
+      ],
+    ),
   ];
 
   late List<Technician> _filteredTechnicians;
@@ -154,10 +168,7 @@ class _RepairDetailState extends State<RepairDetail> {
         title: Center(
           child: Text(
             technician.name,
-            style: GoogleFonts.montserrat(
-              fontWeight: FontWeight.bold,
-              fontSize: 22,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
           ),
         ),
         content: SizedBox(
@@ -184,20 +195,33 @@ class _RepairDetailState extends State<RepairDetail> {
                     children: [
                       Text(
                         technician.specialty,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Text("📍 ${technician.address}"), // Uses detailed address
                       const SizedBox(height: 4),
-                      Text("🕒 ${technician.operatingHours}"), // Uses specific hours
+                      Text(
+                        "🕒 ${technician.operatingHours}",
+                      ), // Uses specific hours
                       const Divider(height: 24),
-                      const Text("Recent Reviews",
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      ...technician.reviews.map((review) => Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: Text(
-                                '"${review.comment}" - ${review.author} (${review.rating} ★)'),
-                          )),
+                      const Text(
+                        "Recent Reviews",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      ...technician.reviews.map(
+                        (review) => Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            '"${review.comment}" - ${review.author} (${review.rating} ★)',
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -207,8 +231,9 @@ class _RepairDetailState extends State<RepairDetail> {
         ),
         actions: [
           TextButton(
-              child: const Text('Close'),
-              onPressed: () => Navigator.of(context).pop())
+            child: const Text('Close'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
         ],
       ),
     );
@@ -228,8 +253,10 @@ class _RepairDetailState extends State<RepairDetail> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Community & Learning Hub",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          const Text(
+            "Community & Learning Hub",
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 16),
           Card(
             elevation: 2,
@@ -238,22 +265,32 @@ class _RepairDetailState extends State<RepairDetail> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  Column(children: [
-                    Text("1,523",
+                  Column(
+                    children: [
+                      Text(
+                        "1,523",
                         style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).primaryColor)),
-                    const Text("Devices Saved")
-                  ]),
-                  Column(children: [
-                    Text("850kg",
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                      const Text("Devices Saved"),
+                    ],
+                  ),
+                  Column(
+                    children: [
+                      Text(
+                        "850kg",
                         style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).primaryColor)),
-                    const Text("E-Waste Diverted")
-                  ]),
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                      const Text("E-Waste Diverted"),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -262,14 +299,22 @@ class _RepairDetailState extends State<RepairDetail> {
           Row(
             children: [
               Expanded(
-                  child: _buildHubCard(Icons.school, "Tech-Care Guides",
-                      () => _showSnackBar("Opening learning resources..."))),
+                child: _buildHubCard(
+                  Icons.school,
+                  "Tech-Care Guides",
+                  () => _showSnackBar("Opening learning resources..."),
+                ),
+              ),
               const SizedBox(width: 12),
               Expanded(
-                  child: _buildHubCard(Icons.forum, "Ask a Technician",
-                      () => _showSnackBar("Opening community forum..."))),
+                child: _buildHubCard(
+                  Icons.forum,
+                  "Ask a Technician",
+                  () => _showSnackBar("Opening community forum..."),
+                ),
+              ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -286,7 +331,7 @@ class _RepairDetailState extends State<RepairDetail> {
             children: [
               Icon(icon, size: 32),
               const SizedBox(height: 8),
-              Text(title, textAlign: TextAlign.center)
+              Text(title, textAlign: TextAlign.center),
             ],
           ),
         ),
@@ -305,12 +350,15 @@ class _RepairDetailState extends State<RepairDetail> {
             children: [
               const Icon(Icons.favorite, color: Colors.green, size: 32),
               const SizedBox(height: 8),
-              const Text("Device Still Usable?",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text(
+                "Device Still Usable?",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 4),
               const Text(
-                  "Consider donating it to a local student in Davao City.",
-                  textAlign: TextAlign.center),
+                "Consider donating it to a local student in Davao City.",
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: () =>
@@ -335,8 +383,10 @@ class _RepairDetailState extends State<RepairDetail> {
           children: [
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text("Find a Vetted Technician",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              child: Text(
+                "Find a Vetted Technician",
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
             ),
             const SizedBox(height: 16),
             Stack(
@@ -359,8 +409,9 @@ class _RepairDetailState extends State<RepairDetail> {
                     icon: const Icon(Icons.location_searching),
                     label: const Text("Near Me"),
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black87),
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black87,
+                    ),
                   ),
                 ),
               ],
@@ -400,7 +451,8 @@ class _RepairDetailState extends State<RepairDetail> {
                   technician: tech,
                   onTap: () => _showTechnicianProfile(context, tech),
                   onBook: () => _showSnackBar("Booking with ${tech.name}..."),
-                  onChat: () => _showSnackBar("Opening chat with ${tech.name}..."),
+                  onChat: () =>
+                      _showSnackBar("Opening chat with ${tech.name}..."),
                 );
               },
               separatorBuilder: (context, index) => const SizedBox(height: 12),
@@ -423,11 +475,12 @@ class _TechnicianCard extends StatelessWidget {
   final VoidCallback onBook;
   final VoidCallback onChat;
 
-  const _TechnicianCard(
-      {required this.technician,
-      required this.onTap,
-      required this.onBook,
-      required this.onChat});
+  const _TechnicianCard({
+    required this.technician,
+    required this.onTap,
+    required this.onBook,
+    required this.onChat,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -459,22 +512,33 @@ class _TechnicianCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(technician.name,
-                            style: const TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text(
+                          technician.name,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         const SizedBox(height: 4),
                         Text(
-                            "${technician.location} • ${technician.distance}km away", // Uses summary location
-                            style: const TextStyle(color: Colors.black54)),
+                          "${technician.location} • ${technician.distance}km away", // Uses summary location
+                          style: const TextStyle(color: Colors.black54),
+                        ),
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            const Icon(Icons.star,
-                                color: Colors.amber, size: 18),
+                            const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 18,
+                            ),
                             const SizedBox(width: 4),
-                            Text(technician.rating.toString(),
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold)),
+                            Text(
+                              technician.rating.toString(),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -483,9 +547,10 @@ class _TechnicianCard extends StatelessWidget {
                   Text(
                     technician.priceRange,
                     style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
                   ),
                 ],
               ),
@@ -493,8 +558,9 @@ class _TechnicianCard extends StatelessWidget {
               Text(
                 "Specialty: ${technician.specialty}",
                 style: TextStyle(
-                    color: Theme.of(context).primaryColor,
-                    fontWeight: FontWeight.bold),
+                  color: Theme.of(context).primaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const Divider(height: 24),
               Row(
@@ -515,7 +581,7 @@ class _TechnicianCard extends StatelessWidget {
                     ),
                   ),
                 ],
-              )
+              ),
             ],
           ),
         ),
