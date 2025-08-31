@@ -4,7 +4,7 @@ import 'package:ayoayo/models/device_diagnosis.dart';
 class RecommendationsView extends StatelessWidget {
   final List<RecommendedAction> recommendations;
 
-  const RecommendationsView({Key? key, required this.recommendations}) : super(key: key);
+  const RecommendationsView({super.key, required this.recommendations});
 
   @override
   Widget build(BuildContext context) {

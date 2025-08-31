@@ -6,7 +6,7 @@ import 'package:ayoayo/widgets/diagnosis/recommendations_view.dart';
 class DevicePassportScreen extends StatelessWidget {
   final DevicePassport passport;
 
-  const DevicePassportScreen({Key? key, required this.passport}) : super(key: key);
+  const DevicePassportScreen({super.key, required this.passport});
 
   @override
   Widget build(BuildContext context) {
