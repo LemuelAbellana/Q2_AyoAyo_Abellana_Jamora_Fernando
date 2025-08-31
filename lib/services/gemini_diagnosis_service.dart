@@ -790,15 +790,18 @@ ${hasImages ? '\n**Image Analysis:** Visual inspection completed using uploaded 
     if (model.contains('14') ||
         model.contains('13') ||
         model.contains('s23') ||
-        model.contains('s22'))
+        model.contains('s22')) {
       return '1-2 years';
+    }
     if (model.contains('12') ||
         model.contains('11') ||
         model.contains('s21') ||
-        model.contains('s20'))
+        model.contains('s20')) {
       return '2-3 years';
-    if (model.contains('x') || model.contains('10') || model.contains('s19'))
+    }
+    if (model.contains('x') || model.contains('10') || model.contains('s19')) {
       return '3-4 years';
+    }
     return '4+ years';
   }
 

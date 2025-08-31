@@ -7,6 +7,5 @@ class ApiConfig {
   static const bool useDemoMode = false;
 
   // Demo mode provides realistic but static responses for testing
-  static const bool enableImageAnalysis =
-      true; // Set to true when API key is configured
+  static const bool enableImageAnalysis = true; // Set to true when API key is configured
 }
