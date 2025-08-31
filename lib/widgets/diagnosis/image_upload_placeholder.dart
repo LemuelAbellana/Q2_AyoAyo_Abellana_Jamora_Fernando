@@ -27,8 +27,9 @@ class _ImageUploadPlaceholderState extends State<ImageUploadPlaceholder> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Container(
-          height: 120,
+                Container(
+          width: double.infinity,
+          height: 160,
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey.shade300, width: 2),
             borderRadius: BorderRadius.circular(12),
@@ -43,7 +44,7 @@ class _ImageUploadPlaceholderState extends State<ImageUploadPlaceholder> {
                     children: [
                       Icon(
                         LucideIcons.camera,
-                        size: 32,
+                        size: 48,
                         color: Colors.grey.shade600,
                       ),
                       const SizedBox(height: 8),
@@ -52,6 +53,7 @@ class _ImageUploadPlaceholderState extends State<ImageUploadPlaceholder> {
                         style: TextStyle(
                           color: Colors.grey.shade600,
                           fontWeight: FontWeight.w500,
+                          fontSize: 16,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -78,14 +80,14 @@ class _ImageUploadPlaceholderState extends State<ImageUploadPlaceholder> {
                               child: kIsWeb
                                   ? Image.network(
                                       imageFile.path,
-                                      width: 100,
-                                      height: 100,
+                                      width: 140,
+                                      height: 140,
                                       fit: BoxFit.cover,
                                       errorBuilder:
                                           (context, error, stackTrace) {
                                             return Container(
-                                              width: 100,
-                                              height: 100,
+                                              width: 140,
+                                              height: 140,
                                               color: Colors.grey[300],
                                               child: const Icon(Icons.error),
                                             );
@@ -93,8 +95,8 @@ class _ImageUploadPlaceholderState extends State<ImageUploadPlaceholder> {
                                     )
                                   : Image.file(
                                       imageFile,
-                                      width: 100,
-                                      height: 100,
+                                      width: 140,
+                                      height: 140,
                                       fit: BoxFit.cover,
                                     ),
                             ),

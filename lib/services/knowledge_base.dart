@@ -124,8 +124,8 @@ class KnowledgeBase {
   };
 
   static const Map<String, dynamic> marketIntelligence = {
-    'davao_city': {
-      'marketMultiplier': 0.95, // Slightly lower than Manila prices
+    'local_market': {
+      'marketMultiplier': 0.95, // Slightly lower than major city prices
       'popularBrands': ['iphone', 'samsung', 'xiaomi', 'oppo', 'vivo'],
       'repairShops': 150,
       'averageRepairTime': '3-7 days',
@@ -140,17 +140,10 @@ class KnowledgeBase {
         'low': ['april', 'may', 'september', 'october', 'november'],
       },
     },
-    'philippines': {
-      'marketMultiplier': 1.0,
-      'currencyCode': 'PHP',
-      'taxRate': 0.12, // VAT
-      'importDuty': 0.07,
-      'preferredPayment': ['cash', 'installment', 'trade_in'],
-    },
   };
 
   static const String ragData = ''';
-  ENHANCED DEVICE DIAGNOSTIC KNOWLEDGE BASE (Philippines & Davao Market Focus):
+  ENHANCED DEVICE DIAGNOSTIC KNOWLEDGE BASE (Local Market Focus):
 
   **1. Common Device Issues & Symptoms:**
   - **Battery Degradation:** Rapid discharge (<80% health), overheating during charging, unexpected shutdowns. Common after 2-3 years.
@@ -165,9 +158,9 @@ class KnowledgeBase {
     - *Charging Port:* Loose connection, requires specific cable angle to charge, no charging.
   - **Motherboard/Logic Board Issues:** No power, no display even with a new screen, overheating with no specific cause.
 
-  **2. Device Value Factors (Philippines Context):**
+  **2. Device Value Factors (Local Context):**
   - **Age & Model:** Newer models (iPhone 12+, Samsung S21+) retain value well. Older models (iPhone 8, Samsung S9) have lower but stable value.
-  - **Market Demand (Davao):** High demand for iPhones, Samsung A-series, and budget brands like Xiaomi/Realme.
+  - **Market Demand:** High demand for iPhones, Samsung A-series, and budget brands like Xiaomi/Realme.
   - **Condition:**
     - *Pristine/Mint:* No visible flaws. Highest value.
     - *Good:* Minor, barely visible scratches.
@@ -177,7 +170,7 @@ class KnowledgeBase {
   - **"GPP" / Carrier Locked Units:** Lower value than "Factory Unlocked" (FU) units.
   - **Repairs History:** Use of non-original parts (replacement screens/batteries) can lower value.
 
-  **3. Repair Cost Estimates (Davao City, Greenhills price reference):**
+  **3. Repair Cost Estimates (Local price reference):**
   - **iPhone Screen:**
     - *LCD (iPhone 8-11):* ₱2,500 - ₱4,000
     - *OLED (iPhone X-14):* ₱5,000 - ₱12,000
@@ -254,9 +247,10 @@ class KnowledgeBase {
     }
 
     // Add market intelligence
-    final marketData = marketIntelligence['davao_city'] as Map<String, dynamic>;
+    final marketData =
+        marketIntelligence['local_market'] as Map<String, dynamic>;
     relevantKnowledge.add(
-      'Market Context (Davao): ${marketData['marketMultiplier']}x multiplier, '
+      'Market Context (Local): ${marketData['marketMultiplier']}x multiplier, '
       '${marketData['repairShops']} repair shops available, '
       'Avg repair time: ${marketData['averageRepairTime']}',
     );
@@ -312,9 +306,9 @@ class KnowledgeBase {
     final ageYears = currentYear - releaseYear;
     baseValue *= (depreciationRate * (1 - (ageYears * 0.1))).clamp(0.3, 1.0);
 
-    // Apply market multiplier for Davao
+    // Apply market multiplier for local market
     final marketMultiplier =
-        (marketIntelligence['davao_city']!['marketMultiplier'] as num)
+        (marketIntelligence['local_market']!['marketMultiplier'] as num)
             .toDouble();
     baseValue *= marketMultiplier;
 

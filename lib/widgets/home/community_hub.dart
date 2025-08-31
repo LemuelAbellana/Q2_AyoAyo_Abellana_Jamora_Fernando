@@ -1,3 +1,4 @@
+import 'package:ayoayo/screens/technician_chatbot_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
@@ -18,23 +19,29 @@ class CommunityHub extends StatelessWidget {
           const SizedBox(height: 16),
           Card(
             color: Colors.grey[100],
-            child: const Padding(
-              padding: EdgeInsets.all(16.0),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  Icon(LucideIcons.graduationCap, size: 40, color: Colors.blue),
-                  SizedBox(height: 8),
-                  Text(
+                  const Icon(LucideIcons.graduationCap, size: 40, color: Colors.blue),
+                  const SizedBox(height: 8),
+                  const Text(
                     "AyoAyo University",
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   ListTile(
-                    title: Text("Tech-Care Guides"),
-                    trailing: Icon(Icons.arrow_forward_ios),
-                  ),
-                  ListTile(
-                    title: Text("Ask a Technician"),
-                    trailing: Icon(Icons.arrow_forward_ios),
+                    leading: const Icon(LucideIcons.bot, color: Colors.blue),
+                    title: const Text("Technician Chatbot"),
+                    subtitle: const Text("Get instant help from our AI assistant"),
+                    trailing: const Icon(Icons.arrow_forward_ios),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TechnicianChatbotScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),

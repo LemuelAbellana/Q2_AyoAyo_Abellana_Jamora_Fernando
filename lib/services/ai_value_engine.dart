@@ -73,7 +73,7 @@ class AIValueEngine {
   
   static MarketAnalysis _analyzeMarketConditions(String deviceModel, Map<String, dynamic>? deviceData) {
     final currentMonth = DateTime.now().month;
-    final marketData = KnowledgeBase.marketIntelligence['davao_city'] as Map<String, dynamic>;
+    final marketData = KnowledgeBase.marketIntelligence['local_market'] as Map<String, dynamic>;
     final seasonalData = marketData['seasonalDemand'] as Map<String, dynamic>;
     
     // Determine current demand
@@ -237,7 +237,7 @@ class AIValueEngine {
     } else {
       recommendations.add(InvestmentRecommendation(
         title: 'Local Market Sale',
-        description: 'Standard sale in local Davao market',
+        description: 'Standard sale in local market',
         recommendation: 'SELL_LOCAL',
         confidence: 0.75,
         expectedROI: 0,
