@@ -10,11 +10,10 @@ class DevicePassportFormScreen extends StatefulWidget {
   const DevicePassportFormScreen({super.key});
 
   @override
-  _DevicePassportFormScreenState createState() =>
-      _DevicePassportFormScreenState();
+  State<DevicePassportFormScreen> createState() => DevicePassportFormScreenState();
 }
 
-class _DevicePassportFormScreenState extends State<DevicePassportFormScreen> {
+class DevicePassportFormScreenState extends State<DevicePassportFormScreen> {
   final _geminiDiagnosisService = GeminiDiagnosisService();
 
   @override
@@ -45,8 +44,11 @@ class _DevicePassportFormScreenState extends State<DevicePassportFormScreen> {
                     manufacturer: manufacturer,
                     yearOfRelease: yearOfRelease,
                     operatingSystem: 'Unknown',
+                    imageUrls: diagnosisResult.imageUrls, // Use imageUrls from DiagnosisResult
                     lastDiagnosis: diagnosisResult,
                   );
+
+                  if (!context.mounted) return; // Check if widget is still mounted
 
                   Navigator.push(
                     context,

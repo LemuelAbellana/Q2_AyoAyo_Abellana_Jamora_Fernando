@@ -8,10 +8,10 @@ class DevicePassportForm extends StatefulWidget {
   const DevicePassportForm({super.key, required this.onSubmit});
 
   @override
-  _DevicePassportFormState createState() => _DevicePassportFormState();
+  State<DevicePassportForm> createState() => DevicePassportFormState();
 }
 
-class _DevicePassportFormState extends State<DevicePassportForm> {
+class DevicePassportFormState extends State<DevicePassportForm> {
   final _formKey = GlobalKey<FormState>();
   final _deviceModelController = TextEditingController();
   final _manufacturerController = TextEditingController();

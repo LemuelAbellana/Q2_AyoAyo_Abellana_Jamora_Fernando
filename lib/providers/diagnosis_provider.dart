@@ -1,8 +1,9 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
 import '/models/device_diagnosis.dart';
 import '/services/gemini_diagnosis_service.dart';
+import '/models/pathway.dart'; // Added import for Pathway
 
 class DiagnosisProvider extends ChangeNotifier {
   final GeminiDiagnosisService _diagnosisService = GeminiDiagnosisService();
@@ -11,6 +12,12 @@ class DiagnosisProvider extends ChangeNotifier {
   String _deviceModel = '';
   String _additionalInfo = '';
   final List<File> _selectedImages = [];
+
+  // Selected pathway
+  Pathway _selectedPathway = Pathway.none; // Added selectedPathway
+
+  // Getters
+  Pathway get selectedPathway => _selectedPathway; // Added getter for selectedPathway
 
   // Results
   DiagnosisResult? _currentResult;
@@ -95,6 +102,11 @@ class DiagnosisProvider extends ChangeNotifier {
     }
   }
 
+  void setSelectedPathway(Pathway pathway) { // Added setter for selectedPathway
+    _selectedPathway = pathway;
+    notifyListeners();
+  }
+
   // Reset all data
   void reset() {
     _deviceModel = '';
@@ -103,6 +115,7 @@ class DiagnosisProvider extends ChangeNotifier {
     _currentResult = null;
     _error = null;
     _isLoading = false;
+    _selectedPathway = Pathway.none; // Reset selected pathway on reset
     notifyListeners();
   }
 

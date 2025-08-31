@@ -5,8 +5,7 @@ import '/widgets/diagnosis/image_upload_placeholder.dart';
 import '/providers/diagnosis_provider.dart';
 
 class DiagnosisForm extends StatefulWidget {
-  final VoidCallback onDiagnose;
-  const DiagnosisForm({super.key, required this.onDiagnose});
+  const DiagnosisForm({super.key});
 
   @override
   State<DiagnosisForm> createState() => _DiagnosisFormState();
@@ -100,9 +99,7 @@ class _DiagnosisFormState extends State<DiagnosisForm> {
                     onPressed: provider.canStartDiagnosis && !provider.isLoading
                         ? () async {
                             await provider.startDiagnosis();
-                            if (provider.currentResult != null) {
-                              widget.onDiagnose();
-                            }
+                            if (provider.currentResult != null) {}
                           }
                         : null,
                     style: ElevatedButton.styleFrom(

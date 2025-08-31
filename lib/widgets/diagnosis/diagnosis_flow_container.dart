@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '/models/pathway.dart';
+
 import '/widgets/diagnosis/diagnosis_form.dart';
 import '/widgets/diagnosis/loading_indicator.dart';
 import '/widgets/diagnosis/results_view.dart';
@@ -17,29 +17,15 @@ class DiagnosisFlowContainer extends StatefulWidget {
 }
 
 class _DiagnosisFlowContainerState extends State<DiagnosisFlowContainer> {
-  DiagnosisState _currentState = DiagnosisState.form;
-  Pathway _selectedPathway = Pathway.none;
-
-  void _startDiagnosis() {
-    setState(() => _currentState = DiagnosisState.results);
-  }
-
-  void _selectPathway(Pathway pathway) {
-    setState(() => _selectedPathway = pathway);
-  }
-
   Widget _buildCurrentStateWidget() {
     return Consumer<DiagnosisProvider>(
       builder: (context, provider, child) {
         if (provider.isLoading) {
           return const LoadingIndicator();
         } else if (provider.currentResult != null) {
-          return ResultsView(
-            selectedPathway: _selectedPathway,
-            onPathwaySelected: _selectPathway,
-          );
+          return const ResultsView(); // Removed selectedPathway and onPathwaySelected
         } else {
-          return DiagnosisForm(onDiagnose: _startDiagnosis);
+          return const DiagnosisForm(); // Removed onDiagnose
         }
       },
     );

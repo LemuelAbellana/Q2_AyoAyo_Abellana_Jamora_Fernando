@@ -34,6 +34,7 @@ class DiagnosisResult {
   final List<RecommendedAction> recommendations;
   final String aiAnalysis;
   final double confidenceScore;
+  final List<String> imageUrls; // Added imageUrls
 
   DiagnosisResult({
     required this.deviceModel,
@@ -42,6 +43,7 @@ class DiagnosisResult {
     required this.recommendations,
     required this.aiAnalysis,
     required this.confidenceScore,
+    this.imageUrls = const [], // Initialize with empty list
   });
 
   factory DiagnosisResult.fromJson(Map<String, dynamic> json) {
@@ -56,6 +58,7 @@ class DiagnosisResult {
           [],
       aiAnalysis: json['aiAnalysis'] ?? '',
       confidenceScore: (json['confidenceScore'] ?? 0.0).toDouble(),
+      imageUrls: List<String>.from(json['imageUrls'] ?? []),
     );
   }
 
@@ -67,6 +70,7 @@ class DiagnosisResult {
       'recommendations': recommendations.map((e) => e.toJson()).toList(),
       'aiAnalysis': aiAnalysis,
       'confidenceScore': confidenceScore,
+      'imageUrls': imageUrls,
     };
   }
 }

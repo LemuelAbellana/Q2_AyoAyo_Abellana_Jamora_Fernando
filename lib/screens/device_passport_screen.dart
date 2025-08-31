@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:ayoayo/models/device_passport.dart';
-import 'package:ayoayo/models/device_diagnosis.dart';
 import 'package:ayoayo/widgets/diagnosis/recommendations_view.dart';
+import 'package:ayoayo/widgets/diagnosis/ai_value_insights.dart';
+import 'package:ayoayo/widgets/diagnosis/multi_modal_analysis_card.dart';
 
 class DevicePassportScreen extends StatelessWidget {
   final DevicePassport passport;
@@ -11,9 +12,7 @@ class DevicePassportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Device Passport'),
-      ),
+      appBar: AppBar(title: const Text('Device Passport')),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -21,6 +20,20 @@ class DevicePassportScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               passport.buildPassport(context),
+              const SizedBox(height: 16.0),
+
+              // Multi-Modal Analysis Card
+              MultiModalAnalysisCard(
+                diagnosisResult: passport.lastDiagnosis,
+                hasImages: passport.imageUrls.isNotEmpty,
+                hasUserDescription:
+                    passport.lastDiagnosis.aiAnalysis.contains('User') ||
+                    passport.lastDiagnosis.aiAnalysis.contains('description'),
+              ),
+
+              // AI Value Engine Analysis
+              AIValueInsights(diagnosisResult: passport.lastDiagnosis),
+
               const SizedBox(height: 16.0),
               Text(
                 'AI Analysis',
@@ -48,7 +61,9 @@ class DevicePassportScreen extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8.0),
-              RecommendationsView(recommendations: passport.lastDiagnosis.recommendations),
+              RecommendationsView(
+                recommendations: passport.lastDiagnosis.recommendations,
+              ),
             ],
           ),
         ),

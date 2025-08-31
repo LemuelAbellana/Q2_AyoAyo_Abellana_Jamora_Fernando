@@ -1,9 +1,9 @@
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:image_picker/image_picker.dart';
-
 
 class ImageUploadPlaceholder extends StatefulWidget {
   final String label;
@@ -57,7 +57,10 @@ class _ImageUploadPlaceholderState extends State<ImageUploadPlaceholder> {
                       const SizedBox(height: 4),
                       Text(
                         'Tap to upload',
-                        style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   )
@@ -72,12 +75,28 @@ class _ImageUploadPlaceholderState extends State<ImageUploadPlaceholder> {
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: Image.file(
-                                imageFile,
-                                width: 100,
-                                height: 100,
-                                fit: BoxFit.cover,
-                              ),
+                              child: kIsWeb
+                                  ? Image.network(
+                                      imageFile.path,
+                                      width: 100,
+                                      height: 100,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                            return Container(
+                                              width: 100,
+                                              height: 100,
+                                              color: Colors.grey[300],
+                                              child: const Icon(Icons.error),
+                                            );
+                                          },
+                                    )
+                                  : Image.file(
+                                      imageFile,
+                                      width: 100,
+                                      height: 100,
+                                      fit: BoxFit.cover,
+                                    ),
                             ),
                             Positioned(
                               top: 0,
@@ -110,6 +129,7 @@ class _ImageUploadPlaceholderState extends State<ImageUploadPlaceholder> {
 
   Future<void> _pickImage(BuildContext context) async {
     final ImageSource? source = await showDialog<ImageSource>(
+      // ignore: unnecessary_nullable_for_final_variable_declarations
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
@@ -133,6 +153,8 @@ class _ImageUploadPlaceholderState extends State<ImageUploadPlaceholder> {
       },
     );
 
+    if (!context.mounted) return; // Added check
+
     if (source != null) {
       try {
         final List<XFile>? pickedFiles = await _picker.pickMultiImage(
@@ -143,7 +165,9 @@ class _ImageUploadPlaceholderState extends State<ImageUploadPlaceholder> {
 
         if (pickedFiles != null && pickedFiles.isNotEmpty) {
           setState(() {
-            _selectedImages.addAll(pickedFiles.map((xFile) => File(xFile.path)).toList());
+            _selectedImages.addAll(
+              pickedFiles.map((xFile) => File(xFile.path)).toList(),
+            );
           });
           widget.onImagesSelected(_selectedImages);
         }
