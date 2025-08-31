@@ -11,7 +11,6 @@ class DiagnosisProvider extends ChangeNotifier {
   String _deviceModel = '';
   String _additionalInfo = '';
   final List<File> _selectedImages = [];
-  final List<Uint8List> _imageBytes = []; // For web compatibility
 
   // Results
   DiagnosisResult? _currentResult;
@@ -22,7 +21,6 @@ class DiagnosisProvider extends ChangeNotifier {
   String get deviceModel => _deviceModel;
   String get additionalInfo => _additionalInfo;
   List<File> get selectedImages => List.unmodifiable(_selectedImages);
-  List<Uint8List> get imageBytes => List.unmodifiable(_imageBytes);
   DiagnosisResult? get currentResult => _currentResult;
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -40,13 +38,16 @@ class DiagnosisProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addImage(File image, [Uint8List? bytes]) {
+  void setSelectedImages(List<File> images) {
+    _selectedImages.clear();
+    _selectedImages.addAll(images);
+    notifyListeners();
+  }
+
+  void addImage(File image) {
     if (_selectedImages.length < 3) {
       // Limit to 3 images
       _selectedImages.add(image);
-      if (bytes != null) {
-        _imageBytes.add(bytes);
-      }
       notifyListeners();
     }
   }
@@ -54,16 +55,12 @@ class DiagnosisProvider extends ChangeNotifier {
   void removeImage(int index) {
     if (index >= 0 && index < _selectedImages.length) {
       _selectedImages.removeAt(index);
-      if (index < _imageBytes.length) {
-        _imageBytes.removeAt(index);
-      }
       notifyListeners();
     }
   }
 
   void clearImages() {
     _selectedImages.clear();
-    _imageBytes.clear();
     notifyListeners();
   }
 
@@ -84,7 +81,6 @@ class DiagnosisProvider extends ChangeNotifier {
       final diagnosis = DeviceDiagnosis(
         deviceModel: _deviceModel,
         images: _selectedImages,
-        imageBytes: kIsWeb ? _imageBytes : null,
         additionalInfo: _additionalInfo.isEmpty ? null : _additionalInfo,
       );
 
@@ -104,7 +100,6 @@ class DiagnosisProvider extends ChangeNotifier {
     _deviceModel = '';
     _additionalInfo = '';
     _selectedImages.clear();
-    _imageBytes.clear();
     _currentResult = null;
     _error = null;
     _isLoading = false;

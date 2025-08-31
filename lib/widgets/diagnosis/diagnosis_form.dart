@@ -70,54 +70,10 @@ class _DiagnosisFormState extends State<DiagnosisForm> {
               },
             ),
             const SizedBox(height: 16),
-            Consumer<DiagnosisProvider>(
-              builder: (context, provider, child) {
-                final images = provider.selectedImages;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Device Images (Optional but recommended)',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: 120,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: (images.length < 3)
-                            ? images.length + 1
-                            : images.length,
-                        itemBuilder: (context, index) {
-                          if (index < images.length) {
-                            return Container(
-                              width: 120,
-                              margin: const EdgeInsets.only(right: 16),
-                              child: ImageUploadPlaceholder(
-                                label: 'Image ${index + 1}',
-                                selectedImage: images[index],
-                                imageBytes: index < provider.imageBytes.length
-                                    ? provider.imageBytes[index]
-                                    : null,
-                              ),
-                            );
-                          } else {
-                            return Container(
-                              width: 120,
-                              margin: const EdgeInsets.only(right: 16),
-                              child: const ImageUploadPlaceholder(
-                                label: 'Add Image',
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                );
+            ImageUploadPlaceholder(
+              label: 'Upload Device Images',
+              onImagesSelected: (imageFiles) {
+                context.read<DiagnosisProvider>().setSelectedImages(imageFiles);
               },
             ),
             const SizedBox(height: 24),
