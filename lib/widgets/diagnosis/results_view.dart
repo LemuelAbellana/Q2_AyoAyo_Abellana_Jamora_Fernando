@@ -3,10 +3,12 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:provider/provider.dart';
 import '/models/pathway.dart';
 import '/models/device_diagnosis.dart';
+import '/providers/diagnosis_provider.dart';
 import '/widgets/pathways/donate_detail.dart';
 import '/widgets/pathways/pathway_card.dart';
 import '/widgets/pathways/repair_detail.dart';
-import '/providers/diagnosis_provider.dart';
+import '/widgets/pathways/upcycle_detail.dart';
+import '/widgets/pathways/resell_detail.dart';
 
 class ResultsView extends StatelessWidget {
   const ResultsView({
@@ -80,12 +82,21 @@ class ResultsView extends StatelessWidget {
         // Display details based on selected pathway
         Consumer<DiagnosisProvider>(
           builder: (context, provider, child) {
-            if (provider.selectedPathway == Pathway.repair) {
-              return const RepairDetail();
-            } else if (provider.selectedPathway == Pathway.donate) {
-              return const DonateDetail();
+            if (provider.currentResult == null) {
+              return const SizedBox.shrink();
             }
-            return const SizedBox.shrink();
+            switch (provider.selectedPathway) {
+              case Pathway.repair:
+                return const RepairDetail();
+              case Pathway.resell:
+                return const ResellDetail();
+              case Pathway.upcycle:
+                return UpcycleDetail(diagnosisResult: provider.currentResult!);
+              case Pathway.donate:
+                return const DonateDetail();
+              default:
+                return const SizedBox.shrink();
+            }
           },
         ),
         const SizedBox(height: 16),
