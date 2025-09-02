@@ -112,8 +112,9 @@ class DevicePassport {
                                       ),
                                   loadingBuilder:
                                       (context, child, loadingProgress) {
-                                        if (loadingProgress == null)
+                                        if (loadingProgress == null) {
                                           return child;
+                                        }
                                         return Container(
                                           width: 100,
                                           height: 100,

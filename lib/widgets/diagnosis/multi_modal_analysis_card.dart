@@ -303,14 +303,18 @@ class MultiModalAnalysisCard extends StatelessWidget {
   }
 
   String _getAccuracyDescription(double confidence) {
-    if (confidence >= 0.9)
+    if (confidence >= 0.9) {
       return 'Multiple data sources provide strong validation';
-    if (confidence >= 0.8)
+    }
+    if (confidence >= 0.8) {
       return 'Good correlation between visual and textual evidence';
-    if (confidence >= 0.7)
+    }
+    if (confidence >= 0.7) {
       return 'Solid analysis with adequate supporting data';
-    if (confidence >= 0.6)
+    }
+    if (confidence >= 0.6) {
       return 'Reasonable assessment with some data limitations';
+    }
     return 'Limited data available - assessment may be incomplete';
   }
 
