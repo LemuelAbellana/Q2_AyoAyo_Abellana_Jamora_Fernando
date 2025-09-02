@@ -187,40 +187,49 @@ class GeminiDiagnosisService {
       final info = diagnosis.additionalInfo!.toLowerCase();
       if (info.contains('battery') ||
           info.contains('drain') ||
-          info.contains('power'))
+          info.contains('power')) {
         identifiedIssues.add('battery');
+      }
       if (info.contains('screen') ||
           info.contains('crack') ||
-          info.contains('display'))
+          info.contains('display')) {
         identifiedIssues.add('screen');
+      }
       if (info.contains('camera') ||
           info.contains('photo') ||
-          info.contains('video'))
+          info.contains('video')) {
         identifiedIssues.add('camera');
+      }
       if (info.contains('charge') ||
           info.contains('charging') ||
-          info.contains('port'))
+          info.contains('port')) {
         identifiedIssues.add('charging');
+      }
       if (info.contains('overheat') ||
           info.contains('hot') ||
-          info.contains('warm'))
+          info.contains('warm')) {
         identifiedIssues.add('thermal');
+      }
       if (info.contains('water') ||
           info.contains('wet') ||
-          info.contains('liquid'))
+          info.contains('liquid')) {
         identifiedIssues.add('water_damage');
+      }
       if (info.contains('drop') ||
           info.contains('fall') ||
-          info.contains('impact'))
+          info.contains('impact')) {
         identifiedIssues.add('physical_damage');
+      }
       if (info.contains('slow') ||
           info.contains('lag') ||
-          info.contains('freeze'))
+          info.contains('freeze')) {
         identifiedIssues.add('performance');
+      }
       if (info.contains('speaker') ||
           info.contains('audio') ||
-          info.contains('sound'))
+          info.contains('sound')) {
         identifiedIssues.add('audio');
+      }
     }
 
     // Extract issues from image analysis results
@@ -228,22 +237,28 @@ class GeminiDiagnosisService {
       final imageText = imageAnalysis.toLowerCase();
       if (imageText.contains('crack') ||
           imageText.contains('shatter') ||
-          imageText.contains('broken'))
+          imageText.contains('broken')) {
         identifiedIssues.add('screen');
+      }
       if (imageText.contains('scratch') ||
           imageText.contains('dent') ||
-          imageText.contains('damage'))
+          imageText.contains('damage')) {
         identifiedIssues.add('physical_damage');
+      }
       if (imageText.contains('water') ||
           imageText.contains('corrosion') ||
-          imageText.contains('liquid'))
+          imageText.contains('liquid')) {
         identifiedIssues.add('water_damage');
-      if (imageText.contains('camera') || imageText.contains('lens'))
+      }
+      if (imageText.contains('camera') || imageText.contains('lens')) {
         identifiedIssues.add('camera');
-      if (imageText.contains('port') || imageText.contains('charging'))
+      }
+      if (imageText.contains('port') || imageText.contains('charging')) {
         identifiedIssues.add('charging');
-      if (imageText.contains('poor') || imageText.contains('damaged'))
+      }
+      if (imageText.contains('poor') || imageText.contains('damaged')) {
         identifiedIssues.add('overall_condition');
+      }
     }
 
     // Remove duplicates

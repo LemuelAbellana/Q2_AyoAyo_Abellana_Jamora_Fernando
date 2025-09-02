@@ -159,13 +159,13 @@ class _ImageUploadPlaceholderState extends State<ImageUploadPlaceholder> {
 
     if (source != null) {
       try {
-        final List<XFile>? pickedFiles = await _picker.pickMultiImage(
+        final List<XFile> pickedFiles = await _picker.pickMultiImage(
           maxWidth: 1024,
           maxHeight: 1024,
           imageQuality: 85,
         );
 
-        if (pickedFiles != null && pickedFiles.isNotEmpty) {
+        if (pickedFiles.isNotEmpty) {
           setState(() {
             _selectedImages.addAll(
               pickedFiles.map((xFile) => File(xFile.path)).toList(),
