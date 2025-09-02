@@ -165,7 +165,7 @@ class _ImageUploadPlaceholderState extends State<ImageUploadPlaceholder> {
           imageQuality: 85,
         );
 
-        if (pickedFiles != null && pickedFiles.isNotEmpty) {
+        if (pickedFiles.isNotEmpty) {
           setState(() {
             _selectedImages.addAll(
               pickedFiles.map((xFile) => File(xFile.path)).toList(),
