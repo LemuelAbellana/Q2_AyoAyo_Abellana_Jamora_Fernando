@@ -32,19 +32,41 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text.rich(
-          TextSpan(
-            children: [
-              TextSpan(
-                text: 'Ayo',
-                style: TextStyle(color: Colors.green),
+        title: Row(
+          children: [
+            // Add logo to app bar
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.blue.shade50,
+                border: Border.all(color: Colors.blue.shade200),
               ),
-              TextSpan(
-                text: 'Ayo',
-                style: TextStyle(color: Colors.blue),
+              child: Image.asset(
+                'assets/images/Ayo-ayo.png',
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(Icons.eco, size: 24, color: Colors.blue);
+                },
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 12),
+            const Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: 'Ayo',
+                    style: TextStyle(color: Colors.green),
+                  ),
+                  TextSpan(
+                    text: 'Ayo',
+                    style: TextStyle(color: Colors.blue),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         actions: [
           IconButton(

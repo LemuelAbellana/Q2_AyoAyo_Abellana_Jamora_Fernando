@@ -80,12 +80,18 @@ class DeviceHealth {
   final ScreenCondition screenCondition;
   final HardwareCondition hardwareCondition;
   final List<String> identifiedIssues;
+  final String lifeCycleStage;
+  final String remainingUsefulLife;
+  final String environmentalImpact;
 
   DeviceHealth({
     required this.batteryHealth,
     required this.screenCondition,
     required this.hardwareCondition,
     required this.identifiedIssues,
+    this.lifeCycleStage = 'unknown',
+    this.remainingUsefulLife = 'unknown',
+    this.environmentalImpact = 'unknown',
   });
 
   factory DeviceHealth.fromJson(Map<String, dynamic> json) {
@@ -100,6 +106,9 @@ class DeviceHealth {
         orElse: () => HardwareCondition.unknown,
       ),
       identifiedIssues: List<String>.from(json['identifiedIssues'] ?? []),
+      lifeCycleStage: json['lifeCycleStage'] ?? 'unknown',
+      remainingUsefulLife: json['remainingUsefulLife'] ?? 'unknown',
+      environmentalImpact: json['environmentalImpact'] ?? 'unknown',
     );
   }
 
@@ -109,6 +118,9 @@ class DeviceHealth {
       'screenCondition': screenCondition.name,
       'hardwareCondition': hardwareCondition.name,
       'identifiedIssues': identifiedIssues,
+      'lifeCycleStage': lifeCycleStage,
+      'remainingUsefulLife': remainingUsefulLife,
+      'environmentalImpact': environmentalImpact,
     };
   }
 }
@@ -118,14 +130,20 @@ class ValueEstimation {
   final double postRepairValue;
   final double partsValue;
   final double repairCost;
+  final double recyclingValue;
   final String currency;
+  final String marketPositioning;
+  final String depreciationRate;
 
   ValueEstimation({
     required this.currentValue,
     required this.postRepairValue,
     required this.partsValue,
     required this.repairCost,
+    this.recyclingValue = 0.0,
     this.currency = '₱',
+    this.marketPositioning = 'unknown',
+    this.depreciationRate = 'unknown',
   });
 
   factory ValueEstimation.fromJson(Map<String, dynamic> json) {
@@ -134,7 +152,10 @@ class ValueEstimation {
       postRepairValue: (json['postRepairValue'] ?? 0.0).toDouble(),
       partsValue: (json['partsValue'] ?? 0.0).toDouble(),
       repairCost: (json['repairCost'] ?? 0.0).toDouble(),
+      recyclingValue: (json['recyclingValue'] ?? 0.0).toDouble(),
       currency: json['currency'] ?? '₱',
+      marketPositioning: json['marketPositioning'] ?? 'unknown',
+      depreciationRate: json['depreciationRate'] ?? 'unknown',
     );
   }
 
@@ -144,7 +165,10 @@ class ValueEstimation {
       'postRepairValue': postRepairValue,
       'partsValue': partsValue,
       'repairCost': repairCost,
+      'recyclingValue': recyclingValue,
       'currency': currency,
+      'marketPositioning': marketPositioning,
+      'depreciationRate': depreciationRate,
     };
   }
 }
@@ -154,12 +178,26 @@ class RecommendedAction {
   final String description;
   final ActionType type;
   final double priority;
+  final double costBenefitRatio;
+  final String environmentalImpact;
+  final String timeframe;
+  final double estimatedReturn;
+  final String marketTiming;
+  final double partsValue;
+  final String sustainabilityBenefit;
 
   RecommendedAction({
     required this.title,
     required this.description,
     required this.type,
     required this.priority,
+    this.costBenefitRatio = 0.0,
+    this.environmentalImpact = 'neutral',
+    this.timeframe = 'unknown',
+    this.estimatedReturn = 0.0,
+    this.marketTiming = 'neutral',
+    this.partsValue = 0.0,
+    this.sustainabilityBenefit = 'neutral',
   });
 
   factory RecommendedAction.fromJson(Map<String, dynamic> json) {
@@ -171,6 +209,13 @@ class RecommendedAction {
         orElse: () => ActionType.other,
       ),
       priority: (json['priority'] ?? 0.0).toDouble(),
+      costBenefitRatio: (json['costBenefitRatio'] ?? 0.0).toDouble(),
+      environmentalImpact: json['environmentalImpact'] ?? 'neutral',
+      timeframe: json['timeframe'] ?? 'unknown',
+      estimatedReturn: (json['estimatedReturn'] ?? 0.0).toDouble(),
+      marketTiming: json['marketTiming'] ?? 'neutral',
+      partsValue: (json['partsValue'] ?? 0.0).toDouble(),
+      sustainabilityBenefit: json['sustainabilityBenefit'] ?? 'neutral',
     );
   }
 
@@ -180,6 +225,13 @@ class RecommendedAction {
       'description': description,
       'type': type.name,
       'priority': priority,
+      'costBenefitRatio': costBenefitRatio,
+      'environmentalImpact': environmentalImpact,
+      'timeframe': timeframe,
+      'estimatedReturn': estimatedReturn,
+      'marketTiming': marketTiming,
+      'partsValue': partsValue,
+      'sustainabilityBenefit': sustainabilityBenefit,
     };
   }
 }

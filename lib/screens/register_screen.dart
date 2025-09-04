@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import '/services/user_service.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  // Controllers for text fields for better state management
-  final _emailController = TextEditingController(text: 'user@ayoayo.com');
-  final _passwordController = TextEditingController(text: 'password123');
+class _RegisterScreenState extends State<RegisterScreen> {
+  // Controllers for text fields
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _nameController = TextEditingController();
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -20,11 +22,13 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
-    if (!_validateLoginForm()) return;
+  Future<void> _handleRegistration() async {
+    if (!_validateRegistrationForm()) return;
 
     setState(() {
       _isLoading = true;
@@ -32,34 +36,61 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // Simulate login process
+      // Simulate registration process
       await Future.delayed(const Duration(seconds: 2));
 
-      // Check user credentials using UserService
-      final user = UserService.authenticateUser(
-        _emailController.text,
+      // Check if user already exists
+      if (UserService.userExists(_emailController.text)) {
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'User already exists with this email';
+          });
+        }
+        return;
+      }
+
+      // Register the user using UserService
+      final success = UserService.registerUser(
+        _nameController.text.trim(),
+        _emailController.text.trim(),
         _passwordController.text,
       );
 
-      if (user != null) {
-        // Successful login
-        if (mounted) {
-          // Navigate using named routes
-          Navigator.pushReplacementNamed(context, '/home');
-        }
-      } else {
+      if (!success) {
         if (mounted) {
           setState(() {
-            _errorMessage = UserService.userExists(_emailController.text)
-                ? 'Invalid password. Please try again.'
-                : 'No account found with this email. Please register first.';
+            _errorMessage = 'Registration failed. Please try again.';
           });
         }
+        return;
+      }
+
+      if (mounted) {
+        // Clear the form
+        _nameController.clear();
+        _emailController.clear();
+        _passwordController.clear();
+        _confirmPasswordController.clear();
+
+        setState(() {
+          _isLoading = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Registration successful! Please login with your credentials.',
+            ),
+          ),
+        );
+
+        // Navigate back to login screen
+        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Login failed. Please try again.';
+          _errorMessage = 'Registration failed. Please try again.';
         });
       }
     } finally {
@@ -71,17 +102,17 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  bool _validateLoginForm() {
-    if (_emailController.text.isEmpty) {
+  bool _validateRegistrationForm() {
+    if (_nameController.text.isEmpty) {
       setState(() {
-        _errorMessage = 'Please enter your email';
+        _errorMessage = 'Please enter your full name';
       });
       return false;
     }
 
-    if (_passwordController.text.isEmpty) {
+    if (_emailController.text.isEmpty) {
       setState(() {
-        _errorMessage = 'Please enter your password';
+        _errorMessage = 'Please enter your email';
       });
       return false;
     }
@@ -95,12 +126,31 @@ class _LoginScreenState extends State<LoginScreen> {
       return false;
     }
 
+    if (_passwordController.text.length < 6) {
+      setState(() {
+        _errorMessage = 'Password must be at least 6 characters long';
+      });
+      return false;
+    }
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      setState(() {
+        _errorMessage = 'Passwords do not match';
+      });
+      return false;
+    }
+
     return true;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Register'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -159,7 +209,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      "Welcome Back",
+                      "Create Your Account",
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey, fontSize: 18),
                     ),
@@ -185,36 +235,61 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 if (_errorMessage != null) const SizedBox(height: 16),
 
-                // Login Form Fields
+                // Registration Form Fields
+                TextField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Full Name',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.person),
+                    hintText: 'Enter your full name',
+                  ),
+                  keyboardType: TextInputType.name,
+                ),
+                const SizedBox(height: 16),
+
                 TextField(
                   controller: _emailController,
                   decoration: const InputDecoration(
                     labelText: 'Email',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.email),
-                    hintText: 'user@ayoayo.com',
+                    hintText: 'Enter your email address',
                   ),
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 16),
+
                 TextField(
                   controller: _passwordController,
                   decoration: const InputDecoration(
                     labelText: 'Password',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.lock),
-                    hintText: 'password123',
+                    hintText: 'Create a password (min 6 characters)',
+                  ),
+                  obscureText: true,
+                ),
+                const SizedBox(height: 16),
+
+                TextField(
+                  controller: _confirmPasswordController,
+                  decoration: const InputDecoration(
+                    labelText: 'Confirm Password',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.lock_outline),
+                    hintText: 'Confirm your password',
                   ),
                   obscureText: true,
                 ),
 
                 const SizedBox(height: 24),
 
-                // Login Button
+                // Register Button
                 SizedBox(
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleLogin,
+                    onPressed: _isLoading ? null : _handleRegistration,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       shape: RoundedRectangleBorder(
@@ -223,7 +298,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: _isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Login'),
+                        : const Text('Create Account'),
                   ),
                 ),
 
@@ -231,34 +306,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Demo Notice
                 const Text(
-                  "For demo purposes, you can use the credentials above or register a new account.",
+                  "For demo purposes, you can use any valid email and password.",
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
-                // Register Navigation
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Don't have an account? ",
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/register');
-                      },
-                      child: const Text(
-                        "Register here",
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
+                // Back to Login Link
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text(
+                    "Already have an account? Login here",
+                    style: TextStyle(color: Colors.blue),
+                  ),
                 ),
               ],
             ),

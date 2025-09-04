@@ -13,11 +13,17 @@ class DiagnosisProvider extends ChangeNotifier {
   String _additionalInfo = '';
   final List<File> _selectedImages = [];
 
+  // Device Passport data
+  String _manufacturer = '';
+  int _yearOfRelease = DateTime.now().year;
+  String _operatingSystem = '';
+
   // Selected pathway
   Pathway _selectedPathway = Pathway.none; // Added selectedPathway
 
   // Getters
-  Pathway get selectedPathway => _selectedPathway; // Added getter for selectedPathway
+  Pathway get selectedPathway =>
+      _selectedPathway; // Added getter for selectedPathway
 
   // Results
   DiagnosisResult? _currentResult;
@@ -34,6 +40,11 @@ class DiagnosisProvider extends ChangeNotifier {
   bool get hasImages => _selectedImages.isNotEmpty;
   bool get canStartDiagnosis => _deviceModel.isNotEmpty;
 
+  // Device Passport getters
+  String get manufacturer => _manufacturer;
+  int get yearOfRelease => _yearOfRelease;
+  String get operatingSystem => _operatingSystem;
+
   // Setters
   void setDeviceModel(String model) {
     _deviceModel = model.trim();
@@ -42,6 +53,22 @@ class DiagnosisProvider extends ChangeNotifier {
 
   void setAdditionalInfo(String info) {
     _additionalInfo = info.trim();
+    notifyListeners();
+  }
+
+  // Device Passport setters
+  void setManufacturer(String manufacturer) {
+    _manufacturer = manufacturer.trim();
+    notifyListeners();
+  }
+
+  void setYearOfRelease(String year) {
+    _yearOfRelease = int.tryParse(year) ?? DateTime.now().year;
+    notifyListeners();
+  }
+
+  void setOperatingSystem(String os) {
+    _operatingSystem = os.trim();
     notifyListeners();
   }
 
@@ -102,7 +129,8 @@ class DiagnosisProvider extends ChangeNotifier {
     }
   }
 
-  void setSelectedPathway(Pathway pathway) { // Added setter for selectedPathway
+  void setSelectedPathway(Pathway pathway) {
+    // Added setter for selectedPathway
     _selectedPathway = pathway;
     notifyListeners();
   }
@@ -116,6 +144,12 @@ class DiagnosisProvider extends ChangeNotifier {
     _error = null;
     _isLoading = false;
     _selectedPathway = Pathway.none; // Reset selected pathway on reset
+
+    // Reset device passport data
+    _manufacturer = '';
+    _yearOfRelease = DateTime.now().year;
+    _operatingSystem = '';
+
     notifyListeners();
   }
 

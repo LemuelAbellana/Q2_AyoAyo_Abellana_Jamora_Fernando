@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/home_screen.dart';
 import '/screens/login_screen.dart';
+import '/screens/register_screen.dart';
 import '/utils/app_theme.dart';
 import 'providers/diagnosis_provider.dart';
 
@@ -25,6 +26,7 @@ class AyoAyoApp extends StatelessWidget {
         initialRoute: '/login', // Set initial route
         routes: {
           '/login': (context) => const LoginScreen(),
+          '/register': (context) => const RegisterScreen(),
           '/home': (context) => const HomeScreen(),
         },
       ),
