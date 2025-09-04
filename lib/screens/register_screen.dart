@@ -166,11 +166,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Container(
                       width: 120,
                       height: 120,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        color: Colors.blue.shade50,
-                        border: Border.all(color: Colors.blue.shade200),
-                      ),
                       child: Image.asset(
                         'assets/images/Ayo-ayo.png',
                         fit: BoxFit.contain,

@@ -38,11 +38,6 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               width: 40,
               height: 40,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: Colors.blue.shade50,
-                border: Border.all(color: Colors.blue.shade200),
-              ),
               child: Image.asset(
                 'assets/images/Ayo-ayo.png',
                 fit: BoxFit.contain,
