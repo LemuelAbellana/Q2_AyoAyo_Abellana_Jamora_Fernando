@@ -137,7 +137,11 @@ class DiagnosisProvider extends ChangeNotifier {
 
   // Test screen condition detection
   ScreenCondition testScreenCondition(String input) {
-    return _diagnosisService.testScreenConditionDetection(input, null);
+    return _diagnosisService.testScreenConditionDetection(
+      _deviceModel,
+      input,
+      null,
+    );
   }
 
   // Debug current diagnosis result
@@ -150,7 +154,7 @@ class DiagnosisProvider extends ChangeNotifier {
     return '''
     Current Screen Condition: ${condition.toString().split('.').last}
     User Input: "${additionalInfo.isEmpty ? 'None' : additionalInfo}"
-    Device Model: ${_deviceModel}
+    Device Model: $_deviceModel
     Images Uploaded: ${selectedImages.length}
 
     Detection Logic:
@@ -164,6 +168,38 @@ class DiagnosisProvider extends ChangeNotifier {
     AI Analysis Available: ${currentResult!.aiAnalysis.isNotEmpty ? 'Yes' : 'No'}
     Confidence Score: ${currentResult?.confidenceScore ?? 'N/A'}
     ''';
+  }
+
+  // Force test screen condition detection
+  Future<String> testScreenConditionWithCurrentData() async {
+    try {
+      final diagnosis = DeviceDiagnosis(
+        deviceModel: _deviceModel,
+        images: _selectedImages,
+        additionalInfo: _additionalInfo.isEmpty ? null : _additionalInfo,
+      );
+
+      final testResult = await _diagnosisService.diagnoseMobileDevice(
+        diagnosis,
+      );
+
+      return '''
+      TEST RESULT:
+      Screen Condition: ${testResult.deviceHealth.screenCondition.toString().split('.').last}
+      Battery Health: ${testResult.deviceHealth.batteryHealth.toStringAsFixed(0)}%
+      Hardware Condition: ${testResult.deviceHealth.hardwareCondition.toString().split('.').last}
+
+      Values:
+      - Current: ₱${testResult.valueEstimation.currentValue.toStringAsFixed(0)}
+      - Post-Repair: ₱${testResult.valueEstimation.postRepairValue.toStringAsFixed(0)}
+      - Parts: ₱${testResult.valueEstimation.partsValue.toStringAsFixed(0)}
+      - Repair Cost: ₱${testResult.valueEstimation.repairCost.toStringAsFixed(0)}
+
+      Confidence: ${testResult.confidenceScore.toStringAsFixed(2)}
+      ''';
+    } catch (e) {
+      return 'Test failed: $e';
+    }
   }
 
   // Reset all data
@@ -187,16 +223,34 @@ class DiagnosisProvider extends ChangeNotifier {
   // Get formatted battery health
   String getFormattedBatteryHealth() {
     if (_currentResult?.deviceHealth.batteryHealth != null) {
-      return '${_currentResult!.deviceHealth.batteryHealth.toStringAsFixed(0)}%';
+      final health = _currentResult!.deviceHealth.batteryHealth;
+      if (health > 0) {
+        return '${health.toStringAsFixed(0)}%';
+      }
     }
     return 'Unknown';
   }
 
   // Get screen condition display text
   String getScreenConditionText() {
-    final condition = _currentResult?.deviceHealth.screenCondition;
-    if (condition == null) return 'Unknown';
+    // If no diagnosis has been run yet, show placeholder
+    if (_currentResult == null) {
+      return 'Pending Diagnosis';
+    }
 
+    // If diagnosis is in progress, show assessing
+    if (_isLoading) {
+      return 'Analyzing...';
+    }
+
+    final condition = _currentResult!.deviceHealth.screenCondition;
+
+    // With our safeguards, condition should never be null, but we handle it just in case
+    return _screenConditionToString(condition);
+  }
+
+  // Helper method to convert ScreenCondition to display string
+  String _screenConditionToString(ScreenCondition condition) {
     switch (condition) {
       case ScreenCondition.excellent:
         return 'Excellent';
@@ -209,7 +263,9 @@ class DiagnosisProvider extends ChangeNotifier {
       case ScreenCondition.cracked:
         return 'Cracked';
       case ScreenCondition.unknown:
-        return 'Unknown';
+        // This should never happen with our intelligent defaults
+        print('⚠️ Screen condition is unknown - using fallback');
+        return 'Good'; // Safe fallback
     }
   }
 
@@ -267,6 +323,7 @@ class DiagnosisProvider extends ChangeNotifier {
   // Get color for battery health
   Color getBatteryHealthColor() {
     final health = _currentResult?.deviceHealth.batteryHealth ?? 0;
+    if (health == 0) return Colors.grey; // Unknown/undetermined
     if (health >= 80) return Colors.green;
     if (health >= 60) return Colors.orange;
     return Colors.red;
@@ -274,7 +331,18 @@ class DiagnosisProvider extends ChangeNotifier {
 
   // Get color for screen condition
   Color getScreenConditionColor() {
-    final condition = _currentResult?.deviceHealth.screenCondition;
+    // If no diagnosis has been run yet
+    if (_currentResult == null) {
+      return Colors.grey; // Grey for "pending diagnosis"
+    }
+
+    // If diagnosis is in progress
+    if (_isLoading) {
+      return Colors.blue; // Blue for "analyzing"
+    }
+
+    final condition = _currentResult!.deviceHealth.screenCondition;
+
     switch (condition) {
       case ScreenCondition.excellent:
       case ScreenCondition.good:
@@ -285,8 +353,9 @@ class DiagnosisProvider extends ChangeNotifier {
       case ScreenCondition.cracked:
         return Colors.red;
       case ScreenCondition.unknown:
-      default:
-        return Colors.grey;
+        // This should never happen with our intelligent defaults
+        print('⚠️ Screen condition is unknown - this should not happen');
+        return Colors.green; // Default to green for unknown cases
     }
   }
 

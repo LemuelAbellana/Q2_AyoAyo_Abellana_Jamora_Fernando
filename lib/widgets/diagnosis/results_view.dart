@@ -225,15 +225,6 @@ class _DevicePassportCard extends StatelessWidget {
                 color: provider.getBatteryHealthColor(),
               ),
 
-              // Screen Condition
-              _buildDiagnosisIndicator(
-                icon: LucideIcons.monitor,
-                title: "Screen Condition",
-                value: provider.getScreenConditionText(),
-                status: _getScreenStatus(provider.getScreenConditionColor()),
-                color: provider.getScreenConditionColor(),
-              ),
-
               // Hardware Condition
               _buildDiagnosisIndicator(
                 icon: LucideIcons.cpu,
@@ -545,13 +536,7 @@ class _DevicePassportCard extends StatelessWidget {
     if (color == Colors.green) return "Excellent";
     if (color == Colors.orange) return "Good";
     if (color == Colors.red) return "Replace";
-    return "Check";
-  }
-
-  static String _getScreenStatus(Color color) {
-    if (color == Colors.green) return "Perfect";
-    if (color == Colors.orange) return "Minor Issues";
-    if (color == Colors.red) return "Repair Needed";
+    if (color == Colors.grey) return "Unknown";
     return "Check";
   }
 

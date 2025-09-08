@@ -35,16 +35,18 @@ class _TechnicianChatbotScreenState extends State<TechnicianChatbotScreen> {
     _messageController.clear();
 
     try {
-      final response =
-          await _geminiService.getTechnicianChatbotResponse(messageText);
+      final response = await _geminiService.getTechnicianChatbotResponse(
+        messageText,
+      );
       setState(() {
         _chatMessages.add(ChatMessage(text: response, isUser: false));
         _isLoading = false;
       });
     } catch (e) {
       setState(() {
-        _chatMessages.add(ChatMessage(
-            text: "Sorry, something went wrong.", isUser: false));
+        _chatMessages.add(
+          ChatMessage(text: "Sorry, something went wrong.", isUser: false),
+        );
         _isLoading = false;
       });
     }
@@ -53,9 +55,6 @@ class _TechnicianChatbotScreenState extends State<TechnicianChatbotScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Technician Chatbot'),
-      ),
       body: Column(
         children: [
           Expanded(

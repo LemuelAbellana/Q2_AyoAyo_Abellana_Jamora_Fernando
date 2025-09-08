@@ -36,47 +36,17 @@ class _UpcyclingWorkspaceScreenState extends State<UpcyclingWorkspaceScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              child: Image.asset(
-                'assets/images/Ayo-ayo.png',
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(LucideIcons.leaf, size: 20, color: Colors.blue);
-                },
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Text('Upcycle Studio'),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(LucideIcons.wand),
-            onPressed: () => _showCreateProjectDialog(context),
-            tooltip: 'AI Project Ideas',
-          ),
-          IconButton(
-            icon: Icon(LucideIcons.settings),
-            onPressed: () => _showFilterDialog(context),
-            tooltip: 'Filter',
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: 'My Projects', icon: Icon(LucideIcons.palette)),
-            Tab(text: 'Explore', icon: Icon(LucideIcons.search)),
-            Tab(text: 'Materials', icon: Icon(LucideIcons.wrench)),
-          ],
-        ),
-      ),
       body: Column(
         children: [
+          // Add the TabBar to the body
+          TabBar(
+            controller: _tabController,
+            tabs: [
+              Tab(text: 'My Projects', icon: Icon(LucideIcons.palette)),
+              Tab(text: 'Explore', icon: Icon(LucideIcons.search)),
+              Tab(text: 'Materials', icon: Icon(LucideIcons.wrench)),
+            ],
+          ),
           // Search bar (only show on explore tab)
           if (_tabController.index == 1) ...[
             Padding(
@@ -125,8 +95,8 @@ class _UpcyclingWorkspaceScreenState extends State<UpcyclingWorkspaceScreen>
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCreateProjectDialog(context),
-        child: Icon(LucideIcons.wand),
         tooltip: 'Generate AI Project Ideas',
+        child: Icon(LucideIcons.wand),
       ),
     );
   }
@@ -753,23 +723,6 @@ class _UpcyclingWorkspaceScreenState extends State<UpcyclingWorkspaceScreen>
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showFilterDialog(BuildContext context) {
-    // Implementation for filtering projects
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Filter Projects'),
-        content: const Text('Filter options will be implemented here.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
       ),
     );
   }

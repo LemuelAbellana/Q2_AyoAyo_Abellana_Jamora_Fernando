@@ -45,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Successful login
         if (mounted) {
           // Navigate using named routes
-          Navigator.pushReplacementNamed(context, '/home');
+          Navigator.pushReplacementNamed(context, '/main');
         }
       } else {
         if (mounted) {
@@ -113,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Column(
                   children: [
                     // Add the Ayo-ayo.png logo
-                    Container(
+                    SizedBox(
                       width: 120,
                       height: 120,
                       child: Image.asset(

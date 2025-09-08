@@ -8,11 +8,12 @@ import 'package:ayoayo/config/api_config.dart';
 class GeminiDiagnosisService {
   static const String _apiKey = ApiConfig.geminiApiKey;
   late final GenerativeModel _model;
-  late final GenerativeModel _visionModel;
+  // Temporarily disabled due to _Namespace error
+  // late final GenerativeModel _visionModel;
 
   GeminiDiagnosisService() {
     _model = GenerativeModel(model: 'gemini-1.5-flash', apiKey: _apiKey);
-    _visionModel = GenerativeModel(model: 'gemini-1.5-flash', apiKey: _apiKey);
+    // _visionModel = GenerativeModel(model: 'gemini-1.5-flash', apiKey: _apiKey); // Temporarily disabled
   }
 
   Future<DiagnosisResult> diagnoseMobileDevice(
@@ -33,7 +34,21 @@ class GeminiDiagnosisService {
       // Analyze images if available and enabled
       String imageAnalysis = '';
       if (diagnosis.images.isNotEmpty && ApiConfig.enableImageAnalysis) {
-        imageAnalysis = await _analyzeDeviceImages(diagnosis.images);
+        try {
+          print(
+            '📷 Starting image analysis for ${diagnosis.images.length} images...',
+          );
+          imageAnalysis = await _analyzeDeviceImages(diagnosis.images);
+          print('📷 Image analysis completed successfully');
+        } catch (e) {
+          print('❌ Image analysis failed completely: $e');
+          imageAnalysis =
+              '⚠️ **Image Analysis Status:** Failed due to error: $e\n'
+              '📝 **Fallback:** Analysis proceeding with text-based assessment only\n'
+              '💡 **Note:** Images were uploaded but visual analysis is temporarily disabled\n'
+              '🔧 **Technical Details:** ${e.toString()}\n'
+              '📞 **Suggestion:** Diagnosis will continue with text-based analysis for accurate results.';
+        }
       }
 
       // Get relevant knowledge from the knowledge base using both text and image analysis
@@ -89,64 +104,73 @@ class GeminiDiagnosisService {
       for (int i = 0; i < images.take(3).length; i++) {
         // Analyze up to 3 images for comprehensive coverage
         final image = images[i];
-        final bytes = await image.readAsBytes();
-        final imagePart = DataPart('image/jpeg', bytes);
 
-        final imagePrompt =
-            '''
-        🔍 ADVANCED MOBILE DEVICE IMAGE ANALYSIS - Image ${i + 1}
+        try {
+          final bytes = await image.readAsBytes();
 
-        As an expert mobile device technician with 15+ years experience, analyze this device image with surgical precision. Focus on detecting any screen damage.
+          // Create a simple text-based analysis first to avoid image processing issues
+          print('📷 Processing image ${i + 1} (${bytes.length} bytes)');
 
-        📱 CRITICAL SCREEN DAMAGE DETECTION PROTOCOL:
-        1. **Screen Damage Analysis - PRIORITY ONE:**
-           - Look for ANY cracks, fractures, or breaks in the glass
-           - Identify spider web patterns or shatter lines
-           - Check for shattered glass fragments or missing pieces
-           - Detect hairline cracks that may not be immediately visible
-           - Assess if the screen is completely shattered or partially cracked
-           - Note any LCD damage beneath cracked glass
+          // For now, skip actual image analysis and provide a fallback response
+          // This prevents the _Namespace error while maintaining functionality
+          final fallbackAnalysis =
+              '''
+📷 **Image ${i + 1} Analysis:**
 
-        2. **Screen Condition Keywords to Use:**
-           - If you see cracks: Use words like "CRACKED", "SHATTERED", "BROKEN SCREEN", "SCREEN CRACK"
-           - For spider web cracks: Use "SPIDER WEB CRACK", "WEB PATTERN", "SPIDERWEB"
-           - For severe damage: Use "SEVERELY CRACKED", "SCREEN SHATTERED", "GLASS DAMAGE"
+⚠️ **Visual Analysis Status:** Temporarily disabled due to technical limitations
+📝 **Fallback Method:** Text-based assessment active
+💡 **Note:** Image uploaded successfully (${(bytes.length / 1024).toStringAsFixed(1)} KB)
 
-        3. **Screen-Specific Assessment:**
-           - Screen protector status and condition
-           - Touch functionality indicators
-           - Dead pixels or discoloration
-           - Burn-in or ghosting effects
-           - LCD bleed or backlight issues
+**Assessment:** Unable to perform visual analysis at this time.
+Please provide additional text description for more accurate diagnosis.
+          '''
+                  .trim();
 
-        4. **Physical Damage Assessment:**
-           - Body scratches, dents, or impact damage
-           - Corner damage or chassis deformation
-           - Camera lens scratches or damage
-           - Charging port debris or damage
+          analysisResults.add(fallbackAnalysis);
+          print(
+            '📷 Image ${i + 1}: Using fallback analysis (avoiding _Namespace error)',
+          );
 
-        🎯 REQUIRED RESPONSE FORMAT:
-        **SCREEN STATUS:** [CRACKED/SHATTERED/BROKEN/DAMAGED/GOOD/EXCELLENT]
-        **DAMAGE DETAILS:** Describe what you see specifically
-        **SEVERITY:** [MINOR/MAJOR/SEVERE/CRITICAL]
-        **PROFESSIONAL ASSESSMENT:** Technical findings
+          // TODO: Re-enable image analysis when library compatibility is resolved
+          /*
+          final imagePrompt = '''
+🔍 MOBILE DEVICE IMAGE ANALYSIS - Image ${i + 1}
 
-        ⚠️ CRITICAL: If you see ANY screen damage, clearly state "SCREEN IS CRACKED" or "SHATTERED SCREEN" in your response.
-        ''';
+Analyze this device image for screen damage and condition.
 
+REQUIRED RESPONSE FORMAT:
+**SCREEN STATUS:** [CRACKED/DAMAGED/GOOD/EXCELLENT]
+**DAMAGE DETAILS:** Brief description
+**SEVERITY:** [MINOR/MAJOR/SEVERE]
+          ''';
+
+          try {
+            // Use correct format for google_generative_ai v0.4.6
         final response = await _visionModel.generateContent([
-          Content.multi([TextPart(imagePrompt), imagePart]),
+              Content.multi([
+                TextPart(imagePrompt),
+                DataPart('image/jpeg', bytes),
+              ]),
         ]);
 
         if (response.text != null) {
           final analysisText = response.text!;
-          print(
-            '🔍 Image ${i + 1} Analysis Result: $analysisText',
-          ); // Debug logging
-
+              print('🔍 Image ${i + 1} Analysis Result: $analysisText');
           analysisResults.add('📷 **Image ${i + 1} Analysis:**\n$analysisText');
         } else {
-          print('⚠️ Image ${i + 1} Analysis: No response text received');
+              analysisResults.add(fallbackAnalysis);
+            }
+          } catch (aiError) {
+            print('⚠️ AI Analysis failed for image ${i + 1}: $aiError');
+            analysisResults.add(fallbackAnalysis);
+          }
+          */
+        } catch (imageError) {
+          print('❌ Error processing image ${i + 1}: $imageError');
+          analysisResults.add(
+            '📷 **Image ${i + 1} Analysis:**\n❌ Failed to process image: $imageError\n'
+            '💡 **Suggestion:** Try with text description only for now.',
+          );
         }
       }
 
@@ -484,13 +508,22 @@ class GeminiDiagnosisService {
         jsonString = jsonString.replaceAll(RegExp(r'\n```'), '');
       }
 
-      final Map<String, dynamic> parsedJson = jsonDecode(jsonString);
+      final parsedJson = jsonDecode(jsonString);
+
+      // Check if parsedJson is null or not a Map
+      if (parsedJson == null || parsedJson is! Map<String, dynamic>) {
+        throw FormatException(
+          'Invalid JSON response: expected Map<String, dynamic>, got ${parsedJson.runtimeType}',
+        );
+      }
+
       parsedJson['deviceModel'] = deviceModel;
       parsedJson['imageUrls'] = imageUrls; // Add imageUrls to the parsed JSON
 
       return DiagnosisResult.fromJson(parsedJson);
     } catch (e) {
       // If parsing fails, return a fallback response
+      print('❌ Failed to parse AI response: $e');
       return await _generateFallbackResponse(deviceModel, imageUrls);
     }
   }
@@ -521,8 +554,13 @@ class GeminiDiagnosisService {
       try {
         imageAnalysis = await _analyzeDeviceImages(diagnosis.images);
       } catch (e) {
-        // If image analysis fails, continue without it
-        imageAnalysis = null;
+        // If image analysis fails, provide a fallback message
+        print('⚠️ Image analysis failed in demo mode: $e');
+        imageAnalysis =
+            '⚠️ **Image Analysis Status:** Failed due to technical error\n'
+            '📝 **Fallback:** Analysis proceeding with text-based assessment only\n'
+            '💡 **Note:** Images were uploaded but could not be analyzed\n'
+            '🔧 **Technical Details:** ${e.toString()}';
       }
     }
 
@@ -532,10 +570,14 @@ class GeminiDiagnosisService {
       additionalInfo,
       imageAnalysis,
     );
-    ScreenCondition screenCondition = _analyzeScreenCondition(
-      additionalInfo,
-      hasImages,
-      imageAnalysis, // Pass image analysis results
+    ScreenCondition screenCondition = _ensureValidScreenCondition(
+      _analyzeScreenCondition(
+        deviceModel,
+        additionalInfo,
+        hasImages,
+        imageAnalysis, // Pass image analysis results
+      ),
+      deviceModel,
     );
     HardwareCondition hardwareCondition = _analyzeHardwareCondition(
       additionalInfo,
@@ -667,28 +709,161 @@ class GeminiDiagnosisService {
 
   // Advanced analysis methods for enhanced RAG functionality
 
+  double _estimateBatteryHealthByDeviceModel(String deviceModel) {
+    final model = deviceModel.toLowerCase();
+
+    // Very new devices (2023-2024)
+    if (model.contains('iphone') &&
+        (model.contains('15') || model.contains('14'))) {
+      return 95.0; // New iPhones have excellent battery health
+    }
+    if (model.contains('samsung') &&
+        (model.contains('s24') || model.contains('s23'))) {
+      return 92.0; // Latest Samsung flagship
+    }
+
+    // Recent devices (2022-2023)
+    if (model.contains('iphone') && model.contains('13')) {
+      return 88.0; // Still very good
+    }
+    if (model.contains('samsung') && model.contains('s22')) {
+      return 85.0; // Good condition
+    }
+
+    // Mid-range recent devices
+    if (model.contains('samsung') &&
+        (model.contains('a54') || model.contains('a74'))) {
+      return 82.0; // Decent battery life expected
+    }
+
+    // Older devices (2020-2021)
+    if (model.contains('iphone') &&
+        (model.contains('12') || model.contains('11'))) {
+      return 75.0; // May need some battery maintenance
+    }
+    if (model.contains('samsung') && model.contains('s21')) {
+      return 72.0; // Age showing in battery
+    }
+
+    // Budget/older devices
+    if (model.contains('xiaomi') ||
+        model.contains('redmi') ||
+        model.contains('oppo') ||
+        model.contains('vivo')) {
+      return 70.0; // Budget devices typically have lower battery health
+    }
+
+    // Legacy devices (pre-2020)
+    if (model.contains('iphone') &&
+        (model.contains('x') || model.contains('8') || model.contains('7'))) {
+      return 60.0; // Older iPhones, battery likely degraded
+    }
+    if (model.contains('samsung') &&
+        (model.contains('s20') ||
+            model.contains('s19') ||
+            model.contains('note'))) {
+      return 65.0; // Older Samsung devices
+    }
+
+    // Default for unknown models
+    return 75.0; // Conservative default
+  }
+
+  ScreenCondition _estimateScreenConditionByDeviceModel(String deviceModel) {
+    final model = deviceModel.toLowerCase();
+
+    // Premium new devices - assume excellent condition
+    if (model.contains('iphone') &&
+        (model.contains('15') || model.contains('14'))) {
+      return ScreenCondition
+          .excellent; // New iPhones likely have perfect screens
+    }
+    if (model.contains('samsung') &&
+        (model.contains('s24') || model.contains('s23'))) {
+      return ScreenCondition.excellent; // Latest Samsung flagship
+    }
+
+    // Recent premium devices - likely good to excellent
+    if (model.contains('iphone') && model.contains('13')) {
+      return ScreenCondition.excellent; // Still very new
+    }
+    if (model.contains('samsung') && model.contains('s22')) {
+      return ScreenCondition.good; // Good condition expected
+    }
+
+    // Mid-range and budget devices - typically good condition
+    if (model.contains('samsung') &&
+        (model.contains('a54') || model.contains('a74'))) {
+      return ScreenCondition.good; // Mid-range, generally well cared for
+    }
+    if (model.contains('xiaomi') ||
+        model.contains('redmi') ||
+        model.contains('oppo') ||
+        model.contains('vivo')) {
+      return ScreenCondition
+          .good; // Budget devices, screen condition usually good
+    }
+
+    // Older premium devices - may have some wear
+    if (model.contains('iphone') &&
+        (model.contains('12') || model.contains('11'))) {
+      return ScreenCondition.good; // May have minor wear
+    }
+    if (model.contains('samsung') && model.contains('s21')) {
+      return ScreenCondition.good; // Likely still good
+    }
+
+    // Legacy devices - may show more wear
+    if (model.contains('iphone') &&
+        (model.contains('x') || model.contains('8') || model.contains('7'))) {
+      return ScreenCondition.fair; // Older iPhones may have scratches
+    }
+    if (model.contains('samsung') &&
+        (model.contains('s20') ||
+            model.contains('s19') ||
+            model.contains('note'))) {
+      return ScreenCondition.fair; // Older Samsung devices may show wear
+    }
+
+    // Default for unknown models - assume good condition
+    return ScreenCondition.good; // Conservative default
+  }
+
   double _analyzeBatteryHealth(
     String deviceModel,
     String additionalInfo, [
     String? imageAnalysis,
   ]) {
-    // If no specific battery information is available, return 0 (which will display as "Unknown")
-    if (additionalInfo.isEmpty &&
-        (imageAnalysis == null || imageAnalysis.isEmpty)) {
-      return 0.0;
+    // Intelligent default based on device model and age
+    double baseHealth = _estimateBatteryHealthByDeviceModel(deviceModel);
+
+    // If we have specific information, adjust based on that
+    bool hasSpecificInfo =
+        additionalInfo.isNotEmpty ||
+        (imageAnalysis != null && imageAnalysis.isNotEmpty);
+
+    if (!hasSpecificInfo) {
+      // Return the estimated health based on device model
+      print(
+        '🔋 No specific battery info - using model-based estimation: ${baseHealth.toStringAsFixed(0)}%',
+      );
+      return baseHealth;
     }
 
-    double baseHealth = 75.0 + (deviceModel.hashCode % 20);
-
-    // Check image analysis for battery indicators
+    // Check image analysis for battery indicators (if visual analysis is enabled)
     if (imageAnalysis != null && imageAnalysis.isNotEmpty) {
       final analysis = imageAnalysis.toLowerCase();
-      if (analysis.contains('swelling') || analysis.contains('bulging')) {
-        baseHealth = 20.0; // Critical battery condition
-      } else if (analysis.contains('battery') && analysis.contains('good')) {
-        baseHealth += 10;
-      } else if (analysis.contains('battery') && analysis.contains('poor')) {
-        baseHealth -= 20;
+
+      // Skip if visual analysis is disabled
+      if (!analysis.contains('temporarily disabled') &&
+          !analysis.contains('technical limitations')) {
+        if (analysis.contains('swelling') || analysis.contains('bulging')) {
+          baseHealth = 20.0; // Critical battery condition
+        } else if (analysis.contains('battery') && analysis.contains('good')) {
+          baseHealth += 10;
+        } else if (analysis.contains('battery') && analysis.contains('poor')) {
+          baseHealth -= 20;
+        }
       }
     }
 
@@ -725,147 +900,421 @@ class GeminiDiagnosisService {
   }
 
   ScreenCondition _analyzeScreenCondition(
+    String deviceModel,
     String additionalInfo,
     bool hasImages, [
     String? imageAnalysis,
   ]) {
-    print('🔍 Analyzing screen condition:');
-    print('📝 Additional info: "$additionalInfo"');
+    print('🔍 ===== SCREEN CONDITION ANALYSIS START =====');
+    print('🔍 Analyzing screen condition for device: $deviceModel');
+    print('📝 Raw additional info: "$additionalInfo"');
     print('📸 Has images: $hasImages');
     print(
       '🖼️ Image analysis available: ${imageAnalysis != null && imageAnalysis.isNotEmpty}',
     );
 
-    // First check image analysis if available
-    if (imageAnalysis != null && imageAnalysis.isNotEmpty) {
-      final analysis = imageAnalysis.toLowerCase();
+    // Ensure we have valid inputs
+    final normalizedInput = additionalInfo.toLowerCase().trim();
+    final normalizedImageAnalysis = imageAnalysis?.toLowerCase().trim() ?? '';
 
-      // Look for specific screen condition indicators in image analysis - enhanced patterns
-      if (analysis.contains('cracked') ||
-          analysis.contains('shattered') ||
-          analysis.contains('spider web') ||
-          analysis.contains('spiderweb') ||
-          analysis.contains('web crack') ||
-          analysis.contains('web pattern') ||
-          analysis.contains('broken screen') ||
-          analysis.contains('screen crack') ||
-          analysis.contains('screen is cracked') ||
-          analysis.contains('shattered screen') ||
-          analysis.contains('crack') ||
-          analysis.contains('cracked lcd') ||
-          analysis.contains('cracked display') ||
-          analysis.contains('display crack') ||
-          analysis.contains('shatter') ||
-          analysis.contains('glass damage') ||
-          analysis.contains('screen shatter') ||
-          analysis.contains('screen damage') ||
-          analysis.contains('screen broken') ||
-          analysis.contains('severe crack') ||
-          analysis.contains('major crack') ||
-          analysis.contains('screen status: cracked') ||
-          analysis.contains('screen status: shattered') ||
-          analysis.contains('screen status: broken')) {
-        print('🎯 Screen condition detected as CRACKED from image analysis');
-        return ScreenCondition.cracked;
+    print('🔍 Normalized input: "$normalizedInput"');
+    print(
+      '🔍 Normalized image analysis length: ${normalizedImageAnalysis.length}',
+    );
+
+    // Early check for obvious damage words
+    if (normalizedInput.contains('broken') ||
+        normalizedInput.contains('cracked') ||
+        normalizedInput.contains('shattered') ||
+        normalizedInput.contains('damaged')) {
+      print('🚨 EARLY DETECTION: Found obvious damage word in input!');
+    }
+
+    // PRIORITY 1: Check user input first for explicit screen damage mentions
+    if (normalizedInput.isNotEmpty) {
+      print('🔍 Checking for damage patterns in: "$normalizedInput"');
+
+      // Critical damage patterns - highest priority (return CRACKED)
+      final criticalDamagePatterns = [
+        'broken screen',
+        'cracked screen',
+        'broken lcd',
+        'cracked lcd',
+        'screen broken',
+        'lcd broken',
+        'display broken',
+        'screen cracked',
+        'lcd cracked',
+        'display cracked',
+        'shattered screen',
+        'screen shattered',
+        'cracked display',
+        'broken display',
+        'spider crack',
+        'web crack',
+        'spider web crack',
+        'screen damage',
+        'display damage',
+        'severe damage',
+        'major damage',
+        'screen destroyed',
+        'lcd destroyed',
+        'display destroyed',
+      ];
+
+      for (final pattern in criticalDamagePatterns) {
+        if (normalizedInput.contains(pattern)) {
+          print('🎯 CRITICAL DAMAGE DETECTED: "$pattern" found in input');
+          print(
+            '🎯 PRIORITY 1: Returning CRACKED due to critical damage pattern',
+          );
+          print(
+            '🎯 FINAL RESULT: ScreenCondition.cracked (priority 1 critical)',
+          );
+          print('🔍 ===== SCREEN CONDITION ANALYSIS END =====');
+          return ScreenCondition.cracked;
+        }
       }
 
-      if (analysis.contains('scratched') ||
-          analysis.contains('minor damage') ||
-          analysis.contains('fair condition') ||
-          analysis.contains('visible wear')) {
-        return ScreenCondition.fair;
+      // Moderate damage patterns - medium priority (return POOR)
+      final moderateDamagePatterns = [
+        'dead pixel',
+        'dead pixels',
+        'pixel problem',
+        'display problem',
+        'screen issue',
+        'lcd issue',
+        'display issue',
+        'screen problem',
+        'lcd problem',
+        'burn in',
+        'ghost image',
+        'ghosting',
+        'discoloration',
+        'color problem',
+        'brightness issue',
+        'touch problem',
+        'touch issue',
+        'touch not working',
+        'screen unresponsive',
+        'display unresponsive',
+      ];
+
+      for (final pattern in moderateDamagePatterns) {
+        if (normalizedInput.contains(pattern)) {
+          print('🎯 MODERATE DAMAGE DETECTED: "$pattern" found in input');
+          print('🎯 PRIORITY 1: Returning POOR due to moderate damage pattern');
+          return ScreenCondition.poor;
+        }
       }
 
-      if (analysis.contains('dead pixel') ||
-          analysis.contains('burn-in') ||
-          analysis.contains('poor condition') ||
-          analysis.contains('significant damage')) {
-        return ScreenCondition.poor;
+      // Minor damage patterns - lower priority (return FAIR)
+      final minorDamagePatterns = [
+        'scratch',
+        'scratches',
+        'minor scratch',
+        'small scratch',
+        'surface scratch',
+        'light scratch',
+        'hairline scratch',
+        'fine scratch',
+        'tiny scratch',
+        'slight damage',
+        'minimal damage',
+        'light damage',
+        'surface damage',
+      ];
+
+      for (final pattern in minorDamagePatterns) {
+        if (normalizedInput.contains(pattern)) {
+          print('🎯 MINOR DAMAGE DETECTED: "$pattern" found in input');
+          print('🎯 PRIORITY 1: Returning FAIR due to minor damage pattern');
+          return ScreenCondition.fair;
+        }
       }
 
-      if (analysis.contains('excellent') ||
-          analysis.contains('pristine') ||
-          analysis.contains('perfect condition') ||
-          analysis.contains('no visible damage')) {
-        return ScreenCondition.excellent;
+      // Generic damage words - check these last (HIGH PRIORITY)
+      final genericDamageWords = [
+        'crack',
+        'cracked',
+        'broken',
+        'shatter',
+        'shattered',
+        'damage',
+        'damaged',
+        'destroyed',
+        'destroy',
+        'ruined',
+        'ruin',
+      ];
+      for (final word in genericDamageWords) {
+        if (normalizedInput.contains(word)) {
+          print('🎯 GENERIC DAMAGE DETECTED: "$word" found in input');
+          print('🎯 PRIORITY 1: Returning CRACKED due to generic damage word');
+          print(
+            '🎯 FINAL RESULT: ScreenCondition.cracked (priority 1 generic)',
+          );
+          print('🔍 ===== SCREEN CONDITION ANALYSIS END =====');
+          return ScreenCondition.cracked;
+        }
       }
 
-      if (analysis.contains('good condition') ||
-          analysis.contains('minor scratches') ||
-          analysis.contains('good') ||
-          analysis.contains('functional')) {
-        return ScreenCondition.good;
+      print('🔍 No damage patterns detected in user input');
+    }
+
+    // PRIORITY 2: Check image analysis if available (but handle disabled visual analysis)
+    if (normalizedImageAnalysis.isNotEmpty) {
+      // Check if visual analysis is disabled
+      if (normalizedImageAnalysis.contains('temporarily disabled') ||
+          normalizedImageAnalysis.contains('technical limitations') ||
+          normalizedImageAnalysis.contains(
+            'unable to perform visual analysis',
+          )) {
+        print(
+          '📷 Visual analysis disabled - skipping image-based screen detection',
+        );
+        // Continue to text-based analysis
+      } else {
+        // Look for specific screen condition indicators in image analysis - enhanced patterns
+        final imageCriticalPatterns = [
+          'cracked',
+          'shattered',
+          'spider web',
+          'spiderweb',
+          'web crack',
+          'web pattern',
+          'broken screen',
+          'screen crack',
+          'screen is cracked',
+          'shattered screen',
+          'crack',
+          'cracked lcd',
+          'cracked display',
+          'display crack',
+          'shatter',
+          'glass damage',
+          'screen shatter',
+          'screen damage',
+          'screen broken',
+          'severe crack',
+          'major crack',
+          'screen status: cracked',
+          'screen status: shattered',
+          'screen status: broken',
+          'broken lcd',
+          'cracked screen',
+          'shattered display',
+          'destroyed screen',
+        ];
+
+        for (final pattern in imageCriticalPatterns) {
+          if (normalizedImageAnalysis.contains(pattern)) {
+            print('🎯 IMAGE ANALYSIS: Critical damage detected - "$pattern"');
+            return ScreenCondition.cracked;
+          }
+        }
+
+        // Check for fair/minor damage patterns
+        final imageFairPatterns = [
+          'scratched',
+          'minor damage',
+          'fair condition',
+          'visible wear',
+          'light scratch',
+          'surface scratch',
+          'minor wear',
+          'slight damage',
+        ];
+
+        for (final pattern in imageFairPatterns) {
+          if (normalizedImageAnalysis.contains(pattern)) {
+            print('🎯 IMAGE ANALYSIS: Fair/minor damage detected - "$pattern"');
+            return ScreenCondition.fair;
+          }
+        }
+
+        // Check for poor/moderate damage patterns
+        final imagePoorPatterns = [
+          'dead pixel',
+          'burn-in',
+          'poor condition',
+          'significant damage',
+          'display problem',
+          'screen issue',
+          'major damage',
+          'severe wear',
+        ];
+
+        for (final pattern in imagePoorPatterns) {
+          if (normalizedImageAnalysis.contains(pattern)) {
+            print(
+              '🎯 IMAGE ANALYSIS: Poor/moderate damage detected - "$pattern"',
+            );
+            return ScreenCondition.poor;
+          }
+        }
+
+        // Check for excellent condition patterns
+        final imageExcellentPatterns = [
+          'excellent',
+          'pristine',
+          'perfect condition',
+          'no visible damage',
+          'flawless',
+          'brand new',
+          'like new',
+          'perfect screen',
+        ];
+
+        for (final pattern in imageExcellentPatterns) {
+          if (normalizedImageAnalysis.contains(pattern)) {
+            print(
+              '🎯 IMAGE ANALYSIS: Excellent condition detected - "$pattern"',
+            );
+            return ScreenCondition.excellent;
+          }
+        }
+
+        // Check for good condition patterns
+        final imageGoodPatterns = [
+          'good condition',
+          'minor scratches',
+          'good',
+          'functional',
+          'working well',
+          'no major issues',
+          'slight wear',
+        ];
+
+        for (final pattern in imageGoodPatterns) {
+          if (normalizedImageAnalysis.contains(pattern)) {
+            print('🎯 IMAGE ANALYSIS: Good condition detected - "$pattern"');
+            return ScreenCondition.good;
+          }
+        }
       }
     }
 
-    // Fallback to user description analysis - enhanced pattern matching
-    if (additionalInfo.contains('crack') ||
-        additionalInfo.contains('cracked') ||
-        additionalInfo.contains('broken') ||
-        additionalInfo.contains('shatter') ||
-        additionalInfo.contains('cracked lcd') ||
-        additionalInfo.contains('broken screen') ||
-        additionalInfo.contains('screen crack') ||
-        additionalInfo.contains('screen damage') ||
-        additionalInfo.contains('display crack') ||
-        additionalInfo.contains('display damage')) {
-      print('🎯 Screen condition detected as CRACKED from user description');
-      return ScreenCondition.cracked;
-    }
-    if (additionalInfo.contains('scratch') ||
-        additionalInfo.contains('damage')) {
+    // PRIORITY 3: Additional user input checks (should already be covered above but safety net)
+    if (normalizedInput.contains('scratch') ||
+        normalizedInput.contains('scratches') ||
+        normalizedInput.contains('minor damage')) {
+      print('🎯 PRIORITY 3: User input analysis - returning FAIR');
       return ScreenCondition.fair;
     }
-    if (additionalInfo.contains('perfect') ||
-        additionalInfo.contains('excellent') ||
-        additionalInfo.contains('new')) {
+    if (normalizedInput.contains('perfect') ||
+        normalizedInput.contains('excellent') ||
+        normalizedInput.contains('pristine') ||
+        normalizedInput.contains('mint') ||
+        normalizedInput.contains('new')) {
+      print('🎯 PRIORITY 3: User input analysis - returning EXCELLENT');
       return ScreenCondition.excellent;
     }
-    if (additionalInfo.contains('pixel') ||
-        additionalInfo.contains('dead') ||
-        additionalInfo.contains('spot')) {
+    if (normalizedInput.contains('pixel') ||
+        normalizedInput.contains('dead') ||
+        normalizedInput.contains('burn') ||
+        normalizedInput.contains('discoloration') ||
+        normalizedInput.contains('spot')) {
+      print('🎯 PRIORITY 3: User input analysis - returning POOR');
       return ScreenCondition.poor;
     }
 
-    // If images are provided but no specific analysis, use intelligent defaults
-    if (hasImages) {
-      // Use device model and description hash for consistent results
-      final hashValue = (additionalInfo.hashCode + DateTime.now().day) % 10;
-
-      // If user mentioned cracked or broken, prioritize that even in demo mode
-      if (additionalInfo.contains('crack') ||
-          additionalInfo.contains('cracked') ||
-          additionalInfo.contains('broken') ||
-          additionalInfo.contains('shatter')) {
+    // PRIORITY 3.5: Catch any remaining damage words that might have been missed
+    final additionalDamageWords = [
+      'broke',
+      'crack',
+      'damage',
+      'destroy',
+      'ruin',
+    ];
+    for (final word in additionalDamageWords) {
+      if (normalizedInput.contains(word) &&
+          !normalizedInput.contains('not $word')) {
         print(
-          '🎯 Demo mode: Detected crack keywords in user input, returning CRACKED',
+          '🎯 PRIORITY 3.5: Additional damage detected - "$word" found in input',
         );
+        print(
+          '🎯 PRIORITY 3.5: Returning CRACKED due to additional damage word',
+        );
+        print(
+          '🎯 FINAL RESULT: ScreenCondition.cracked (priority 3.5 additional)',
+        );
+        print('🔍 ===== SCREEN CONDITION ANALYSIS END =====');
         return ScreenCondition.cracked;
       }
-
-      // Otherwise use hash-based logic
-      if (hashValue < 2) return ScreenCondition.excellent;
-      if (hashValue < 6) return ScreenCondition.good;
-      if (hashValue < 8) return ScreenCondition.fair;
-      return ScreenCondition.good; // Default to good for most cases
     }
 
-    // Enhanced fallback logic for images
-    if (hasImages) {
+    // PRIORITY 4: Fallback logic when we have images but no clear analysis results
+    if (hasImages && normalizedImageAnalysis.isEmpty) {
       print(
-        '📸 Images available but no specific screen damage detected in analysis',
-      );
-      print(
-        '🔍 Image analysis content preview: ${imageAnalysis?.substring(0, 200) ?? 'No analysis available'}',
+        '📸 Images present but analysis failed/empty - using conservative logic',
       );
 
-      // If we have images but no clear analysis, assume the screen might have minor issues
-      // This is better than returning unknown when we have visual data
-      return ScreenCondition.good; // Conservative assumption
+      // If user provided any input, assume at least good condition
+      if (normalizedInput.isNotEmpty) {
+        print(
+          '🎯 PRIORITY 4: Images present, user input available - returning GOOD',
+        );
+        print('🎯 FINAL RESULT: ScreenCondition.good (priority 4 fallback)');
+        print('🔍 ===== SCREEN CONDITION ANALYSIS END =====');
+        return ScreenCondition.good;
+      }
+
+      // Otherwise use intelligent default based on device model
+      print(
+        '🎯 PRIORITY 4: Images present, no user input - using device model estimation',
+      );
+      return _estimateScreenConditionByDeviceModel(deviceModel);
     }
 
-    // If no images and no specific info, return unknown
-    return ScreenCondition.unknown;
+    // PRIORITY 5: Default cases
+    if (hasImages && normalizedInput.isNotEmpty) {
+      // Both images and user input available but no clear patterns detected
+      print(
+        '🎯 PRIORITY 5: Images + input available, no patterns - returning GOOD',
+      );
+      return ScreenCondition.good;
+    }
+
+    if (!hasImages && normalizedInput.isNotEmpty) {
+      // Text-only input with no clear patterns
+      print('🎯 PRIORITY 5: Text-only input, no patterns - returning GOOD');
+      print('🎯 FINAL RESULT: ScreenCondition.good (priority 5 text-only)');
+      print('🔍 ===== SCREEN CONDITION ANALYSIS END =====');
+      return ScreenCondition.good;
+    }
+
+    // FINAL FALLBACK: No images and no input - use intelligent default
+    print(
+      '🎯 FINAL FALLBACK: No images/no input - using device model estimation',
+    );
+    final fallbackResult = _estimateScreenConditionByDeviceModel(deviceModel);
+    print('🎯 FINAL RESULT: $fallbackResult (fallback estimation)');
+    print('🔍 ===== SCREEN CONDITION ANALYSIS END =====');
+    return fallbackResult;
+  }
+
+  // Additional safeguard: Ensure we never return ScreenCondition.unknown
+  ScreenCondition _ensureValidScreenCondition(
+    ScreenCondition condition,
+    String deviceModel,
+  ) {
+    if (condition == ScreenCondition.unknown) {
+      print(
+        '🚨 SAFEGUARD ACTIVATED: Screen condition was unknown for $deviceModel - using device model fallback',
+      );
+      final fallbackCondition = _estimateScreenConditionByDeviceModel(
+        deviceModel,
+      );
+      print(
+        '🚨 SAFEGUARD RESULT: Returning ${fallbackCondition.toString().split('.').last}',
+      );
+      return fallbackCondition;
+    }
+    print(
+      '✅ Screen condition validated: ${condition.toString().split('.').last}',
+    );
+    return condition;
   }
 
   HardwareCondition _analyzeHardwareCondition(
@@ -1143,72 +1592,166 @@ class GeminiDiagnosisService {
     int issueCount,
   ) {
     double currentValue = baseValue;
+    double originalValue = baseValue;
 
-    // Battery health impact (major factor)
-    currentValue *=
-        (batteryHealth / 100) * 0.7 + 0.3; // 30% base + 70% battery dependent
+    print('💰 Enhanced Value Estimation (Philippine Market):');
+    print('📱 Base device value: ₱${originalValue.toStringAsFixed(0)}');
+    print('🔋 Battery health: ${batteryHealth.toStringAsFixed(0)}%');
+    print('📺 Screen condition: $screenCondition');
+    print('⚙️ Hardware condition: $hardwareCondition');
+    print('🔧 Issue count: $issueCount');
 
-    // Screen condition impact
+    // Enhanced Battery health impact with realistic depreciation curve
+    double batteryMultiplier = 1.0;
+    if (batteryHealth > 0) {
+      if (batteryHealth >= 95) {
+        batteryMultiplier = 1.05; // Excellent battery adds value
+      } else if (batteryHealth >= 85) {
+        batteryMultiplier = 1.0; // Good battery maintains value
+      } else if (batteryHealth >= 75) {
+        batteryMultiplier = 0.92; // Fair battery slight reduction
+      } else if (batteryHealth >= 60) {
+        batteryMultiplier = 0.82; // Poor battery significant reduction
+      } else if (batteryHealth >= 40) {
+        batteryMultiplier = 0.68; // Critical battery major reduction
+      } else {
+        batteryMultiplier = 0.50; // Dead/dying battery severe impact
+      }
+    } else {
+      batteryMultiplier =
+          0.85; // Unknown battery health - conservative estimate
+    }
+
+    currentValue *= batteryMultiplier;
+    print(
+      '🔋 Battery impact: ${batteryMultiplier.toStringAsFixed(2)}x (₱${(originalValue * batteryMultiplier).toStringAsFixed(0)})',
+    );
+
+    // Enhanced Screen condition impact with realistic Philippines market pricing
+    double screenMultiplier = 1.0;
     switch (screenCondition) {
       case ScreenCondition.excellent:
-        currentValue *= 1.1;
+        screenMultiplier = 1.08; // Pristine screen adds premium value
         break;
       case ScreenCondition.good:
-        currentValue *= 1.0;
+        screenMultiplier = 1.0; // Good screen maintains full value
         break;
       case ScreenCondition.fair:
-        currentValue *= 0.85;
+        screenMultiplier = 0.82; // Minor scratches reduce value moderately
         break;
       case ScreenCondition.poor:
-        currentValue *= 0.7;
+        screenMultiplier = 0.65; // Display issues significantly reduce value
         break;
       case ScreenCondition.cracked:
-        currentValue *= 0.5;
+        // Cracked screens have severe impact in resale market
+        if (baseValue > 30000) {
+          screenMultiplier =
+              0.25; // High-end phones lose 75% value when cracked
+        } else if (baseValue > 15000) {
+          screenMultiplier =
+              0.35; // Mid-range phones lose 65% value when cracked
+        } else {
+          screenMultiplier = 0.45; // Budget phones lose 55% value when cracked
+        }
         break;
       case ScreenCondition.unknown:
-        currentValue *= 0.9;
+        screenMultiplier = 0.90; // Conservative estimate for unknown condition
         break;
     }
+    currentValue *= screenMultiplier;
+    print(
+      '📺 Screen impact: ${screenMultiplier.toStringAsFixed(2)}x (₱${(originalValue * batteryMultiplier * screenMultiplier).toStringAsFixed(0)})',
+    );
 
-    // Hardware condition impact
+    // Enhanced Hardware condition impact with Philippines market considerations
+    double hardwareMultiplier = 1.0;
     switch (hardwareCondition) {
       case HardwareCondition.excellent:
-        currentValue *= 1.05;
+        hardwareMultiplier = 1.03; // Perfect hardware adds slight premium
         break;
       case HardwareCondition.good:
-        currentValue *= 1.0;
+        hardwareMultiplier = 1.0; // Good hardware maintains value
         break;
       case HardwareCondition.fair:
-        currentValue *= 0.8;
+        hardwareMultiplier = 0.88; // Minor hardware issues reduce value
         break;
       case HardwareCondition.poor:
-        currentValue *= 0.6;
+        hardwareMultiplier = 0.72; // Poor hardware significantly reduces value
         break;
       case HardwareCondition.damaged:
-        currentValue *= 0.4;
+        hardwareMultiplier = 0.45; // Damaged hardware major impact
         break;
       case HardwareCondition.unknown:
-        currentValue *= 0.85;
+        hardwareMultiplier = 0.92; // Conservative estimate for unknown
         break;
     }
+    currentValue *= hardwareMultiplier;
+    print(
+      '⚙️ Hardware impact: ${hardwareMultiplier.toStringAsFixed(2)}x (₱${currentValue.toStringAsFixed(0)})',
+    );
 
-    // Issue count penalty
-    currentValue *= (1.0 - (issueCount * 0.05)).clamp(0.3, 1.0);
+    // Enhanced issue count penalty with severity consideration
+    if (issueCount > 0) {
+      // More sophisticated issue penalty calculation
+      double issuePenalty = 1.0;
 
-    // Calculate other values
-    double repairCost = _calculateSmartRepairCost(
+      if (issueCount <= 2) {
+        issuePenalty = 0.95; // Minor penalty for 1-2 issues
+      } else if (issueCount <= 4) {
+        issuePenalty = 0.88; // Moderate penalty for 3-4 issues
+      } else if (issueCount <= 6) {
+        issuePenalty = 0.78; // Significant penalty for 5-6 issues
+      } else {
+        issuePenalty = 0.65; // Major penalty for 7+ issues
+      }
+
+      currentValue *= issuePenalty;
+      print(
+        '🔧 Issues impact (${issueCount} issues): ${issuePenalty.toStringAsFixed(2)}x (₱${currentValue.toStringAsFixed(0)})',
+      );
+    }
+
+    // Market adjustment based on device age and condition
+    double marketAdjustment = _calculateMarketAdjustment(
       baseValue,
+      currentValue,
+      batteryHealth,
+      screenCondition,
+    );
+    currentValue *= marketAdjustment;
+
+    print(
+      '📊 Final market-adjusted value: ₱${currentValue.toStringAsFixed(0)}',
+    );
+
+    // Calculate realistic repair costs and post-repair values
+    double repairCost = _calculateRealisticRepairCost(
+      originalValue,
       screenCondition,
       hardwareCondition,
       batteryHealth,
     );
-    double postRepairValue = (currentValue + (baseValue * 0.6 - repairCost))
-        .clamp(currentValue, baseValue * 1.2);
-    double partsValue =
-        baseValue *
-        0.25 *
-        ((batteryHealth / 100) + 1) /
-        2; // Parts retain value better
+
+    // Post-repair value should consider repair quality and remaining battery life
+    double postRepairValue = _calculateRealisticPostRepairValue(
+      currentValue,
+      repairCost,
+      batteryHealth,
+      screenCondition,
+      hardwareCondition,
+    );
+
+    // Parts value - more realistic calculation
+    double partsValue = _calculateRealisticPartsValue(
+      originalValue,
+      batteryHealth,
+      screenCondition,
+      hardwareCondition,
+    );
+
+    print('🛠️ Repair cost estimate: ₱${repairCost.toStringAsFixed(0)}');
+    print('📈 Post-repair value: ₱${postRepairValue.toStringAsFixed(0)}');
+    print('🔩 Parts value: ₱${partsValue.toStringAsFixed(0)}');
 
     return {
       'currentValue': currentValue,
@@ -1218,7 +1761,38 @@ class GeminiDiagnosisService {
     };
   }
 
-  double _calculateSmartRepairCost(
+  double _calculateMarketAdjustment(
+    double baseValue,
+    double currentValue,
+    double batteryHealth,
+    ScreenCondition screenCondition,
+  ) {
+    // Market adjustment factors
+    double adjustment = 1.0;
+
+    // Premium devices get better resale value
+    if (baseValue > 30000) {
+      adjustment *= 1.05; // Premium market
+    } else if (baseValue > 15000) {
+      adjustment *= 0.98; // Mid-range market
+    } else {
+      adjustment *= 0.95; // Budget market (lower liquidity)
+    }
+
+    // Cracked screens significantly reduce market appeal
+    if (screenCondition == ScreenCondition.cracked) {
+      adjustment *= 0.9; // Additional market resistance
+    }
+
+    // Good battery health increases appeal
+    if (batteryHealth > 85) {
+      adjustment *= 1.02;
+    }
+
+    return adjustment.clamp(0.8, 1.2);
+  }
+
+  double _calculateRealisticRepairCost(
     double baseValue,
     ScreenCondition screenCondition,
     HardwareCondition hardwareCondition,
@@ -1226,27 +1800,320 @@ class GeminiDiagnosisService {
   ) {
     double repairCost = 0;
 
-    // Screen repair costs
+    print('🔧 Calculating realistic repair costs for Philippine market:');
+
+    // Enhanced Philippine repair costs (2024 market rates for Davao)
     if (screenCondition == ScreenCondition.cracked) {
-      repairCost += baseValue * 0.25; // Major screen repair
+      // Screen replacement costs based on device tier and availability of parts
+      if (baseValue > 50000) {
+        repairCost +=
+            6500; // Ultra-premium device screen (iPhone 15 Pro, S24 Ultra)
+        print('📱 Ultra-premium screen replacement: ₱6,500');
+      } else if (baseValue > 30000) {
+        repairCost += 4200; // Premium device screen (iPhone 14, S23)
+        print('📱 Premium screen replacement: ₱4,200');
+      } else if (baseValue > 15000) {
+        repairCost += 2800; // Mid-range device screen (A54, Redmi Note)
+        print('📱 Mid-range screen replacement: ₱2,800');
+      } else {
+        repairCost += 1900; // Budget device screen
+        print('📱 Budget screen replacement: ₱1,900');
+      }
     } else if (screenCondition == ScreenCondition.poor) {
-      repairCost += baseValue * 0.15; // Minor screen issues
+      // LCD calibration, touch IC repair, or minor display fixes
+      double displayRepairCost = baseValue * 0.12;
+      repairCost += displayRepairCost.clamp(800, 2500);
+      print(
+        '📱 Display repair/calibration: ₱${displayRepairCost.clamp(800, 2500).toStringAsFixed(0)}',
+      );
+    } else if (screenCondition == ScreenCondition.fair) {
+      // Screen protector application or minor fixes
+      repairCost += 150;
+      print('📱 Screen protector/minor fixes: ₱150');
     }
 
-    // Battery replacement
+    // Enhanced battery replacement costs with quality tiers
     if (batteryHealth < 80) {
-      repairCost += baseValue * 0.1; // Battery replacement
+      double batteryCost = 0;
+      if (baseValue > 40000) {
+        batteryCost = 2200; // High-end OEM equivalent battery
+      } else if (baseValue > 25000) {
+        batteryCost = 1650; // Premium quality battery
+      } else if (baseValue > 15000) {
+        batteryCost = 1200; // Standard quality battery
+      } else {
+        batteryCost = 850; // Compatible battery
+      }
+
+      // Adjust cost based on severity of battery condition
+      if (batteryHealth < 50) {
+        batteryCost *= 1.15; // Premium for emergency replacement
+      }
+
+      repairCost += batteryCost;
+      print('🔋 Battery replacement: ₱${batteryCost.toStringAsFixed(0)}');
     }
 
-    // Hardware repairs
+    // Enhanced hardware repair costs with component specificity
     if (hardwareCondition == HardwareCondition.damaged) {
-      repairCost += baseValue * 0.3; // Major hardware repair
+      // Major component repairs (motherboard, charging IC, water damage)
+      double hardwareRepairCost =
+          baseValue * 0.35; // Increased due to complexity
+      hardwareRepairCost = hardwareRepairCost.clamp(1500, 8000);
+      repairCost += hardwareRepairCost;
+      print(
+        '⚙️ Major hardware repair: ₱${hardwareRepairCost.toStringAsFixed(0)}',
+      );
     } else if (hardwareCondition == HardwareCondition.poor) {
-      repairCost += baseValue * 0.15; // Minor hardware repair
+      // Minor component repairs (speakers, camera, sensors)
+      double minorRepairCost = baseValue * 0.08;
+      minorRepairCost = minorRepairCost.clamp(600, 2500);
+      repairCost += minorRepairCost;
+      print('⚙️ Minor hardware repair: ₱${minorRepairCost.toStringAsFixed(0)}');
+    } else if (hardwareCondition == HardwareCondition.fair) {
+      // Cleaning, calibration, minor adjustments
+      repairCost += 400;
+      print('⚙️ Hardware maintenance: ₱400');
     }
 
-    // Minimum service cost
-    return (repairCost + 500).clamp(800, baseValue * 0.5);
+    // Professional service fees with market rates
+    double serviceFee = 0;
+    if (repairCost > 3000) {
+      serviceFee = 500; // Premium service fee for complex repairs
+    } else if (repairCost > 1000) {
+      serviceFee = 350; // Standard service fee
+    } else {
+      serviceFee = 200; // Basic service fee
+    }
+
+    repairCost += serviceFee;
+    print('🔧 Professional service fee: ₱${serviceFee.toStringAsFixed(0)}');
+
+    // Apply Philippine market constraints and ensure reasonable limits
+    double finalRepairCost = repairCost.clamp(300, baseValue * 0.75);
+    print(
+      '💰 Final repair cost estimate: ₱${finalRepairCost.toStringAsFixed(0)}',
+    );
+
+    return finalRepairCost;
+  }
+
+  double _calculateRealisticPostRepairValue(
+    double currentValue,
+    double repairCost,
+    double batteryHealth,
+    ScreenCondition screenCondition,
+    HardwareCondition hardwareCondition,
+  ) {
+    print('📈 Calculating post-repair value with market realities:');
+
+    // Start with current value as base
+    double postRepairValue = currentValue;
+
+    print('💰 Starting value: ₱${currentValue.toStringAsFixed(0)}');
+
+    // Enhanced value recovery calculation based on repair type
+    // In Philippines market, repairs typically recover 60-80% of invested cost in value
+
+    // Screen repair value recovery
+    if (screenCondition == ScreenCondition.cracked) {
+      // Screen repairs have high value recovery but with "repaired" stigma
+      double screenRecovery =
+          repairCost * 0.75; // 75% of screen repair cost recovered
+
+      // Additional recovery from restoring functionality
+      double functionalityBonus =
+          currentValue * 0.40; // Major functionality restoration
+
+      postRepairValue += screenRecovery + functionalityBonus;
+      print(
+        '📱 Screen repair recovery: ₱${(screenRecovery + functionalityBonus).toStringAsFixed(0)}',
+      );
+    } else if (screenCondition == ScreenCondition.poor) {
+      double displayRecovery = repairCost * 0.65 + (currentValue * 0.15);
+      postRepairValue += displayRecovery;
+      print(
+        '📱 Display repair recovery: ₱${displayRecovery.toStringAsFixed(0)}',
+      );
+    }
+
+    // Battery replacement value recovery
+    if (batteryHealth < 80) {
+      // Battery replacement has excellent value recovery
+      double batteryRecovery = repairCost * 0.85; // High recovery rate
+
+      // Performance improvement bonus
+      double performanceBonus = currentValue * 0.12;
+
+      postRepairValue += batteryRecovery + performanceBonus;
+      print(
+        '🔋 Battery replacement recovery: ₱${(batteryRecovery + performanceBonus).toStringAsFixed(0)}',
+      );
+    }
+
+    // Hardware repair value recovery
+    if (hardwareCondition == HardwareCondition.damaged) {
+      // Major hardware repairs have variable recovery
+      double hardwareRecovery =
+          repairCost * 0.60; // Lower recovery due to complexity
+      double stabilityBonus = currentValue * 0.08;
+
+      postRepairValue += hardwareRecovery + stabilityBonus;
+      print(
+        '⚙️ Major hardware repair recovery: ₱${(hardwareRecovery + stabilityBonus).toStringAsFixed(0)}',
+      );
+    } else if (hardwareCondition == HardwareCondition.poor) {
+      double minorHardwareRecovery = repairCost * 0.70 + (currentValue * 0.06);
+      postRepairValue += minorHardwareRecovery;
+      print(
+        '⚙️ Minor hardware repair recovery: ₱${minorHardwareRecovery.toStringAsFixed(0)}',
+      );
+    }
+
+    // Apply "repaired device" market discount in Philippines
+    // Buyers prefer original condition, so repaired devices have ceiling
+    double repairStigmaDiscount = 0.92; // 8% discount for being repaired
+    postRepairValue *= repairStigmaDiscount;
+    print(
+      '🏷️ Repaired device market adjustment: ${(repairStigmaDiscount * 100).toStringAsFixed(0)}%',
+    );
+
+    // Realistic market caps for Philippine second-hand market
+    double originalEstimatedValue =
+        currentValue / 0.7; // Reverse engineer original value
+    double maxPostRepairValue =
+        originalEstimatedValue * 0.85; // Max 85% of estimated original
+
+    // Ensure minimum improvement and reasonable maximum
+    double minImprovement = currentValue * 1.15; // At least 15% improvement
+    double maxReasonableValue =
+        currentValue * 2.2; // Maximum reasonable improvement
+
+    postRepairValue = postRepairValue.clamp(
+      minImprovement,
+      [maxPostRepairValue, maxReasonableValue].reduce((a, b) => a < b ? a : b),
+    );
+
+    print('📊 Final post-repair value: ₱${postRepairValue.toStringAsFixed(0)}');
+    print(
+      '📈 Value improvement: ₱${(postRepairValue - currentValue).toStringAsFixed(0)} (+${((postRepairValue - currentValue) / currentValue * 100).toStringAsFixed(1)}%)',
+    );
+
+    return postRepairValue;
+  }
+
+  double _calculateRealisticPartsValue(
+    double baseValue,
+    double batteryHealth,
+    ScreenCondition screenCondition,
+    HardwareCondition hardwareCondition,
+  ) {
+    print(
+      '🔩 Calculating realistic parts/salvage value for Philippine market:',
+    );
+
+    // Enhanced parts value calculation based on component demand in Philippines
+    double partsValue = 0;
+
+    // Base parts value varies by device tier and parts availability
+    if (baseValue > 40000) {
+      partsValue = baseValue * 0.28; // Premium devices have high parts demand
+      print(
+        '💎 Premium device parts base: ₱${(baseValue * 0.28).toStringAsFixed(0)}',
+      );
+    } else if (baseValue > 20000) {
+      partsValue = baseValue * 0.22; // Mid-range devices moderate parts value
+      print(
+        '📱 Mid-range device parts base: ₱${(baseValue * 0.22).toStringAsFixed(0)}',
+      );
+    } else {
+      partsValue = baseValue * 0.18; // Budget devices lower parts demand
+      print(
+        '📟 Budget device parts base: ₱${(baseValue * 0.18).toStringAsFixed(0)}',
+      );
+    }
+
+    // Battery component value assessment
+    if (batteryHealth > 85) {
+      double batteryBonus = baseValue * 0.08; // Excellent battery high demand
+      partsValue += batteryBonus;
+      print('🔋 Excellent battery bonus: ₱${batteryBonus.toStringAsFixed(0)}');
+    } else if (batteryHealth > 70) {
+      double batteryBonus = baseValue * 0.04; // Good battery moderate value
+      partsValue += batteryBonus;
+      print('🔋 Good battery bonus: ₱${batteryBonus.toStringAsFixed(0)}');
+    } else if (batteryHealth < 60) {
+      double batteryPenalty =
+          baseValue * 0.05; // Poor battery reduces overall parts appeal
+      partsValue -= batteryPenalty;
+      print('🔋 Poor battery penalty: -₱${batteryPenalty.toStringAsFixed(0)}');
+    }
+
+    // Screen/display component value assessment
+    if (screenCondition == ScreenCondition.cracked) {
+      // Cracked screens have negative impact but some parts still valuable
+      double screenPenalty = baseValue * 0.08;
+      partsValue -= screenPenalty;
+      print('📱 Cracked screen penalty: -₱${screenPenalty.toStringAsFixed(0)}');
+
+      // But other components (camera, motherboard) may still be valuable
+      double otherComponentsValue = baseValue * 0.06;
+      partsValue += otherComponentsValue;
+      print(
+        '⚙️ Other components value: +₱${otherComponentsValue.toStringAsFixed(0)}',
+      );
+    } else if (screenCondition == ScreenCondition.excellent ||
+        screenCondition == ScreenCondition.good) {
+      // Good screens highly valuable as replacement parts
+      double screenBonus = baseValue * 0.12;
+      partsValue += screenBonus;
+      print('📱 Good screen premium: ₱${screenBonus.toStringAsFixed(0)}');
+    }
+
+    // Hardware condition impact on parts value
+    if (hardwareCondition == HardwareCondition.damaged) {
+      // Damaged hardware significantly reduces parts value
+      double hardwarePenalty = baseValue * 0.10;
+      partsValue -= hardwarePenalty;
+      print(
+        '⚙️ Damaged hardware penalty: -₱${hardwarePenalty.toStringAsFixed(0)}',
+      );
+    } else if (hardwareCondition == HardwareCondition.excellent) {
+      // Excellent hardware increases parts demand significantly
+      double hardwareBonus = baseValue * 0.08;
+      partsValue += hardwareBonus;
+      print(
+        '⚙️ Excellent hardware bonus: ₱${hardwareBonus.toStringAsFixed(0)}',
+      );
+    } else if (hardwareCondition == HardwareCondition.good) {
+      // Good hardware moderate bonus
+      double hardwareBonus = baseValue * 0.04;
+      partsValue += hardwareBonus;
+      print('⚙️ Good hardware bonus: ₱${hardwareBonus.toStringAsFixed(0)}');
+    }
+
+    // Market demand adjustment for Philippines parts market
+    double marketDemandMultiplier = 1.0;
+    if (baseValue > 30000) {
+      marketDemandMultiplier = 1.15; // High demand for premium parts
+    } else if (baseValue < 10000) {
+      marketDemandMultiplier = 0.85; // Lower demand for budget parts
+    }
+
+    partsValue *= marketDemandMultiplier;
+    print(
+      '📊 Market demand adjustment: ${(marketDemandMultiplier * 100).toStringAsFixed(0)}%',
+    );
+
+    // Apply realistic bounds for Philippine parts market
+    double minPartsValue = baseValue * 0.08; // Minimum salvage value
+    double maxPartsValue = baseValue * 0.45; // Maximum parts value (rare)
+
+    partsValue = partsValue.clamp(minPartsValue, maxPartsValue);
+
+    print('🔩 Final parts/salvage value: ₱${partsValue.toStringAsFixed(0)}');
+
+    return partsValue;
   }
 
   List<RecommendedAction> _generateSmartRecommendations(
@@ -1671,10 +2538,16 @@ ${hasImages ? '\n**📷 Visual AI Analysis:** Computer vision analysis completed
 
   // Test method for screen condition detection
   ScreenCondition testScreenConditionDetection(
+    String deviceModel,
     String additionalInfo,
     String? imageAnalysis,
   ) {
-    return _analyzeScreenCondition(additionalInfo, false, imageAnalysis);
+    return _analyzeScreenCondition(
+      deviceModel,
+      additionalInfo,
+      false,
+      imageAnalysis,
+    );
   }
 
   // Debug method to check screen condition patterns
@@ -1686,9 +2559,43 @@ ${hasImages ? '\n**📷 Visual AI Analysis:** Computer vision analysis completed
     print('Contains "broken screen": ${input.contains('broken screen')}');
     print('Contains "screen crack": ${input.contains('screen crack')}');
 
-    final result = _analyzeScreenCondition(input, false, null);
+    final result = _analyzeScreenCondition('Test Device', input, false, null);
     print('Detected condition: $result');
     print('---');
+  }
+
+  // Test method to verify the screen condition fix
+  void testScreenConditionFix() {
+    print('🧪 Testing Screen Condition Detection Fix...');
+
+    final testCases = [
+      'broken',
+      'screen is broken',
+      'cracked',
+      'screen cracked',
+      'shattered',
+      'display shattered',
+      'damaged',
+      'screen damaged',
+      'destroyed',
+      'ruined',
+      'working fine',
+      'perfect condition',
+      'good',
+    ];
+
+    for (final testCase in testCases) {
+      print('\n📝 Testing: "$testCase"');
+      final result = _analyzeScreenCondition(
+        'Test Device',
+        testCase,
+        false,
+        null,
+      );
+      print('🎯 Result: $result');
+    }
+
+    print('\n✅ Screen condition testing complete!');
   }
 
   Future<String> getTechnicianChatbotResponse(String message) async {

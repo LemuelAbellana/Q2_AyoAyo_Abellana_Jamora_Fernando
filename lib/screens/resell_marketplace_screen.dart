@@ -36,47 +36,17 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              child: Image.asset(
-                'assets/images/Ayo-ayo.png',
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(LucideIcons.leaf, size: 20, color: Colors.blue);
-                },
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Text('Resell Hub'),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(LucideIcons.plus),
-            onPressed: () => _showCreateListingDialog(context),
-            tooltip: 'Create Listing',
-          ),
-          IconButton(
-            icon: Icon(LucideIcons.settings),
-            onPressed: () => _showFilterDialog(context),
-            tooltip: 'Filter',
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: 'Marketplace', icon: Icon(LucideIcons.shoppingBag)),
-            Tab(text: 'My Listings', icon: Icon(LucideIcons.package)),
-            Tab(text: 'Analytics', icon: Icon(LucideIcons.trendingUp)),
-          ],
-        ),
-      ),
       body: Column(
         children: [
+          // Add the TabBar to the body
+          TabBar(
+            controller: _tabController,
+            tabs: [
+              Tab(text: 'Marketplace', icon: Icon(LucideIcons.shoppingBag)),
+              Tab(text: 'My Listings', icon: Icon(LucideIcons.package)),
+              Tab(text: 'Analytics', icon: Icon(LucideIcons.trendingUp)),
+            ],
+          ),
           // Search bar
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -677,23 +647,6 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
       builder: (context) => AlertDialog(
         title: const Text('Edit Listing'),
         content: const Text('Listing edit form will be implemented here.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showFilterDialog(BuildContext context) {
-    // Implementation for filtering listings
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Filter Listings'),
-        content: const Text('Filter options will be implemented here.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),

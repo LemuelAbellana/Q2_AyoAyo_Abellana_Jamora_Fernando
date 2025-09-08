@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_flutter/lucide_flutter.dart';
 import '/widgets/diagnosis/diagnosis_flow_container.dart';
 import '/widgets/home/about_section.dart';
 import '/widgets/home/community_hub.dart';
@@ -31,49 +30,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            // Add logo to app bar
-            Container(
-              width: 40,
-              height: 40,
-              child: Image.asset(
-                'assets/images/Ayo-ayo.png',
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(Icons.eco, size: 24, color: Colors.blue);
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: 'Ayo',
-                    style: TextStyle(color: Colors.green),
-                  ),
-                  TextSpan(
-                    text: 'Ayo',
-                    style: TextStyle(color: Colors.blue),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(LucideIcons.logOut),
-            tooltip: 'Sign Out',
-            onPressed: () {
-              // Navigate using named routes
-              Navigator.pushReplacementNamed(context, '/login');
-            },
-          ),
-        ],
-      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
