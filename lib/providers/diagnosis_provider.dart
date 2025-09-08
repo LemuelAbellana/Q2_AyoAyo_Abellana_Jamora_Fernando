@@ -151,6 +151,7 @@ class DiagnosisProvider extends ChangeNotifier {
     Current Screen Condition: ${condition.toString().split('.').last}
     User Input: "${additionalInfo.isEmpty ? 'None' : additionalInfo}"
     Device Model: ${_deviceModel}
+    Images Uploaded: ${selectedImages.length}
 
     Detection Logic:
     - Contains 'crack': ${additionalInfo.contains('crack')}
@@ -159,6 +160,9 @@ class DiagnosisProvider extends ChangeNotifier {
     - Contains 'broken screen': ${additionalInfo.contains('broken screen')}
     - Contains 'screen crack': ${additionalInfo.contains('screen crack')}
     - Contains 'display crack': ${additionalInfo.contains('display crack')}
+
+    AI Analysis Available: ${currentResult!.aiAnalysis.isNotEmpty ? 'Yes' : 'No'}
+    Confidence Score: ${currentResult?.confidenceScore ?? 'N/A'}
     ''';
   }
 

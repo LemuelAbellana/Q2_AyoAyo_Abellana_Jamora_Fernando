@@ -96,47 +96,42 @@ class GeminiDiagnosisService {
             '''
         🔍 ADVANCED MOBILE DEVICE IMAGE ANALYSIS - Image ${i + 1}
 
-        As an expert mobile device technician, analyze this device image with professional precision:
+        As an expert mobile device technician with 15+ years experience, analyze this device image with surgical precision. Focus on detecting any screen damage.
 
-        📱 VISUAL INSPECTION CHECKLIST:
-        1. **Screen Assessment:**
-           - Cracks, spider web patterns, or shattered areas
-           - Dead pixels, discoloration, or burn-in
-           - Touch responsiveness indicators
-           - Screen protector condition
+        📱 CRITICAL SCREEN DAMAGE DETECTION PROTOCOL:
+        1. **Screen Damage Analysis - PRIORITY ONE:**
+           - Look for ANY cracks, fractures, or breaks in the glass
+           - Identify spider web patterns or shatter lines
+           - Check for shattered glass fragments or missing pieces
+           - Detect hairline cracks that may not be immediately visible
+           - Assess if the screen is completely shattered or partially cracked
+           - Note any LCD damage beneath cracked glass
 
-        2. **Physical Condition:**
+        2. **Screen Condition Keywords to Use:**
+           - If you see cracks: Use words like "CRACKED", "SHATTERED", "BROKEN SCREEN", "SCREEN CRACK"
+           - For spider web cracks: Use "SPIDER WEB CRACK", "WEB PATTERN", "SPIDERWEB"
+           - For severe damage: Use "SEVERELY CRACKED", "SCREEN SHATTERED", "GLASS DAMAGE"
+
+        3. **Screen-Specific Assessment:**
+           - Screen protector status and condition
+           - Touch functionality indicators
+           - Dead pixels or discoloration
+           - Burn-in or ghosting effects
+           - LCD bleed or backlight issues
+
+        4. **Physical Damage Assessment:**
            - Body scratches, dents, or impact damage
            - Corner damage or chassis deformation
-           - Button wear or misalignment
-           - Camera lens condition
+           - Camera lens scratches or damage
+           - Charging port debris or damage
 
-        3. **Hardware Indicators:**
-           - Charging port condition and debris
-           - Speaker/microphone openings
-           - SIM tray alignment
-           - Any visible internal components
+        🎯 REQUIRED RESPONSE FORMAT:
+        **SCREEN STATUS:** [CRACKED/SHATTERED/BROKEN/DAMAGED/GOOD/EXCELLENT]
+        **DAMAGE DETAILS:** Describe what you see specifically
+        **SEVERITY:** [MINOR/MAJOR/SEVERE/CRITICAL]
+        **PROFESSIONAL ASSESSMENT:** Technical findings
 
-        4. **Damage Assessment:**
-           - Water damage indicators (corrosion, discoloration)
-           - Heat damage signs (warping, discoloration)
-           - Previous repair evidence (adhesive residue, non-original parts)
-           - Overall wear level (light, moderate, heavy)
-
-        5. **Market Value Factors:**
-           - Cosmetic condition impact on resale value
-           - Functional issues that affect usability
-           - Repairability assessment
-
-        🎯 ANALYSIS FORMAT:
-        Provide detailed technical findings in this structure:
-        - **Condition Grade:** (Excellent/Good/Fair/Poor/Damaged)
-        - **Key Issues:** List specific problems identified
-        - **Market Impact:** How findings affect device value
-        - **Repair Priority:** Critical/Important/Optional issues
-        - **Professional Notes:** Technical observations
-
-        Be thorough and precise in your assessment.
+        ⚠️ CRITICAL: If you see ANY screen damage, clearly state "SCREEN IS CRACKED" or "SHATTERED SCREEN" in your response.
         ''';
 
         final response = await _visionModel.generateContent([
@@ -144,9 +139,14 @@ class GeminiDiagnosisService {
         ]);
 
         if (response.text != null) {
-          analysisResults.add(
-            '📷 **Image ${i + 1} Analysis:**\n${response.text!}',
-          );
+          final analysisText = response.text!;
+          print(
+            '🔍 Image ${i + 1} Analysis Result: $analysisText',
+          ); // Debug logging
+
+          analysisResults.add('📷 **Image ${i + 1} Analysis:**\n$analysisText');
+        } else {
+          print('⚠️ Image ${i + 1} Analysis: No response text received');
         }
       }
 
@@ -169,9 +169,11 @@ class GeminiDiagnosisService {
 
       return combinedAnalysis.toString();
     } catch (e) {
-      return '⚠️ **Image Analysis Status:** Unavailable due to technical limitations\n'
+      print('❌ Image analysis failed: $e');
+      return '⚠️ **Image Analysis Status:** Failed due to error: $e\n'
           '📝 **Fallback:** Analysis proceeding with text-based assessment only\n'
-          '💡 **Note:** For best results, ensure clear, well-lit device photos';
+          '💡 **Note:** For best results, ensure clear, well-lit device photos\n'
+          '🔧 **Technical Details:** ${e.toString()}';
     }
   }
 
@@ -727,6 +729,13 @@ class GeminiDiagnosisService {
     bool hasImages, [
     String? imageAnalysis,
   ]) {
+    print('🔍 Analyzing screen condition:');
+    print('📝 Additional info: "$additionalInfo"');
+    print('📸 Has images: $hasImages');
+    print(
+      '🖼️ Image analysis available: ${imageAnalysis != null && imageAnalysis.isNotEmpty}',
+    );
+
     // First check image analysis if available
     if (imageAnalysis != null && imageAnalysis.isNotEmpty) {
       final analysis = imageAnalysis.toLowerCase();
@@ -735,16 +744,28 @@ class GeminiDiagnosisService {
       if (analysis.contains('cracked') ||
           analysis.contains('shattered') ||
           analysis.contains('spider web') ||
+          analysis.contains('spiderweb') ||
+          analysis.contains('web crack') ||
+          analysis.contains('web pattern') ||
           analysis.contains('broken screen') ||
+          analysis.contains('screen crack') ||
+          analysis.contains('screen is cracked') ||
+          analysis.contains('shattered screen') ||
           analysis.contains('crack') ||
           analysis.contains('cracked lcd') ||
-          analysis.contains('screen crack') ||
+          analysis.contains('cracked display') ||
           analysis.contains('display crack') ||
-          analysis.contains('spiderweb') ||
           analysis.contains('shatter') ||
-          analysis.contains('web crack') ||
           analysis.contains('glass damage') ||
-          analysis.contains('screen shatter')) {
+          analysis.contains('screen shatter') ||
+          analysis.contains('screen damage') ||
+          analysis.contains('screen broken') ||
+          analysis.contains('severe crack') ||
+          analysis.contains('major crack') ||
+          analysis.contains('screen status: cracked') ||
+          analysis.contains('screen status: shattered') ||
+          analysis.contains('screen status: broken')) {
+        print('🎯 Screen condition detected as CRACKED from image analysis');
         return ScreenCondition.cracked;
       }
 
@@ -788,6 +809,7 @@ class GeminiDiagnosisService {
         additionalInfo.contains('screen damage') ||
         additionalInfo.contains('display crack') ||
         additionalInfo.contains('display damage')) {
+      print('🎯 Screen condition detected as CRACKED from user description');
       return ScreenCondition.cracked;
     }
     if (additionalInfo.contains('scratch') ||
@@ -809,10 +831,37 @@ class GeminiDiagnosisService {
     if (hasImages) {
       // Use device model and description hash for consistent results
       final hashValue = (additionalInfo.hashCode + DateTime.now().day) % 10;
+
+      // If user mentioned cracked or broken, prioritize that even in demo mode
+      if (additionalInfo.contains('crack') ||
+          additionalInfo.contains('cracked') ||
+          additionalInfo.contains('broken') ||
+          additionalInfo.contains('shatter')) {
+        print(
+          '🎯 Demo mode: Detected crack keywords in user input, returning CRACKED',
+        );
+        return ScreenCondition.cracked;
+      }
+
+      // Otherwise use hash-based logic
       if (hashValue < 2) return ScreenCondition.excellent;
       if (hashValue < 6) return ScreenCondition.good;
       if (hashValue < 8) return ScreenCondition.fair;
       return ScreenCondition.good; // Default to good for most cases
+    }
+
+    // Enhanced fallback logic for images
+    if (hasImages) {
+      print(
+        '📸 Images available but no specific screen damage detected in analysis',
+      );
+      print(
+        '🔍 Image analysis content preview: ${imageAnalysis?.substring(0, 200) ?? 'No analysis available'}',
+      );
+
+      // If we have images but no clear analysis, assume the screen might have minor issues
+      // This is better than returning unknown when we have visual data
+      return ScreenCondition.good; // Conservative assumption
     }
 
     // If no images and no specific info, return unknown
