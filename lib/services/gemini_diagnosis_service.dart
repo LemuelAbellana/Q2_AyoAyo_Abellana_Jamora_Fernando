@@ -192,7 +192,11 @@ class GeminiDiagnosisService {
       }
       if (info.contains('screen') ||
           info.contains('crack') ||
-          info.contains('display')) {
+          info.contains('cracked') ||
+          info.contains('cracked lcd') ||
+          info.contains('display') ||
+          info.contains('broken screen') ||
+          info.contains('screen damage')) {
         identifiedIssues.add('screen');
       }
       if (info.contains('camera') ||
@@ -236,8 +240,15 @@ class GeminiDiagnosisService {
     if (imageAnalysis != null && imageAnalysis.isNotEmpty) {
       final imageText = imageAnalysis.toLowerCase();
       if (imageText.contains('crack') ||
+          imageText.contains('cracked') ||
+          imageText.contains('cracked lcd') ||
           imageText.contains('shatter') ||
-          imageText.contains('broken')) {
+          imageText.contains('shattered') ||
+          imageText.contains('broken') ||
+          imageText.contains('broken screen') ||
+          imageText.contains('screen damage') ||
+          imageText.contains('spider web') ||
+          imageText.contains('spiderweb')) {
         identifiedIssues.add('screen');
       }
       if (imageText.contains('scratch') ||
@@ -720,11 +731,20 @@ class GeminiDiagnosisService {
     if (imageAnalysis != null && imageAnalysis.isNotEmpty) {
       final analysis = imageAnalysis.toLowerCase();
 
-      // Look for specific screen condition indicators in image analysis
+      // Look for specific screen condition indicators in image analysis - enhanced patterns
       if (analysis.contains('cracked') ||
           analysis.contains('shattered') ||
           analysis.contains('spider web') ||
-          analysis.contains('broken screen')) {
+          analysis.contains('broken screen') ||
+          analysis.contains('crack') ||
+          analysis.contains('cracked lcd') ||
+          analysis.contains('screen crack') ||
+          analysis.contains('display crack') ||
+          analysis.contains('spiderweb') ||
+          analysis.contains('shatter') ||
+          analysis.contains('web crack') ||
+          analysis.contains('glass damage') ||
+          analysis.contains('screen shatter')) {
         return ScreenCondition.cracked;
       }
 
@@ -757,10 +777,17 @@ class GeminiDiagnosisService {
       }
     }
 
-    // Fallback to user description analysis
+    // Fallback to user description analysis - enhanced pattern matching
     if (additionalInfo.contains('crack') ||
+        additionalInfo.contains('cracked') ||
         additionalInfo.contains('broken') ||
-        additionalInfo.contains('shatter')) {
+        additionalInfo.contains('shatter') ||
+        additionalInfo.contains('cracked lcd') ||
+        additionalInfo.contains('broken screen') ||
+        additionalInfo.contains('screen crack') ||
+        additionalInfo.contains('screen damage') ||
+        additionalInfo.contains('display crack') ||
+        additionalInfo.contains('display damage')) {
       return ScreenCondition.cracked;
     }
     if (additionalInfo.contains('scratch') ||
@@ -1591,6 +1618,28 @@ ${hasImages ? '\n**📷 Visual AI Analysis:** Computer vision analysis completed
     } catch (e) {
       return false;
     }
+  }
+
+  // Test method for screen condition detection
+  ScreenCondition testScreenConditionDetection(
+    String additionalInfo,
+    String? imageAnalysis,
+  ) {
+    return _analyzeScreenCondition(additionalInfo, false, imageAnalysis);
+  }
+
+  // Debug method to check screen condition patterns
+  void debugScreenCondition(String input) {
+    print('Testing input: "$input"');
+    print('Contains "crack": ${input.contains('crack')}');
+    print('Contains "cracked": ${input.contains('cracked')}');
+    print('Contains "cracked lcd": ${input.contains('cracked lcd')}');
+    print('Contains "broken screen": ${input.contains('broken screen')}');
+    print('Contains "screen crack": ${input.contains('screen crack')}');
+
+    final result = _analyzeScreenCondition(input, false, null);
+    print('Detected condition: $result');
+    print('---');
   }
 
   Future<String> getTechnicianChatbotResponse(String message) async {

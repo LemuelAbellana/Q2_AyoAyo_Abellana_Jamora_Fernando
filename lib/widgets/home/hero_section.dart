@@ -28,72 +28,25 @@ class HeroSection extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           const Text(
-            "Discover the true value of your electronics in Davao. Diagnose, repair, resell, or recycle—all in one place.",
+            "Get a complete diagnosis of your device's health. Our AI-powered analysis provides detailed insights about battery, screen, and hardware condition.",
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 18, color: Colors.white70),
           ),
           const SizedBox(height: 32),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.blue,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-                onPressed: onDiagnosePressed,
-                child: const Text(
-                  'Diagnose Device',
-                  style: TextStyle(fontSize: 14),
-                ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.blue,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
               ),
-              const SizedBox(width: 16),
-              OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.white, width: 2),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.pushNamed(context, '/resell');
-                },
-                child: const Text('Resell Hub', style: TextStyle(fontSize: 14)),
-              ),
-              const SizedBox(width: 16),
-              OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.white, width: 2),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.pushNamed(context, '/upcycle');
-                },
-                child: const Text(
-                  'Upcycle Studio',
-                  style: TextStyle(fontSize: 14),
-                ),
-              ),
-            ],
+            ),
+            onPressed: onDiagnosePressed,
+            child: const Text(
+              'Start Diagnosis',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),

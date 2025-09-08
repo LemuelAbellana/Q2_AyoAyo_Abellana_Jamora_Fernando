@@ -135,6 +135,33 @@ class DiagnosisProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Test screen condition detection
+  ScreenCondition testScreenCondition(String input) {
+    return _diagnosisService.testScreenConditionDetection(input, null);
+  }
+
+  // Debug current diagnosis result
+  String debugCurrentScreenCondition() {
+    if (_currentResult == null) return 'No diagnosis result available';
+
+    final condition = _currentResult!.deviceHealth.screenCondition;
+    final additionalInfo = _additionalInfo;
+
+    return '''
+    Current Screen Condition: ${condition.toString().split('.').last}
+    User Input: "${additionalInfo.isEmpty ? 'None' : additionalInfo}"
+    Device Model: ${_deviceModel}
+
+    Detection Logic:
+    - Contains 'crack': ${additionalInfo.contains('crack')}
+    - Contains 'cracked': ${additionalInfo.contains('cracked')}
+    - Contains 'cracked lcd': ${additionalInfo.contains('cracked lcd')}
+    - Contains 'broken screen': ${additionalInfo.contains('broken screen')}
+    - Contains 'screen crack': ${additionalInfo.contains('screen crack')}
+    - Contains 'display crack': ${additionalInfo.contains('display crack')}
+    ''';
+  }
+
   // Reset all data
   void reset() {
     _deviceModel = '';
