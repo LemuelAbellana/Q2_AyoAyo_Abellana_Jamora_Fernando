@@ -361,11 +361,13 @@ class ResellDetail extends StatelessWidget {
         result.deviceHealth.hardwareCondition == HardwareCondition.excellent ||
         result.deviceHealth.hardwareCondition == HardwareCondition.good;
 
-    if (screenGood && batteryGood && hardwareGood)
+    if (screenGood && batteryGood && hardwareGood) {
       return ConditionGrade.excellent;
+    }
     if (screenGood || batteryGood || hardwareGood) return ConditionGrade.good;
-    if (result.deviceHealth.screenCondition == ScreenCondition.cracked)
+    if (result.deviceHealth.screenCondition == ScreenCondition.cracked) {
       return ConditionGrade.damaged;
+    }
 
     return ConditionGrade.fair;
   }

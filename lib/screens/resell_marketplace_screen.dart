@@ -91,8 +91,8 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCreateListingDialog(context),
-        child: const Icon(LucideIcons.plus),
         tooltip: 'Create New Listing',
+        child: const Icon(LucideIcons.plus),
       ),
     );
   }

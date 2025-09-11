@@ -3,7 +3,6 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../models/device_diagnosis.dart';
 import '../../providers/upcycling_provider.dart';
-import '../../services/ai_upcycling_service.dart';
 
 class UpcycleProject {
   final String title;

@@ -1707,7 +1707,7 @@ REQUIRED RESPONSE FORMAT:
 
       currentValue *= issuePenalty;
       print(
-        '🔧 Issues impact (${issueCount} issues): ${issuePenalty.toStringAsFixed(2)}x (₱${currentValue.toStringAsFixed(0)})',
+        '🔧 Issues impact ($issueCount issues): ${issuePenalty.toStringAsFixed(2)}x (₱${currentValue.toStringAsFixed(0)})',
       );
     }
 

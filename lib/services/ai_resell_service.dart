@@ -2,7 +2,6 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:ayoayo/models/resell_listing.dart';
 import 'package:ayoayo/models/device_passport.dart';
 import 'package:ayoayo/services/ai_value_engine.dart';
-import 'package:ayoayo/services/knowledge_base.dart';
 
 class AIResellService {
   final GenerativeModel _model;

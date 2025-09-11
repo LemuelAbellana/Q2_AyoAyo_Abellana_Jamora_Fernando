@@ -152,8 +152,9 @@ class UpcyclingProject {
 
   // Check if project is overdue
   bool get isOverdue {
-    if (status == ProjectStatus.completed || status == ProjectStatus.paused)
+    if (status == ProjectStatus.completed || status == ProjectStatus.paused) {
       return false;
+    }
     final daysSinceCreation = DateTime.now().difference(createdAt).inDays;
     return daysSinceCreation > (estimatedHours / 2); // Rough estimate
   }

@@ -163,7 +163,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Column(
                   children: [
                     // Add the Ayo-ayo.png logo
-                    Container(
+                    SizedBox(
                       width: 120,
                       height: 120,
                       child: Image.asset(
