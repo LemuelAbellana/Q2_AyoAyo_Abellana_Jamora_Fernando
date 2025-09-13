@@ -37,11 +37,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      // Simulate registration process
-      await Future.delayed(const Duration(seconds: 2));
-
       // Check if user already exists
-      if (UserService.userExists(_emailController.text)) {
+      final userExists = await UserService.userExists(_emailController.text);
+      if (userExists) {
         if (mounted) {
           setState(() {
             _errorMessage = 'User already exists with this email';
@@ -51,7 +49,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
 
       // Register the user using UserService
-      final success = UserService.registerUser(
+      final success = await UserService.registerUser(
         _nameController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text,

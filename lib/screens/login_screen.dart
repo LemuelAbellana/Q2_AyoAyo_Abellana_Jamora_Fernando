@@ -33,25 +33,22 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // Simulate login process
-      await Future.delayed(const Duration(seconds: 2));
-
-      // Check user credentials using UserService
-      final user = UserService.authenticateUser(
+      // Authenticate user using database
+      final user = await UserService.authenticateUser(
         _emailController.text,
         _passwordController.text,
       );
 
-      if (user != null) {
+      if (user != null && mounted) {
         // Successful login
-        if (mounted) {
-          // Navigate using named routes
-          Navigator.pushReplacementNamed(context, '/main');
-        }
+        Navigator.pushReplacementNamed(context, '/main');
       } else {
         if (mounted) {
+          final userExists = await UserService.userExists(
+            _emailController.text,
+          );
           setState(() {
-            _errorMessage = UserService.userExists(_emailController.text)
+            _errorMessage = userExists
                 ? 'Invalid password. Please try again.'
                 : 'No account found with this email. Please register first.';
           });
