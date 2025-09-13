@@ -14,6 +14,13 @@ class DatabaseService {
   DatabaseService._internal();
 
   Future<Database> get database async {
+    if (kIsWeb) {
+      // For web, we can't use SQLite directly, so we'll use a mock database
+      // The actual data operations will be handled by SharedPreferences
+      throw UnsupportedError(
+        'SQLite not supported on web. Use web-compatible methods.',
+      );
+    }
     if (_database != null) return _database!;
     _database = await _initDatabase();
     return _database!;
@@ -23,9 +30,9 @@ class DatabaseService {
     String path;
 
     if (kIsWeb) {
-      // For web, use simple approach - let sqflite handle IndexedDB
+      // For web, use IndexedDB through sqflite_common_ffi_web
       path = 'ayoayo.db';
-      print('Database path (Web): IndexedDB - ayoayo.db');
+      print('Database path (Web): IndexedDB - $path');
     } else {
       // For development/testing, use a local path in project directory
       try {
