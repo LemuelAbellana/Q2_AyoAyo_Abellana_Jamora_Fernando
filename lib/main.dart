@@ -45,17 +45,23 @@ void main() async {
     await dbService.database; // This creates/opens the database
   }
 
-  // Check for existing user session on web
+  // Clear any existing Google sessions to allow account selection
   if (kIsWeb) {
     try {
+      // Force disconnect from Google to allow fresh account selection
+      await OAuthService.forceDisconnect();
+      print(
+        '🔄 Cleared previous Google sessions - ready for account selection',
+      );
+
+      // Check for saved session but don't auto-restore
       final savedUid = await UserService.getSavedUserSession();
       if (savedUid != null) {
-        print('🔄 Restoring user session for UID: $savedUid');
-        // The user will be automatically authenticated by Firebase Auth
-        // and the database check will happen when needed
+        print('💾 Previous session found for UID: $savedUid');
+        print('🎯 User can now choose to sign in with any Google account');
       }
     } catch (e) {
-      print('⚠️ Could not restore user session: $e');
+      print('⚠️ Could not clear sessions: $e');
     }
 
     // Test OAuth configuration on startup
@@ -77,6 +83,9 @@ void main() async {
     } catch (e) {
       print('⚠️ OAuth configuration test failed: $e');
     }
+
+    // TEST: Delete specific user for testing
+    await UserService.deleteTestUser();
   }
 
   runApp(const AyoAyoApp());

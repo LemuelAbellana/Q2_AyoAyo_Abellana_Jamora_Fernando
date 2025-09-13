@@ -103,48 +103,17 @@ class OAuthService {
       print('   Firefox: Check privacy settings');
       print('   Safari: Allow popups and redirects');
 
-      GoogleSignInAccount? googleUser;
-
-      // Try silent sign-in first (won't trigger popup)
-      try {
-        print('🔇 Attempting silent sign-in...');
-        final GoogleSignInAccount? silentUser = await _googleSignInInstance
-            .signInSilently();
-        if (silentUser != null) {
-          print('✅ Silent sign-in successful: ${silentUser.email}');
-          googleUser = silentUser;
-        } else {
-          print('🔄 Silent sign-in failed, trying popup...');
-          // Trigger the authentication flow with timeout
-          final GoogleSignInAccount? popupUser = await _googleSignInInstance
-              .signIn()
-              .timeout(
-                const Duration(seconds: 60),
-                onTimeout: () {
-                  print('⏰ Google Sign-In timed out after 60 seconds');
-                  throw Exception(
-                    'Google Sign-In timed out. Please try again.',
-                  );
-                },
-              );
-          googleUser = popupUser;
-        }
-      } catch (silentError) {
-        print('⚠️ Silent sign-in failed: $silentError');
-        print('🔄 Trying popup sign-in...');
-
-        // Fallback to popup sign-in
-        final GoogleSignInAccount? popupUser = await _googleSignInInstance
-            .signIn()
-            .timeout(
-              const Duration(seconds: 60),
-              onTimeout: () {
-                print('⏰ Google Sign-In timed out after 60 seconds');
-                throw Exception('Google Sign-In timed out. Please try again.');
-              },
-            );
-        googleUser = popupUser;
-      }
+      // Always use popup for fresh account selection
+      print('🎯 Select your preferred Google account from the popup');
+      final GoogleSignInAccount? googleUser = await _googleSignInInstance
+          .signIn()
+          .timeout(
+            const Duration(seconds: 60),
+            onTimeout: () {
+              print('⏰ Google Sign-In timed out after 60 seconds');
+              throw Exception('Google Sign-In timed out. Please try again.');
+            },
+          );
 
       if (googleUser == null) {
         print('❌ User cancelled Google Sign-In');
@@ -340,13 +309,11 @@ class OAuthService {
   // Sign out from all providers
   static Future<void> signOut() async {
     try {
-      if (_googleSignIn != null) {
-        await _googleSignIn!.signOut();
-        await _googleSignIn!
-            .disconnect(); // Force disconnect to clear all cached state
-      }
+      // Force disconnect from Google to allow account switching
+      await forceDisconnect();
       await _auth.signOut();
       print('✅ Successfully signed out from all providers');
+      print('🔄 Ready to sign in with a different Google account');
     } catch (e) {
       print('❌ Sign out error: $e');
     }
@@ -479,6 +446,69 @@ class OAuthService {
       print('❌ Popup test failed: $e');
       showPopupBlockerHelp();
       return false;
+    }
+  }
+
+  // Switch to a different Google account
+  static Future<Map<String, dynamic>?> switchGoogleAccount() async {
+    try {
+      print('🔄 Switching to a different Google account...');
+
+      // Force disconnect to clear current session
+      await forceDisconnect();
+
+      print('🔐 Opening account selection popup...');
+      final GoogleSignInAccount? googleUser = await _googleSignInInstance
+          .signIn()
+          .timeout(
+            const Duration(seconds: 60),
+            onTimeout: () {
+              print('⏰ Account switch timed out');
+              throw Exception('Account switch timed out. Please try again.');
+            },
+          );
+
+      if (googleUser == null) {
+        print('❌ Account switch cancelled by user');
+        return null;
+      }
+
+      print('✅ Switched to account: ${googleUser.email}');
+
+      // Continue with Firebase authentication
+      print('🔑 Obtaining authentication tokens...');
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      print('🔥 Signing in to Firebase with new account...');
+      final UserCredential userCredential = await _auth.signInWithCredential(
+        credential,
+      );
+      final User? firebaseUser = userCredential.user;
+
+      if (firebaseUser != null) {
+        return {
+          'uid': firebaseUser.uid,
+          'email': firebaseUser.email ?? '',
+          'display_name':
+              firebaseUser.displayName ??
+              firebaseUser.email?.split('@')[0] ??
+              '',
+          'photo_url': firebaseUser.photoURL ?? '',
+          'provider': 'google',
+          'provider_id': googleUser.id,
+          'email_verified': firebaseUser.emailVerified,
+        };
+      }
+
+      return null;
+    } catch (e) {
+      print('❌ Account switch error: $e');
+      return null;
     }
   }
 

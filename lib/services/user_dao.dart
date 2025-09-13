@@ -395,6 +395,60 @@ class UserDao {
     }
   }
 
+  // Delete user by email (hard delete)
+  Future<int> deleteUserByEmail(String email) async {
+    if (kIsWeb) {
+      // Web implementation using SharedPreferences
+      try {
+        final prefs = await _prefs;
+        final userUids = prefs.getStringList('user_uids') ?? [];
+        final targetEmail = email.toLowerCase();
+
+        for (final uid in userUids) {
+          final userJson = prefs.getString('user_$uid');
+          if (userJson != null) {
+            final user = jsonDecode(userJson);
+            if (user['email'] == targetEmail) {
+              // Remove from user list
+              userUids.remove(uid);
+              await prefs.setStringList('user_uids', userUids);
+
+              // Remove user data
+              await prefs.remove('user_$uid');
+
+              print('✅ Deleted user: $email (web)');
+              return 1;
+            }
+          }
+        }
+        print('⚠️ User not found: $email');
+        return 0;
+      } catch (e) {
+        print('❌ Error deleting user by email (web): $e');
+        return 0;
+      }
+    } else {
+      // Mobile implementation using SQLite - hard delete
+      final db = await _database;
+      try {
+        final result = await db!.delete(
+          'users',
+          where: 'email = ?',
+          whereArgs: [email.toLowerCase()],
+        );
+        if (result > 0) {
+          print('✅ Deleted user: $email (SQLite)');
+        } else {
+          print('⚠️ User not found: $email');
+        }
+        return result;
+      } catch (e) {
+        print('❌ Error deleting user by email: $e');
+        return 0;
+      }
+    }
+  }
+
   // Get users by auth provider
   Future<List<Map<String, dynamic>>> getUsersByProvider(String provider) async {
     if (kIsWeb) {

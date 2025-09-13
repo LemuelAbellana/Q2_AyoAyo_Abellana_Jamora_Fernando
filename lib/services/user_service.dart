@@ -227,9 +227,69 @@ class UserService {
       await OAuthService.signOut();
       await clearUserSession(); // Clear saved session
       print('✅ User signed out successfully');
+      print('🔄 Ready to sign in with any Google account');
     } catch (e) {
       print('❌ Error signing out: $e');
     }
+  }
+
+  // Switch to a different Google account
+  static Future<Map<String, dynamic>?> switchGoogleAccount() async {
+    try {
+      print('🔄 Switching Google account...');
+
+      // Use the OAuth service to switch accounts
+      final userData = await OAuthService.switchGoogleAccount();
+
+      if (userData != null) {
+        print('✅ Account switched successfully: ${userData['email']}');
+
+        // Check if this user exists in database
+        final existingUser = await _userDao.getUserByUid(userData['uid']);
+
+        if (existingUser != null) {
+          print('✅ Existing user found, updating session');
+          await _userDao.updateLastLogin(existingUser['id']);
+          await saveUserSession(existingUser);
+          return existingUser;
+        } else {
+          print('👤 New account detected, creating database entry');
+          // Create new user entry for this account
+          final result = await _userDao.insertUser(userData);
+          if (result > 0) {
+            final newUser = await _userDao.getUserByUid(userData['uid']);
+            if (newUser != null) {
+              await saveUserSession(newUser);
+              print('✅ New account registered in database');
+              return newUser;
+            }
+          }
+        }
+      }
+
+      return null;
+    } catch (e) {
+      print('❌ Account switch error: $e');
+      return null;
+    }
+  }
+
+  // Delete user by email (for testing/admin purposes)
+  static Future<bool> deleteUserByEmail(String email) async {
+    try {
+      print('🗑️ Attempting to delete user: $email');
+      final result = await _userDao.deleteUserByEmail(email);
+      return result > 0;
+    } catch (e) {
+      print('❌ Error deleting user: $e');
+      return false;
+    }
+  }
+
+  // Helper method to delete specific test user
+  static Future<bool> deleteTestUser() async {
+    const testEmail = 'lemuelabellana1@gmail.com';
+    return await deleteUserByEmail(testEmail);
   }
 
   // Check if user is currently signed in

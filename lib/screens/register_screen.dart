@@ -109,6 +109,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       print('🚀 Starting Google sign-in from register screen...');
+      print('🎯 You can now select any Google account to register with');
+
       final user = await UserService.handleOAuthSignIn('google');
 
       if (user != null && mounted) {
@@ -119,10 +121,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Welcome to AyoAyo, ${user['display_name'] ?? user['email']}!',
+              'Account created successfully! Welcome to AyoAyo, ${user['display_name'] ?? user['email']}!',
             ),
             backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
+            duration: const Duration(seconds: 3),
           ),
         );
 
@@ -136,7 +138,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         print('❌ Google sign-in returned null user');
         if (mounted) {
           setState(() {
-            _errorMessage = 'Google sign-in failed. Please try again.';
+            _errorMessage =
+                'Google sign-in was cancelled. Please try again and select an account to create your profile.';
           });
         }
       }
@@ -154,6 +157,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         print(
           'ℹ️ People API error detected - fallback mechanism will handle this',
         );
+      } else if (e.toString().contains('popup') ||
+          e.toString().contains('blocked') ||
+          e.toString().contains('cancelled')) {
+        errorMessage =
+            'Please disable popup blockers and try again. You can select any Google account to create your profile.';
+        print('🚫 Popup blocker detected - user needs to disable it');
       } else {
         errorMessage = 'Google sign-in error: ${e.toString()}';
       }
