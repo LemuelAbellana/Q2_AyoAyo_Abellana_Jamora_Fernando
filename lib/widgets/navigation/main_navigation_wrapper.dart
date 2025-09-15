@@ -21,7 +21,12 @@ class NavigationItem {
 }
 
 class MainNavigationWrapper extends StatefulWidget {
-  const MainNavigationWrapper({super.key});
+  final int initialIndex;
+
+  const MainNavigationWrapper({
+    super.key,
+    this.initialIndex = 0,
+  });
 
   @override
   State<MainNavigationWrapper> createState() => _MainNavigationWrapperState();
@@ -29,7 +34,7 @@ class MainNavigationWrapper extends StatefulWidget {
 
 class _MainNavigationWrapperState extends State<MainNavigationWrapper>
     with TickerProviderStateMixin {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
   late List<NavigationItem> _navigationItems;
   late List<Widget> _screens;
   late AnimationController _animationController;
@@ -38,6 +43,7 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper>
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialIndex;
 
     _navigationItems = [
       NavigationItem(
@@ -193,7 +199,7 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper>
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -208,7 +214,7 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper>
                 padding: EdgeInsets.all(isSelected ? 8.0 : 6.0),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? Theme.of(context).primaryColor.withOpacity(0.1)
+                      ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),

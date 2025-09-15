@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 import '/widgets/diagnosis/diagnosis_flow_container.dart';
 import '/widgets/home/about_section.dart';
 import '/widgets/home/community_hub.dart';
 import '/widgets/home/hero_section.dart';
 import 'package:ayoayo/screens/device_passport_form_screen.dart';
+import 'package:ayoayo/screens/technician_finder_screen.dart';
 import 'package:ayoayo/widgets/shared/app_footer.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -41,16 +43,37 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const DevicePassportFormScreen(),
-            ),
-          );
-        },
-        child: const Icon(Icons.add),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            heroTag: 'technician_finder',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const TechnicianFinderScreen(),
+                ),
+              );
+            },
+            tooltip: 'Find Technicians',
+            child: const Icon(LucideIcons.search),
+          ),
+          const SizedBox(height: 16),
+          FloatingActionButton(
+            heroTag: 'add_device',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DevicePassportFormScreen(),
+                ),
+              );
+            },
+            tooltip: 'Add Device',
+            child: const Icon(Icons.add),
+          ),
+        ],
       ),
     );
   }

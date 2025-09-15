@@ -116,6 +116,22 @@ class AyoAyoApp extends StatelessWidget {
           '/register': (context) => const RegisterScreen(),
           '/main': (context) => const MainNavigationWrapper(),
         },
+        onGenerateRoute: (settings) {
+          // Handle dynamic routes with proper navigation state
+          if (settings.name == '/resell') {
+            return MaterialPageRoute(
+              builder: (context) => const MainNavigationWrapper(initialIndex: 1),
+              settings: settings,
+            );
+          }
+          if (settings.name == '/upcycle') {
+            return MaterialPageRoute(
+              builder: (context) => const MainNavigationWrapper(initialIndex: 2),
+              settings: settings,
+            );
+          }
+          return null;
+        },
       ),
     );
   }

@@ -255,6 +255,33 @@ class DatabaseService {
         FOREIGN KEY (project_id) REFERENCES upcycling_projects(id) ON DELETE CASCADE
       )
     ''');
+
+    // 10. Technicians table
+    await db.execute('''
+      CREATE TABLE technicians (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        technician_id TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        specialization TEXT NOT NULL,
+        location TEXT NOT NULL,
+        city TEXT NOT NULL,
+        province TEXT NOT NULL,
+        rating DECIMAL(2,1) DEFAULT 0,
+        experience_years INTEGER DEFAULT 0,
+        is_vetted BOOLEAN DEFAULT 0,
+        contact_phone TEXT NOT NULL,
+        contact_email TEXT UNIQUE NOT NULL,
+        profile_image_url TEXT,
+        description TEXT,
+        skills TEXT,
+        certifications TEXT,
+        completed_repairs INTEGER DEFAULT 0,
+        average_rating DECIMAL(3,2) DEFAULT 0,
+        is_available BOOLEAN DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME
+      )
+    ''');
   }
 
   Future<void> _createIndexes(Database db) async {
@@ -322,6 +349,29 @@ class DatabaseService {
     );
     await db.execute(
       'CREATE INDEX idx_project_steps_step_number ON project_steps(step_number)',
+    );
+
+    // Technician indexes
+    await db.execute(
+      'CREATE INDEX idx_technicians_technician_id ON technicians(technician_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_technicians_specialization ON technicians(specialization)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_technicians_city ON technicians(city)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_technicians_province ON technicians(province)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_technicians_is_vetted ON technicians(is_vetted)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_technicians_rating ON technicians(rating)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_technicians_is_available ON technicians(is_available)',
     );
   }
 
