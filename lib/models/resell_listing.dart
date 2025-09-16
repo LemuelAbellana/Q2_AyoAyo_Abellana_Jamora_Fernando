@@ -16,6 +16,7 @@ class ResellListing {
   final double? aiSuggestedPrice;
   final String title;
   final String description;
+  final String? location;
   final List<String> imageUrls;
   final ListingStatus status;
   final DateTime createdAt;
@@ -37,6 +38,7 @@ class ResellListing {
     this.aiSuggestedPrice,
     required this.title,
     required this.description,
+    this.location,
     required this.imageUrls,
     required this.status,
     required this.createdAt,
@@ -66,6 +68,7 @@ class ResellListing {
       aiSuggestedPrice: json['aiSuggestedPrice']?.toDouble(),
       title: json['title'] ?? '',
       description: json['description'] ?? '',
+      location: json['location'],
       imageUrls: List<String>.from(json['imageUrls'] ?? []),
       status: ListingStatus.values.firstWhere(
         (e) => e.toString() == json['status'],
@@ -99,6 +102,7 @@ class ResellListing {
       'aiSuggestedPrice': aiSuggestedPrice,
       'title': title,
       'description': description,
+      'location': location,
       'imageUrls': imageUrls,
       'status': status.toString(),
       'createdAt': createdAt.toIso8601String(),
@@ -132,5 +136,52 @@ class ResellListing {
     if (aiSuggestedPrice == null) return true;
     final difference = priceDifferencePercentage.abs();
     return difference <= 15; // Within 15% of AI suggestion
+  }
+
+  // Copy with method for updating listings
+  ResellListing copyWith({
+    String? id,
+    String? sellerId,
+    DevicePassport? devicePassport,
+    ListingCategory? category,
+    ConditionGrade? condition,
+    double? askingPrice,
+    double? aiSuggestedPrice,
+    String? title,
+    String? description,
+    String? location,
+    List<String>? imageUrls,
+    ListingStatus? status,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    DateTime? soldAt,
+    String? buyerId,
+    Map<String, dynamic>? aiMarketInsights,
+    List<String>? interestedBuyers,
+    bool? isFeatured,
+    Map<String, dynamic>? shippingInfo,
+  }) {
+    return ResellListing(
+      id: id ?? this.id,
+      sellerId: sellerId ?? this.sellerId,
+      devicePassport: devicePassport ?? this.devicePassport,
+      category: category ?? this.category,
+      condition: condition ?? this.condition,
+      askingPrice: askingPrice ?? this.askingPrice,
+      aiSuggestedPrice: aiSuggestedPrice ?? this.aiSuggestedPrice,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      location: location ?? this.location,
+      imageUrls: imageUrls ?? this.imageUrls,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      soldAt: soldAt ?? this.soldAt,
+      buyerId: buyerId ?? this.buyerId,
+      aiMarketInsights: aiMarketInsights ?? this.aiMarketInsights,
+      interestedBuyers: interestedBuyers ?? this.interestedBuyers,
+      isFeatured: isFeatured ?? this.isFeatured,
+      shippingInfo: shippingInfo ?? this.shippingInfo,
+    );
   }
 }

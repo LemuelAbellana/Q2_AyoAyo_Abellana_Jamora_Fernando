@@ -1,61 +1,70 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
   static Database? _database;
+  static SharedPreferences? _prefs;
 
   factory DatabaseService() => _instance;
 
   DatabaseService._internal();
 
-  Future<Database> get database async {
+  Future<dynamic> get database async {
     if (kIsWeb) {
-      // For web, we can't use SQLite directly, so we'll use a mock database
-      // The actual data operations will be handled by SharedPreferences
-      throw UnsupportedError(
-        'SQLite not supported on web. Use web-compatible methods.',
-      );
+      // For web, use SharedPreferences
+      return await _getPrefs();
+    } else {
+      // For mobile, use SQLite
+      if (_database != null) return _database!;
+      _database = await _initDatabase();
+      return _database!;
     }
-    if (_database != null) return _database!;
-    _database = await _initDatabase();
-    return _database!;
+  }
+
+  Future<SharedPreferences> _getPrefs() async {
+    _prefs ??= await SharedPreferences.getInstance();
+    return _prefs!;
   }
 
   Future<Database> _initDatabase() async {
+    // Initialize sqflite for FFI on desktop
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+    }
+
     String path;
 
-    if (kIsWeb) {
-      // For web, use IndexedDB through sqflite_common_ffi_web
-      path = 'ayoayo.db';
-      print('Database path (Web): IndexedDB - $path');
-    } else {
-      // For development/testing, use a local path in project directory
+    // For development/testing, use a local path in project directory
+    try {
+      // Try to use project directory for easier database inspection
+      final currentDir = Directory.current;
+      final dbDir = Directory(join(currentDir.path, 'database'));
+      if (!await dbDir.exists()) {
+        await dbDir.create(recursive: true);
+      }
+      path = join(dbDir.path, 'ayoayo.db');
+      print('Database path (Development): $path');
+    } catch (e) {
+      // Fallback to application documents directory
       try {
-        // Try to use project directory for easier database inspection
-        final currentDir = Directory.current;
-        final dbDir = Directory(join(currentDir.path, 'database'));
-        if (!await dbDir.exists()) {
-          await dbDir.create(recursive: true);
-        }
-        path = join(dbDir.path, 'ayoayo.db');
-        print('Database path (Development): $path');
-      } catch (e) {
-        // Fallback to application documents directory
-        try {
-          Directory documentsDirectory =
-              await getApplicationDocumentsDirectory();
-          path = join(documentsDirectory.path, 'ayoayo.db');
-          print('Database path (Documents): $path');
-        } catch (e2) {
-          // Final fallback
-          path = 'ayoayo.db';
-          print('Database path (Fallback): $path');
-        }
+        Directory documentsDirectory =
+            await getApplicationDocumentsDirectory();
+        path = join(documentsDirectory.path, 'ayoayo.db');
+        print('Database path (Documents): $path');
+      } catch (e2) {
+        // Final fallback
+        path = 'ayoayo.db';
+        print('Database path (Fallback): $path');
       }
     }
 
@@ -65,6 +74,19 @@ class DatabaseService {
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
+  }
+
+  // Web-compatible methods for SharedPreferences
+  Future<List<Map<String, dynamic>>> getWebListings() async {
+    final prefs = await _getPrefs();
+    final listingsJson = prefs.getStringList('resell_listings') ?? [];
+    return listingsJson.map((json) => jsonDecode(json) as Map<String, dynamic>).toList();
+  }
+
+  Future<void> saveWebListings(List<Map<String, dynamic>> listings) async {
+    final prefs = await _getPrefs();
+    final listingsJson = listings.map((listing) => jsonEncode(listing)).toList();
+    await prefs.setStringList('resell_listings', listingsJson);
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -185,28 +207,26 @@ class DatabaseService {
     // 7. Resell listings table
     await db.execute('''
       CREATE TABLE resell_listings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        listing_uuid TEXT UNIQUE NOT NULL,
-        seller_id INTEGER NOT NULL,
-        passport_id INTEGER NOT NULL,
+        id TEXT PRIMARY KEY,
+        seller_id TEXT NOT NULL,
+        device_passport TEXT NOT NULL,
         category TEXT NOT NULL,
         condition TEXT NOT NULL,
-        asking_price DECIMAL(10,2) NOT NULL,
-        ai_suggested_price DECIMAL(10,2),
+        asking_price REAL NOT NULL,
+        ai_suggested_price REAL,
         title TEXT NOT NULL,
-        description TEXT,
-        status TEXT DEFAULT 'draft',
-        is_featured BOOLEAN DEFAULT 0,
+        description TEXT NOT NULL,
+        location TEXT,
+        image_urls TEXT NOT NULL,
+        status TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT,
+        sold_at TEXT,
+        buyer_id TEXT,
         ai_market_insights TEXT,
-        shipping_info TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME,
-        expires_at DATETIME,
-        sold_at DATETIME,
-        buyer_id INTEGER,
-        FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (passport_id) REFERENCES device_passports(id) ON DELETE CASCADE,
-        FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE SET NULL
+        interested_buyers TEXT,
+        is_featured INTEGER DEFAULT 0,
+        shipping_info TEXT
       )
     ''');
 
@@ -358,9 +378,7 @@ class DatabaseService {
     await db.execute(
       'CREATE INDEX idx_technicians_specialization ON technicians(specialization)',
     );
-    await db.execute(
-      'CREATE INDEX idx_technicians_city ON technicians(city)',
-    );
+    await db.execute('CREATE INDEX idx_technicians_city ON technicians(city)');
     await db.execute(
       'CREATE INDEX idx_technicians_province ON technicians(province)',
     );

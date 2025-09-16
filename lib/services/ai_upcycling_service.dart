@@ -170,7 +170,7 @@ Project: ${project.title}
 Description: ${project.description}
 Difficulty: ${project.difficulty.toString().split('.').last}
 Time: ${project.estimatedHours} hours
-Cost: ₦${project.estimatedCost}
+Cost: ₱${project.estimatedCost}
 
 Generate:
 1. Engaging social media post

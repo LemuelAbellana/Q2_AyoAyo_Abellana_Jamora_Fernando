@@ -69,7 +69,7 @@ Focus on:
 Analyze this device's market position for optimal pricing strategy:
 
 Device: ${devicePassport.deviceModel}
-Base Value: ₦${baseValue.toStringAsFixed(2)}
+Base Value: ₱${baseValue.toStringAsFixed(2)}
 Condition: ${condition.toString().split('.').last}
 Market Demand: ${marketAnalysis.marketAnalysis.currentDemand}
 Market Velocity: ${(marketAnalysis.marketAnalysis.marketVelocity * 100).toStringAsFixed(0)}%
@@ -98,7 +98,7 @@ Based on this device listing, identify potential buyer profiles and matching str
 
 Listing: ${listing.title}
 Device: ${listing.devicePassport.deviceModel}
-Price: ₦${listing.askingPrice.toStringAsFixed(2)}
+Price: ₱${listing.askingPrice.toStringAsFixed(2)}
 Condition: ${listing.condition.toString().split('.').last}
 
 Suggest:
@@ -123,7 +123,7 @@ Suggest:
   ) async {
     final prompt =
         '''
-Analyze the competitive landscape for selling a $deviceModel at ₦${askingPrice.toStringAsFixed(2)}:
+Analyze the competitive landscape for selling a $deviceModel at ₱${askingPrice.toStringAsFixed(2)}:
 
 Market Data:
 - Average prices for similar devices
@@ -153,7 +153,7 @@ Provide:
 Generate actionable tips to improve sales for this listing:
 
 Device: ${listing.devicePassport.deviceModel}
-Current Price: ₦${listing.askingPrice.toStringAsFixed(2)}
+Current Price: ₱${listing.askingPrice.toStringAsFixed(2)}
 Condition: ${listing.condition.toString().split('.').last}
 Days Listed: ${listing.daysActive}
 

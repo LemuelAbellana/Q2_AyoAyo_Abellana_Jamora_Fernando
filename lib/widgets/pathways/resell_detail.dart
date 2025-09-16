@@ -130,7 +130,7 @@ class ResellDetail extends StatelessWidget {
             children: [
               const Text("Estimated Value:"),
               Text(
-                "₦${diagnosisResult!.valueEstimation.currentValue.toStringAsFixed(0)}",
+                "₱${diagnosisResult!.valueEstimation.currentValue.toStringAsFixed(0)}",
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -185,7 +185,7 @@ class ResellDetail extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Optimal Price: ₦${strategy.optimalPrice.toStringAsFixed(0)}",
+                      "Optimal Price: ₱${strategy.optimalPrice.toStringAsFixed(0)}",
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     Text(
@@ -307,6 +307,8 @@ class ResellDetail extends StatelessWidget {
 
     // Create a basic device passport from diagnosis result
     return DevicePassport(
+      id: 'device_${DateTime.now().millisecondsSinceEpoch}',
+      userId: 'user_1', // In real app, get from auth
       deviceModel: deviceName,
       manufacturer: manufacturer,
       yearOfRelease: yearOfRelease,

@@ -10,7 +10,8 @@ class DevicePassportFormScreen extends StatefulWidget {
   const DevicePassportFormScreen({super.key});
 
   @override
-  State<DevicePassportFormScreen> createState() => DevicePassportFormScreenState();
+  State<DevicePassportFormScreen> createState() =>
+      DevicePassportFormScreenState();
 }
 
 class DevicePassportFormScreenState extends State<DevicePassportFormScreen> {
@@ -40,15 +41,19 @@ class DevicePassportFormScreenState extends State<DevicePassportFormScreen> {
                       .diagnoseMobileDevice(diagnosis);
 
                   final passport = DevicePassport(
+                    id: 'device_${DateTime.now().millisecondsSinceEpoch}',
+                    userId: 'user_1', // In real app, get from auth
                     deviceModel: deviceModel,
                     manufacturer: manufacturer,
                     yearOfRelease: yearOfRelease,
                     operatingSystem: 'Unknown',
-                    imageUrls: diagnosisResult.imageUrls, // Use imageUrls from DiagnosisResult
+                    imageUrls: diagnosisResult
+                        .imageUrls, // Use imageUrls from DiagnosisResult
                     lastDiagnosis: diagnosisResult,
                   );
 
-                  if (!context.mounted) return; // Check if widget is still mounted
+                  if (!context.mounted)
+                    return; // Check if widget is still mounted
 
                   Navigator.push(
                     context,

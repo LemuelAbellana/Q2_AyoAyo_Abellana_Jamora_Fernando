@@ -324,7 +324,7 @@ class _UpcyclingWorkspaceScreenState extends State<UpcyclingWorkspaceScreen>
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    '₦${project.estimatedCost.toStringAsFixed(0)}',
+                    '₱${project.estimatedCost.toStringAsFixed(0)}',
                     style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
                 ],
@@ -608,7 +608,7 @@ class _UpcyclingWorkspaceScreenState extends State<UpcyclingWorkspaceScreen>
               'Difficulty: ${project.difficulty.toString().split('.').last}',
             ),
             Text('Time: ${project.estimatedHours} hours'),
-            Text('Cost: ₦${project.estimatedCost.toStringAsFixed(0)}'),
+            Text('Cost: ₱${project.estimatedCost.toStringAsFixed(0)}'),
             Text('Status: ${project.status.toString().split('.').last}'),
           ],
         ),

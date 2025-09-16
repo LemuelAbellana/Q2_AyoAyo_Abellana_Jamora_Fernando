@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:ayoayo/models/device_diagnosis.dart';
 
 class DevicePassport {
+  final String id;
+  final String userId;
   final String deviceModel;
   final String manufacturer;
   final int yearOfRelease;
@@ -10,6 +12,8 @@ class DevicePassport {
   final DiagnosisResult lastDiagnosis;
 
   DevicePassport({
+    required this.id,
+    required this.userId,
     required this.deviceModel,
     required this.manufacturer,
     required this.yearOfRelease,
@@ -24,6 +28,8 @@ class DevicePassport {
   // Factory constructor for creating a DevicePassport from a JSON map
   factory DevicePassport.fromJson(Map<String, dynamic> json) {
     return DevicePassport(
+      id: json['id'] ?? '',
+      userId: json['userId'] ?? '',
       deviceModel: json['deviceModel'] ?? '',
       manufacturer: json['manufacturer'] ?? '',
       yearOfRelease: json['yearOfRelease'] ?? 0,
@@ -36,6 +42,8 @@ class DevicePassport {
   // Method for converting a DevicePassport to a JSON map
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
+      'userId': userId,
       'deviceModel': deviceModel,
       'manufacturer': manufacturer,
       'yearOfRelease': yearOfRelease,

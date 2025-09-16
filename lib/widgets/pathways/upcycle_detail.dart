@@ -137,7 +137,7 @@ class UpcycleDetail extends StatelessWidget {
             children: [
               const Text("Potential Value:"),
               Text(
-                "₦${diagnosisResult.valueEstimation.partsValue.toStringAsFixed(0)}",
+                "₱${diagnosisResult.valueEstimation.partsValue.toStringAsFixed(0)}",
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,

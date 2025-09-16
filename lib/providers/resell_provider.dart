@@ -1,12 +1,18 @@
+import 'package:flutter/foundation.dart';
+import 'package:ayoayo/services/resell_listing_dao.dart';
 import 'package:flutter/material.dart';
 import 'package:ayoayo/models/resell_listing.dart';
 import 'package:ayoayo/models/device_passport.dart';
+import 'package:ayoayo/models/device_diagnosis.dart';
 import 'package:ayoayo/services/ai_resell_service.dart';
 
 class ResellProvider extends ChangeNotifier {
   final AIResellService _aiService;
+  final ResellListingDao _resellListingDao;
 
-  ResellProvider(String apiKey) : _aiService = AIResellService(apiKey);
+  ResellProvider(String apiKey)
+    : _aiService = AIResellService(apiKey),
+      _resellListingDao = ResellListingDao();
 
   // State management
   List<ResellListing> _listings = [];
@@ -32,10 +38,14 @@ class ResellProvider extends ChangeNotifier {
   Future<void> loadListings() async {
     _setLoading(true);
     try {
-      // In a real app, this would fetch from a backend API
-      // For now, we'll use mock data
-      await Future.delayed(const Duration(seconds: 1));
-      _listings = _generateMockListings();
+      _listings = await _resellListingDao.getAllListings();
+
+      // If no listings exist on web, create some sample data
+      if (kIsWeb && _listings.isEmpty) {
+        await _createSampleListings();
+        _listings = await _resellListingDao.getAllListings();
+      }
+
       _errorMessage = null;
     } catch (e) {
       _errorMessage = 'Failed to load listings: $e';
@@ -44,13 +54,122 @@ class ResellProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> _createSampleListings() async {
+    try {
+      // Sample device passports
+      final sampleDevices = [
+        DevicePassport(
+          id: 'sample-device-1',
+          userId: 'user-1',
+          deviceModel: 'iPhone 13 Pro',
+          manufacturer: 'Apple',
+          yearOfRelease: 2021,
+          operatingSystem: 'iOS 15',
+          imageUrls: ['https://via.placeholder.com/300x300?text=iPhone+13+Pro'],
+          lastDiagnosis: DiagnosisResult(
+            deviceModel: 'iPhone 13 Pro',
+            deviceHealth: DeviceHealth(
+              batteryHealth: 85,
+              screenCondition: ScreenCondition.excellent,
+              hardwareCondition: HardwareCondition.excellent,
+              identifiedIssues: [],
+            ),
+            valueEstimation: ValueEstimation(
+              currentValue: 25000,
+              postRepairValue: 25000,
+              partsValue: 0,
+              repairCost: 0,
+              recyclingValue: 5000,
+              currency: 'PHP',
+              marketPositioning: 'Good value for money',
+              depreciationRate: '15% per year',
+            ),
+            recommendations: [],
+            aiAnalysis: 'Device is in excellent condition',
+            confidenceScore: 0.95,
+          ),
+        ),
+        DevicePassport(
+          id: 'sample-device-2',
+          userId: 'user-2',
+          deviceModel: 'Samsung Galaxy S22',
+          manufacturer: 'Samsung',
+          yearOfRelease: 2022,
+          operatingSystem: 'Android 12',
+          imageUrls: ['https://via.placeholder.com/300x300?text=Samsung+S22'],
+          lastDiagnosis: DiagnosisResult(
+            deviceModel: 'Samsung Galaxy S22',
+            deviceHealth: DeviceHealth(
+              batteryHealth: 90,
+              screenCondition: ScreenCondition.good,
+              hardwareCondition: HardwareCondition.good,
+              identifiedIssues: [],
+            ),
+            valueEstimation: ValueEstimation(
+              currentValue: 22000,
+              postRepairValue: 22000,
+              partsValue: 0,
+              repairCost: 0,
+              recyclingValue: 4000,
+              currency: 'PHP',
+              marketPositioning: 'Competitive pricing',
+              depreciationRate: '12% per year',
+            ),
+            recommendations: [],
+            aiAnalysis: 'Device is in good condition',
+            confidenceScore: 0.88,
+          ),
+        ),
+      ];
+
+      // Sample listings
+      final sampleListings = [
+        ResellListing(
+          id: 'sample-1',
+          sellerId: 'user-1',
+          devicePassport: sampleDevices[0],
+          category: ListingCategory.smartphone,
+          condition: ConditionGrade.excellent,
+          askingPrice: 25000,
+          aiSuggestedPrice: 23500,
+          title: 'iPhone 13 Pro 256GB - Like New Condition',
+          description:
+              'Barely used iPhone 13 Pro in excellent condition. Comes with original box and all accessories. Battery health at 85%.',
+          location: 'Facebook Marketplace',
+          imageUrls: ['https://via.placeholder.com/300x300?text=iPhone+13+Pro'],
+          status: ListingStatus.active,
+          createdAt: DateTime.now().subtract(const Duration(days: 3)),
+        ),
+        ResellListing(
+          id: 'sample-2',
+          sellerId: 'user-2',
+          devicePassport: sampleDevices[1],
+          category: ListingCategory.smartphone,
+          condition: ConditionGrade.good,
+          askingPrice: 22000,
+          aiSuggestedPrice: 21000,
+          title: 'Samsung Galaxy S22 Ultra - Excellent Condition',
+          description:
+              'Samsung Galaxy S22 Ultra in great condition. Minor scratches on case but screen is perfect. All functions working perfectly.',
+          location: 'SM Ecoland',
+          imageUrls: ['https://via.placeholder.com/300x300?text=Samsung+S22'],
+          status: ListingStatus.active,
+          createdAt: DateTime.now().subtract(const Duration(days: 7)),
+        ),
+      ];
+
+      for (final listing in sampleListings) {
+        await _resellListingDao.createListing(listing);
+      }
+    } catch (e) {
+      print('Error creating sample listings: $e');
+    }
+  }
+
   Future<void> loadUserListings(String userId) async {
     _setLoading(true);
     try {
-      // Filter listings by user ID
-      _userListings = _listings
-          .where((listing) => listing.sellerId == userId)
-          .toList();
+      _userListings = await _resellListingDao.getUserListings(userId);
       _errorMessage = null;
     } catch (e) {
       _errorMessage = 'Failed to load user listings: $e';
@@ -64,21 +183,29 @@ class ResellProvider extends ChangeNotifier {
     required ConditionGrade condition,
     required double askingPrice,
     required String sellerId,
+    required String location,
+    String? customTitle,
+    String? customDescription,
   }) async {
     _setLoading(true);
     try {
-      // Generate AI-powered listing content
-      final listingContent = await _aiService.generateListingContent(
-        devicePassport,
-        condition,
-      );
-
-      // Generate pricing strategy
+      // Generate AI-powered pricing strategy (but use user input for content)
       final pricingStrategy = await _aiService.generatePricingStrategy(
         devicePassport,
         condition,
         askingPrice,
       );
+
+      // Use user-provided title and description, or generate fallback if empty
+      final title = customTitle?.trim().isNotEmpty == true
+          ? customTitle!
+          : '${devicePassport.deviceModel} - ${devicePassport.manufacturer}';
+
+      final description = customDescription?.trim().isNotEmpty == true
+          ? customDescription!
+          : 'Quality device in ${condition.toString().split('.').last} condition. '
+                'Battery health: ${devicePassport.lastDiagnosis.deviceHealth.batteryHealth}%. '
+                'Help reduce e-waste by giving this device a second life!';
 
       // Create new listing
       final listing = ResellListing(
@@ -89,40 +216,19 @@ class ResellProvider extends ChangeNotifier {
         condition: condition,
         askingPrice: askingPrice,
         aiSuggestedPrice: pricingStrategy.optimalPrice,
-        title: listingContent.title,
-        description: listingContent.description,
+        title: title,
+        description: description,
+        location: location,
         imageUrls: devicePassport.imageUrls,
         status: ListingStatus.draft,
         createdAt: DateTime.now(),
       );
 
-      // Add to listings
-      _listings.add(listing);
-      _userListings.add(listing);
+      await _resellListingDao.createListing(listing);
 
-      // Generate market insights
-      final marketInsights = await _aiService.analyzeCompetition(
-        devicePassport.deviceModel,
-        askingPrice,
-      );
-
-      // Update listing with insights
-      final updatedListing = listing.copyWith(
-        aiMarketInsights: {
-          'marketPosition': marketInsights.pricePositioning,
-          'uniqueAdvantages': marketInsights.uniqueAdvantages,
-          'recommendedActions': marketInsights.recommendedActions,
-        },
-      );
-
-      final index = _listings.indexWhere((l) => l.id == listing.id);
-      if (index != -1) {
-        _listings[index] = updatedListing;
-        final userIndex = _userListings.indexWhere((l) => l.id == listing.id);
-        if (userIndex != -1) {
-          _userListings[userIndex] = updatedListing;
-        }
-      }
+      // Refresh listings
+      await loadListings();
+      await loadUserListings(sellerId);
 
       notifyListeners();
       return true;
@@ -138,32 +244,60 @@ class ResellProvider extends ChangeNotifier {
     String listingId,
     ListingStatus status,
   ) async {
+    _setLoading(true);
     try {
+      // Find existing listing
+      final existingListing = _listings.firstWhere(
+        (listing) => listing.id == listingId,
+        orElse: () => _userListings.firstWhere(
+          (listing) => listing.id == listingId,
+          orElse: () => throw Exception('Listing not found'),
+        ),
+      );
+
+      // Create updated listing
+      final updatedListing = existingListing.copyWith(
+        status: status,
+        updatedAt: DateTime.now(),
+        soldAt: status == ListingStatus.sold ? DateTime.now() : null,
+      );
+
+      await _resellListingDao.updateListing(updatedListing);
+
+      // Update local lists
       final index = _listings.indexWhere((listing) => listing.id == listingId);
       if (index != -1) {
-        final updatedListing = _listings[index].copyWith(
-          status: status,
-          updatedAt: DateTime.now(),
-          soldAt: status == ListingStatus.sold ? DateTime.now() : null,
-        );
-
         _listings[index] = updatedListing;
-
-        final userIndex = _userListings.indexWhere(
-          (listing) => listing.id == listingId,
-        );
-        if (userIndex != -1) {
-          _userListings[userIndex] = updatedListing;
-        }
-
-        notifyListeners();
-        return true;
       }
-      return false;
+
+      final userIndex = _userListings.indexWhere(
+        (listing) => listing.id == listingId,
+      );
+      if (userIndex != -1) {
+        _userListings[userIndex] = updatedListing;
+      }
+
+      _errorMessage = null;
+      notifyListeners();
+      return true;
     } catch (e) {
-      _errorMessage = 'Failed to update listing: $e';
+      _errorMessage = 'Failed to update listing status: $e';
       return false;
+    } finally {
+      _setLoading(false);
     }
+  }
+
+  Future<bool> activateListing(String listingId) async {
+    return updateListingStatus(listingId, ListingStatus.active);
+  }
+
+  Future<bool> deactivateListing(String listingId) async {
+    return updateListingStatus(listingId, ListingStatus.draft);
+  }
+
+  Future<bool> markListingAsSold(String listingId) async {
+    return updateListingStatus(listingId, ListingStatus.sold);
   }
 
   Future<List<String>> getSalesTips(String listingId) async {
@@ -239,59 +373,5 @@ class ResellProvider extends ChangeNotifier {
     } else {
       return ListingCategory.other;
     }
-  }
-
-  List<ResellListing> _generateMockListings() {
-    // Generate some mock listings for demonstration
-    return [
-      // Mock listings would be created here
-    ];
-  }
-}
-
-// Extension to copy ResellListing with modifications
-extension ResellListingCopyWith on ResellListing {
-  ResellListing copyWith({
-    String? id,
-    String? sellerId,
-    DevicePassport? devicePassport,
-    ListingCategory? category,
-    ConditionGrade? condition,
-    double? askingPrice,
-    double? aiSuggestedPrice,
-    String? title,
-    String? description,
-    List<String>? imageUrls,
-    ListingStatus? status,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    DateTime? soldAt,
-    String? buyerId,
-    Map<String, dynamic>? aiMarketInsights,
-    List<String>? interestedBuyers,
-    bool? isFeatured,
-    Map<String, dynamic>? shippingInfo,
-  }) {
-    return ResellListing(
-      id: id ?? this.id,
-      sellerId: sellerId ?? this.sellerId,
-      devicePassport: devicePassport ?? this.devicePassport,
-      category: category ?? this.category,
-      condition: condition ?? this.condition,
-      askingPrice: askingPrice ?? this.askingPrice,
-      aiSuggestedPrice: aiSuggestedPrice ?? this.aiSuggestedPrice,
-      title: title ?? this.title,
-      description: description ?? this.description,
-      imageUrls: imageUrls ?? this.imageUrls,
-      status: status ?? this.status,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      soldAt: soldAt ?? this.soldAt,
-      buyerId: buyerId ?? this.buyerId,
-      aiMarketInsights: aiMarketInsights ?? this.aiMarketInsights,
-      interestedBuyers: interestedBuyers ?? this.interestedBuyers,
-      isFeatured: isFeatured ?? this.isFeatured,
-      shippingInfo: shippingInfo ?? this.shippingInfo,
-    );
   }
 }
