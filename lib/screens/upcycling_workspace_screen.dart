@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import '../models/upcycling_project.dart';
+import '../models/device_passport.dart';
+import '../models/device_diagnosis.dart';
 import '../providers/upcycling_provider.dart';
+import '../providers/diagnosis_provider.dart';
+import '../services/ai_upcycling_service.dart';
 
 class UpcyclingWorkspaceScreen extends StatefulWidget {
   const UpcyclingWorkspaceScreen({super.key});
@@ -576,18 +580,43 @@ class _UpcyclingWorkspaceScreenState extends State<UpcyclingWorkspaceScreen>
   }
 
   void _showCreateProjectDialog(BuildContext context) {
-    // Implementation for creating new project with AI
+    final diagnosisProvider = Provider.of<DiagnosisProvider>(context, listen: false);
+    final upcyclingProvider = Provider.of<UpcyclingProvider>(context, listen: false);
+
+    // Check if we have diagnosis data
+    if (diagnosisProvider.currentResult == null) {
+      _showNoDiagnosisDialog(context);
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => _AIProjectGeneratorDialog(
+        diagnosisResult: diagnosisProvider.currentResult!,
+        upcyclingProvider: upcyclingProvider,
+      ),
+    );
+  }
+
+  void _showNoDiagnosisDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('AI Project Generator'),
+        title: const Text('No Device Diagnosis'),
         content: const Text(
-          'AI-powered project idea generation will be implemented here.',
+          'You need to diagnose a device first before generating upcycling ideas. Please go to the home screen and diagnose your device.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+            child: const Text('OK'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.pushReplacementNamed(context, '/main');
+            },
+            child: const Text('Go to Home'),
           ),
         ],
       ),
@@ -725,5 +754,306 @@ class _UpcyclingWorkspaceScreenState extends State<UpcyclingWorkspaceScreen>
         ),
       ),
     );
+  }
+}
+
+class _AIProjectGeneratorDialog extends StatefulWidget {
+  final DiagnosisResult diagnosisResult;
+  final UpcyclingProvider upcyclingProvider;
+
+  const _AIProjectGeneratorDialog({
+    required this.diagnosisResult,
+    required this.upcyclingProvider,
+  });
+
+  @override
+  State<_AIProjectGeneratorDialog> createState() => _AIProjectGeneratorDialogState();
+}
+
+class _AIProjectGeneratorDialogState extends State<_AIProjectGeneratorDialog> {
+  List<ProjectIdea> _ideas = [];
+  bool _isGenerating = false;
+  bool _isCreatingProject = false;
+  String? _error;
+  ProjectIdea? _selectedIdea;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('AI Project Generator'),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: 400,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Device summary
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Device: ${widget.diagnosisResult.deviceModel}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Screen: ${widget.diagnosisResult.deviceHealth.screenCondition.name}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  Text(
+                    'Battery: ${widget.diagnosisResult.deviceHealth.batteryHealth.toStringAsFixed(0)}%',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  Text(
+                    'Hardware: ${widget.diagnosisResult.deviceHealth.hardwareCondition.name}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            if (_error != null) ...[
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  _error!,
+                  style: TextStyle(color: Colors.red[700], fontSize: 12),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            if (_isGenerating) ...[
+              const Center(
+                child: Column(
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Generating creative ideas...'),
+                  ],
+                ),
+              ),
+            ] else if (_ideas.isEmpty) ...[
+              const Center(
+                child: Column(
+                  children: [
+                    Icon(LucideIcons.wand, size: 48, color: Colors.grey),
+                    SizedBox(height: 16),
+                    Text(
+                      'Generate personalized upcycling ideas\nbased on your device diagnosis',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              const Text(
+                'Generated Ideas:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _ideas.length,
+                  itemBuilder: (context, index) {
+                    final idea = _ideas[index];
+                    final isSelected = _selectedIdea == idea;
+                    return Card(
+                      color: isSelected ? Colors.blue[50] : null,
+                      child: ListTile(
+                        title: Text(
+                          idea.title,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              idea.description,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 12),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Chip(
+                                  label: Text(
+                                    idea.difficulty.name,
+                                    style: const TextStyle(fontSize: 10),
+                                  ),
+                                  backgroundColor: _getDifficultyColor(idea.difficulty),
+                                  labelStyle: const TextStyle(color: Colors.white),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '₱${idea.estimatedCost.toStringAsFixed(0)}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Materials: ${idea.materials.take(3).join(", ")}${idea.materials.length > 3 ? "..." : ""}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[500],
+                                fontStyle: FontStyle.italic,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                        onTap: () {
+                          setState(() {
+                            _selectedIdea = isSelected ? null : idea;
+                          });
+                        },
+                        trailing: isSelected
+                            ? Icon(Icons.check_circle, color: Colors.blue)
+                            : null,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        if (_ideas.isEmpty && !_isGenerating)
+          ElevatedButton(
+            onPressed: _generateIdeas,
+            child: const Text('Generate Ideas'),
+          ),
+        if (_selectedIdea != null && !_isCreatingProject)
+          ElevatedButton(
+            onPressed: _createProject,
+            child: const Text('Create Project'),
+          ),
+        if (_isCreatingProject)
+          const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _generateIdeas() async {
+    setState(() {
+      _isGenerating = true;
+      _error = null;
+    });
+
+    try {
+      // Create a temporary DevicePassport from diagnosis data
+      final devicePassport = DevicePassport(
+        id: 'temp',
+        userId: 'current_user',
+        deviceModel: widget.diagnosisResult.deviceModel,
+        manufacturer: 'Unknown', // Would be better to get this from diagnosis
+        yearOfRelease: DateTime.now().year - 2, // Estimate
+        operatingSystem: 'Android', // Default assumption
+        imageUrls: widget.diagnosisResult.imageUrls,
+        lastDiagnosis: widget.diagnosisResult,
+      );
+
+      final ideas = await widget.upcyclingProvider.generateProjectIdeas(devicePassport);
+
+      setState(() {
+        _ideas = ideas;
+        _isGenerating = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to generate ideas: $e';
+        _isGenerating = false;
+      });
+    }
+  }
+
+  Future<void> _createProject() async {
+    if (_selectedIdea == null) return;
+
+    setState(() {
+      _isCreatingProject = true;
+    });
+
+    try {
+      final devicePassport = DevicePassport(
+        id: 'temp',
+        userId: 'current_user',
+        deviceModel: widget.diagnosisResult.deviceModel,
+        manufacturer: 'Unknown',
+        yearOfRelease: DateTime.now().year - 2,
+        operatingSystem: 'Android',
+        imageUrls: widget.diagnosisResult.imageUrls,
+        lastDiagnosis: widget.diagnosisResult,
+      );
+
+      final project = await widget.upcyclingProvider.createProject(
+        devicePassport: devicePassport,
+        projectIdea: _selectedIdea!.title,
+        difficulty: _selectedIdea!.difficulty,
+        creatorId: 'current_user',
+      );
+
+      if (project != null && mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Project "${project.title}" created successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to create project: $e';
+        _isCreatingProject = false;
+      });
+    }
+  }
+
+  Color _getDifficultyColor(DifficultyLevel difficulty) {
+    switch (difficulty) {
+      case DifficultyLevel.beginner:
+        return Colors.green;
+      case DifficultyLevel.intermediate:
+        return Colors.orange;
+      case DifficultyLevel.advanced:
+        return Colors.red;
+      case DifficultyLevel.expert:
+        return Colors.purple;
+    }
   }
 }

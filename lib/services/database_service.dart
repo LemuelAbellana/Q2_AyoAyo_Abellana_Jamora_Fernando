@@ -409,11 +409,143 @@ class DatabaseService {
   Future<bool> isDatabaseReady() async {
     try {
       final db = await database;
-      final result = await db.rawQuery('SELECT 1');
-      return result.isNotEmpty;
+      if (kIsWeb) {
+        // Web uses SharedPreferences
+        return true;
+      } else {
+        final result = await db.rawQuery('SELECT 1');
+        return result.isNotEmpty;
+      }
     } catch (e) {
       return false;
     }
+  }
+
+  // Upcycling projects methods
+  Future<int> saveUpcyclingProject(Map<String, dynamic> project) async {
+    if (kIsWeb) {
+      return await _saveUpcyclingProjectWeb(project);
+    } else {
+      return await _saveUpcyclingProjectSQLite(project);
+    }
+  }
+
+  Future<int> _saveUpcyclingProjectWeb(Map<String, dynamic> project) async {
+    final prefs = await _getPrefs();
+    final projects = await getUpcyclingProjects();
+
+    // Generate ID for new project
+    final newId = DateTime.now().millisecondsSinceEpoch;
+    project['id'] = newId;
+
+    projects.add(project);
+    final projectsJson = projects.map((p) => jsonEncode(p)).toList();
+    await prefs.setStringList('upcycling_projects', projectsJson);
+
+    return newId;
+  }
+
+  Future<int> _saveUpcyclingProjectSQLite(Map<String, dynamic> project) async {
+    final db = await database as Database;
+
+    return await db.insert(
+      'upcycling_projects',
+      {
+        'project_uuid': project['project_uuid'] ?? '',
+        'creator_id': project['creator_id'] ?? 1,
+        'device_passport_id': project['device_passport_id'] ?? 1,
+        'title': project['title'] ?? '',
+        'description': project['description'] ?? '',
+        'difficulty_level': project['difficulty_level'] ?? 'beginner',
+        'category': project['category'] ?? 'other',
+        'status': project['status'] ?? 'planning',
+        'materials_needed': jsonEncode(project['materials_needed'] ?? []),
+        'tools_required': jsonEncode(project['tools_required'] ?? []),
+        'estimated_hours': project['estimated_hours'] ?? 0,
+        'estimated_cost': project['estimated_cost'] ?? 0,
+        'tags': jsonEncode(project['tags'] ?? []),
+        'ai_insights': jsonEncode(project['ai_insights'] ?? {}),
+        'environmental_impact': project['environmental_impact'] ?? 0.0,
+        'is_public': project['is_public'] == true ? 1 : 0,
+        'likes_count': project['likes_count'] ?? 0,
+        'views_count': project['views_count'] ?? 0,
+        'created_at': project['created_at'] ?? DateTime.now().toIso8601String(),
+        'updated_at': project['updated_at'] ?? DateTime.now().toIso8601String(),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getUpcyclingProjects({String? creatorId}) async {
+    if (kIsWeb) {
+      return await _getUpcyclingProjectsWeb(creatorId: creatorId);
+    } else {
+      return await _getUpcyclingProjectsSQLite(creatorId: creatorId);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _getUpcyclingProjectsWeb({String? creatorId}) async {
+    final prefs = await _getPrefs();
+    final projectsJson = prefs.getStringList('upcycling_projects') ?? [];
+    final projects = projectsJson.map((json) => jsonDecode(json) as Map<String, dynamic>).toList();
+
+    if (creatorId != null) {
+      return projects.where((p) => p['creator_id']?.toString() == creatorId).toList();
+    }
+
+    return projects;
+  }
+
+  Future<List<Map<String, dynamic>>> _getUpcyclingProjectsSQLite({String? creatorId}) async {
+    final db = await database as Database;
+
+    String query = 'SELECT * FROM upcycling_projects';
+    List<dynamic> args = [];
+
+    if (creatorId != null) {
+      query += ' WHERE creator_id = ?';
+      args.add(creatorId);
+    }
+
+    query += ' ORDER BY created_at DESC';
+
+    return await db.rawQuery(query, args);
+  }
+
+  Future<void> updateUpcyclingProjectStatus(String projectId, String status) async {
+    if (kIsWeb) {
+      await _updateUpcyclingProjectStatusWeb(projectId, status);
+    } else {
+      await _updateUpcyclingProjectStatusSQLite(projectId, status);
+    }
+  }
+
+  Future<void> _updateUpcyclingProjectStatusWeb(String projectId, String status) async {
+    final projects = await getUpcyclingProjects();
+    final index = projects.indexWhere((p) => p['id'].toString() == projectId);
+
+    if (index != -1) {
+      projects[index]['status'] = status;
+      projects[index]['updated_at'] = DateTime.now().toIso8601String();
+
+      final prefs = await _getPrefs();
+      final projectsJson = projects.map((p) => jsonEncode(p)).toList();
+      await prefs.setStringList('upcycling_projects', projectsJson);
+    }
+  }
+
+  Future<void> _updateUpcyclingProjectStatusSQLite(String projectId, String status) async {
+    final db = await database as Database;
+
+    await db.update(
+      'upcycling_projects',
+      {
+        'status': status,
+        'updated_at': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ? OR project_uuid = ?',
+      whereArgs: [projectId, projectId],
+    );
   }
 
   // Get database path for debugging

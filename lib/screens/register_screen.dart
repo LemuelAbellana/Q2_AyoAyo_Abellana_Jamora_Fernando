@@ -181,39 +181,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  Future<void> _handleGitHubSignIn() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final user = await UserService.handleOAuthSignIn('github');
-
-      if (user != null && mounted) {
-        // Successful OAuth registration/login
-        Navigator.pushReplacementNamed(context, '/main');
-      } else {
-        if (mounted) {
-          setState(() {
-            _errorMessage = 'GitHub sign-in failed. Please try again.';
-          });
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'GitHub sign-in error: ${e.toString()}';
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
 
   bool _validateRegistrationForm() {
     if (_nameController.text.isEmpty) {
@@ -553,100 +520,50 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                         const SizedBox(height: 24),
 
-                        // OAuth Buttons Row
-                        Row(
-                          children: [
-                            // Google Sign-In Button
-                            Expanded(
-                              child: Container(
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: AppTheme.textSecondary.withOpacity(
-                                      0.3,
-                                    ),
-                                    width: 1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: TextButton.icon(
-                                  onPressed: _handleGoogleSignIn,
-                                  icon: Container(
-                                    width: 20,
-                                    height: 20,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(3),
-                                    ),
-                                    child: const Center(
-                                      child: Text(
-                                        'G',
-                                        style: TextStyle(
-                                          color: Color(
-                                            0xFF4285F4,
-                                          ), // Google Blue
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  label: const Text(
-                                    'Google',
-                                    style: TextStyle(
-                                      color: AppTheme.textPrimary,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  style: TextButton.styleFrom(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
+                        // Google Sign-In Button
+                        Container(
+                          height: 50,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: AppTheme.textSecondary.withOpacity(0.3),
+                              width: 1,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: TextButton.icon(
+                            onPressed: _handleGoogleSignIn,
+                            icon: Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  'G',
+                                  style: TextStyle(
+                                    color: Color(0xFF4285F4), // Google Blue
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ),
                             ),
-
-                            const SizedBox(width: 12),
-
-                            // GitHub Sign-In Button
-                            Expanded(
-                              child: Container(
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: AppTheme.textSecondary.withOpacity(
-                                      0.3,
-                                    ),
-                                    width: 1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: TextButton.icon(
-                                  onPressed: _handleGitHubSignIn,
-                                  icon: const Icon(
-                                    Icons.code,
-                                    color: Colors.black,
-                                    size: 20,
-                                  ),
-                                  label: const Text(
-                                    'GitHub',
-                                    style: TextStyle(
-                                      color: AppTheme.textPrimary,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  style: TextButton.styleFrom(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                ),
+                            label: const Text(
+                              'Sign up with Google',
+                              style: TextStyle(
+                                color: AppTheme.textPrimary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                          ],
+                            style: TextButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
                         ),
 
                         const SizedBox(height: 24),

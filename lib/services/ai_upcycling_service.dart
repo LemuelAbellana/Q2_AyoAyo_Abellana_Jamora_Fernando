@@ -210,11 +210,12 @@ Generate:
               ProjectIdea(
                 title: title,
                 description: section,
-                difficulty: DifficultyLevel.intermediate,
-                estimatedTime: '4-8 hours',
-                estimatedCost: 2000 + (ideas.length * 1000),
-                requiredSkills: ['Basic electronics', 'Crafting'],
+                difficulty: _determineDifficultyFromTitle(title),
+                estimatedTime: _estimateTimeFromTitle(title),
+                estimatedCost: _estimateCostFromTitle(title) + (ideas.length * 500),
+                requiredSkills: _getRequiredSkillsFromTitle(title),
                 environmentalImpact: 'High - repurposes electronic waste',
+                materials: _getMaterialsFromTitle(title, device),
               ),
             );
           }
@@ -228,6 +229,116 @@ Generate:
     }
 
     return ideas.take(6).toList(); // Limit to 6 ideas
+  }
+
+  DifficultyLevel _determineDifficultyFromTitle(String title) {
+    final lowerTitle = title.toLowerCase();
+    if (lowerTitle.contains('mirror') || lowerTitle.contains('hub') || lowerTitle.contains('emulator')) {
+      return DifficultyLevel.advanced;
+    } else if (lowerTitle.contains('speaker') || lowerTitle.contains('charger') || lowerTitle.contains('camera')) {
+      return DifficultyLevel.intermediate;
+    } else {
+      return DifficultyLevel.beginner;
+    }
+  }
+
+  String _estimateTimeFromTitle(String title) {
+    final lowerTitle = title.toLowerCase();
+    if (lowerTitle.contains('mirror') || lowerTitle.contains('hub')) {
+      return '8-12 hours';
+    } else if (lowerTitle.contains('speaker') || lowerTitle.contains('charger')) {
+      return '4-6 hours';
+    } else {
+      return '2-4 hours';
+    }
+  }
+
+  double _estimateCostFromTitle(String title) {
+    final lowerTitle = title.toLowerCase();
+    if (lowerTitle.contains('mirror') || lowerTitle.contains('hub')) {
+      return 4000;
+    } else if (lowerTitle.contains('speaker') || lowerTitle.contains('charger')) {
+      return 2500;
+    } else {
+      return 1500;
+    }
+  }
+
+  List<String> _getRequiredSkillsFromTitle(String title) {
+    final lowerTitle = title.toLowerCase();
+    final skills = <String>['Basic electronics'];
+
+    if (lowerTitle.contains('speaker') || lowerTitle.contains('charger')) {
+      skills.addAll(['Soldering', 'Circuit design']);
+    }
+    if (lowerTitle.contains('frame') || lowerTitle.contains('mirror')) {
+      skills.addAll(['Woodworking', 'Assembly']);
+    }
+    if (lowerTitle.contains('hub') || lowerTitle.contains('emulator')) {
+      skills.addAll(['Programming', 'Advanced electronics']);
+    }
+
+    return skills;
+  }
+
+  List<String> _getMaterialsFromTitle(String title, DevicePassport device) {
+    final lowerTitle = title.toLowerCase();
+    final materials = <String>[];
+
+    // Base materials from device
+    materials.addAll([
+      'Device components (${device.deviceModel})',
+      'Screwdriver set',
+      'Wire strippers',
+    ]);
+
+    // Project-specific materials
+    if (lowerTitle.contains('frame')) {
+      materials.addAll([
+        'Wood frame (12x8 inches)',
+        'Picture frame glass',
+        'LED backlight strip',
+        'Power adapter (5V)',
+      ]);
+    } else if (lowerTitle.contains('speaker')) {
+      materials.addAll([
+        'Bluetooth audio module',
+        'Wooden enclosure',
+        'Fabric grille cloth',
+        'Rubber feet pads',
+      ]);
+    } else if (lowerTitle.contains('charger') || lowerTitle.contains('power bank')) {
+      materials.addAll([
+        'USB output module',
+        'Charging circuit board',
+        'Protective case',
+        'LED indicator lights',
+      ]);
+    } else if (lowerTitle.contains('camera')) {
+      materials.addAll([
+        'WiFi module',
+        'Motion sensor',
+        'Mounting bracket',
+        'Weatherproof housing',
+      ]);
+    } else if (lowerTitle.contains('mirror')) {
+      materials.addAll([
+        'Two-way mirror (24x16 inches)',
+        'Wooden frame',
+        'Raspberry Pi or similar',
+        'HDMI cable',
+        'Touch sensor (optional)',
+      ]);
+    } else if (lowerTitle.contains('hub')) {
+      materials.addAll([
+        'Smart home controller',
+        'WiFi antenna',
+        'Ventilation fan',
+        'Status LED matrix',
+      ]);
+    }
+
+    return materials;
   }
 
   UpcyclingProject _parseDetailedProject(
@@ -383,6 +494,15 @@ Generate:
         estimatedCost: 2500,
         requiredSkills: ['Basic electronics', 'Woodworking'],
         environmentalImpact: 'High - reuses display technology',
+        materials: [
+          'Device components (${device.deviceModel})',
+          'Wood frame (12x8 inches)',
+          'Picture frame glass',
+          'LED backlight strip',
+          'Power adapter (5V)',
+          'Screwdriver set',
+          'Wire strippers',
+        ],
       ),
       ProjectIdea(
         title: 'Portable Phone Charger Bank',
@@ -392,6 +512,15 @@ Generate:
         estimatedCost: 1500,
         requiredSkills: ['Electronics soldering', 'Circuit design'],
         environmentalImpact: 'Medium - reuses battery technology',
+        materials: [
+          'Device components (${device.deviceModel})',
+          'USB output module',
+          'Charging circuit board',
+          'Protective case',
+          'LED indicator lights',
+          'Screwdriver set',
+          'Soldering iron',
+        ],
       ),
       ProjectIdea(
         title: 'Bluetooth Speaker from Phone Components',
@@ -401,6 +530,15 @@ Generate:
         estimatedCost: 3000,
         requiredSkills: ['Electronics', 'Enclosure design'],
         environmentalImpact: 'High - reuses audio technology',
+        materials: [
+          'Device components (${device.deviceModel})',
+          'Bluetooth audio module',
+          'Wooden enclosure',
+          'Fabric grille cloth',
+          'Rubber feet pads',
+          'Screwdriver set',
+          'Drill',
+        ],
       ),
       ProjectIdea(
         title: 'Digital Photo Frame',
@@ -410,6 +548,13 @@ Generate:
         estimatedCost: 1000,
         requiredSkills: ['Basic assembly', 'Software setup'],
         environmentalImpact: 'High - extends device lifespan',
+        materials: [
+          'Device components (${device.deviceModel})',
+          'Simple frame stand',
+          'Power cable',
+          'SD card (optional)',
+          'Screwdriver set',
+        ],
       ),
       ProjectIdea(
         title: 'Smart Mirror with Touch Interface',
@@ -419,6 +564,16 @@ Generate:
         estimatedCost: 4000,
         requiredSkills: ['Electronics', 'Programming', 'Mirror construction'],
         environmentalImpact: 'Very High - innovative reuse',
+        materials: [
+          'Device components (${device.deviceModel})',
+          'Two-way mirror (24x16 inches)',
+          'Wooden frame',
+          'Raspberry Pi or similar',
+          'HDMI cable',
+          'Touch sensor (optional)',
+          'Screwdriver set',
+          'Programming tools',
+        ],
       ),
     ];
   }
@@ -582,6 +737,7 @@ class ProjectIdea {
   final double estimatedCost;
   final List<String> requiredSkills;
   final String environmentalImpact;
+  final List<String> materials;
 
   ProjectIdea({
     required this.title,
@@ -591,6 +747,7 @@ class ProjectIdea {
     required this.estimatedCost,
     required this.requiredSkills,
     required this.environmentalImpact,
+    this.materials = const [],
   });
 }
 

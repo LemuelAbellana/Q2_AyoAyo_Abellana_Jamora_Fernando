@@ -1,10 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:ayoayo/models/upcycling_project.dart';
 import 'package:ayoayo/models/device_passport.dart';
+import 'package:ayoayo/models/device_diagnosis.dart';
 import 'package:ayoayo/services/ai_upcycling_service.dart';
+import 'package:ayoayo/services/database_service.dart';
 
 class UpcyclingProvider extends ChangeNotifier {
   final AIUpcyclingService _aiService;
+  final DatabaseService _dbService = DatabaseService();
 
   UpcyclingProvider(String apiKey) : _aiService = AIUpcyclingService(apiKey);
 
@@ -38,12 +42,12 @@ class UpcyclingProvider extends ChangeNotifier {
   Future<void> loadProjects() async {
     _setLoading(true);
     try {
-      // In a real app, this would fetch from a backend API
-      await Future.delayed(const Duration(seconds: 1));
-      _projects = _generateMockProjects();
+      final projectsData = await _dbService.getUpcyclingProjects();
+      _projects = projectsData.map((data) => _upcyclingProjectFromMap(data)).toList();
       _errorMessage = null;
     } catch (e) {
       _errorMessage = 'Failed to load projects: $e';
+      _projects = _generateMockProjects();
     } finally {
       _setLoading(false);
     }
@@ -52,9 +56,8 @@ class UpcyclingProvider extends ChangeNotifier {
   Future<void> loadUserProjects(String userId) async {
     _setLoading(true);
     try {
-      _userProjects = _projects
-          .where((project) => project.creatorId == userId)
-          .toList();
+      final projectsData = await _dbService.getUpcyclingProjects(creatorId: userId);
+      _userProjects = projectsData.map((data) => _upcyclingProjectFromMap(data)).toList();
       _errorMessage = null;
     } catch (e) {
       _errorMessage = 'Failed to load user projects: $e';
@@ -118,6 +121,10 @@ class UpcyclingProvider extends ChangeNotifier {
         likesCount: 0,
         viewsCount: 0,
       );
+
+      // Save to database
+      final projectData = _upcyclingProjectToMap(newProject);
+      await _dbService.saveUpcyclingProject(projectData);
 
       _projects.add(newProject);
       _userProjects.add(newProject);
@@ -362,6 +369,150 @@ class UpcyclingProvider extends ChangeNotifier {
     return [
       // Mock projects would be created here
     ];
+  }
+
+  // Helper methods for database conversion
+  Map<String, dynamic> _upcyclingProjectToMap(UpcyclingProject project) {
+    return {
+      'project_uuid': project.id,
+      'creator_id': project.creatorId,
+      'device_passport_id': 1, // Default for now
+      'title': project.title,
+      'description': project.description,
+      'difficulty_level': project.difficulty.name,
+      'category': project.category.name,
+      'status': project.status.name,
+      'materials_needed': project.materialsNeeded,
+      'tools_required': project.toolsRequired,
+      'estimated_hours': project.estimatedHours,
+      'estimated_cost': project.estimatedCost,
+      'tags': project.tags,
+      'ai_insights': project.aiInsights ?? {},
+      'environmental_impact': project.environmentalImpact ?? 0.0,
+      'is_public': project.isPublic,
+      'likes_count': project.likesCount ?? 0,
+      'views_count': project.viewsCount ?? 0,
+      'created_at': project.createdAt.toIso8601String(),
+      'updated_at': project.updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+    };
+  }
+
+  UpcyclingProject _upcyclingProjectFromMap(Map<String, dynamic> data) {
+    return UpcyclingProject(
+      id: data['project_uuid'] ?? data['id']?.toString() ?? '',
+      creatorId: data['creator_id']?.toString() ?? '',
+      sourceDevice: DevicePassport(
+        id: 'temp',
+        userId: data['creator_id']?.toString() ?? '',
+        deviceModel: 'Unknown Device',
+        manufacturer: 'Unknown',
+        yearOfRelease: DateTime.now().year,
+        operatingSystem: 'Android',
+        imageUrls: [],
+        lastDiagnosis: DiagnosisResult(
+          deviceModel: 'Unknown Device',
+          deviceHealth: DeviceHealth(
+            batteryHealth: 0.5,
+            screenCondition: ScreenCondition.unknown,
+            hardwareCondition: HardwareCondition.unknown,
+            identifiedIssues: [],
+          ),
+          valueEstimation: ValueEstimation(
+            currentValue: 0,
+            postRepairValue: 0,
+            partsValue: 0,
+            repairCost: 0,
+          ),
+          recommendations: [],
+          aiAnalysis: '',
+          confidenceScore: 0.0,
+        ),
+      ),
+      category: _parseProjectCategory(data['category'] ?? 'other'),
+      difficulty: _parseDifficultyLevel(data['difficulty_level'] ?? 'beginner'),
+      title: data['title'] ?? '',
+      description: data['description'] ?? '',
+      aiGeneratedDescription: data['ai_generated_description'] ?? '',
+      imageUrls: data['image_urls'] != null ? List<String>.from(data['image_urls']) : [],
+      materialsNeeded: data['materials_needed'] != null
+          ? (data['materials_needed'] is String
+              ? List<String>.from(json.decode(data['materials_needed']))
+              : List<String>.from(data['materials_needed']))
+          : [],
+      toolsRequired: data['tools_required'] != null
+          ? (data['tools_required'] is String
+              ? List<String>.from(json.decode(data['tools_required']))
+              : List<String>.from(data['tools_required']))
+          : [],
+      steps: [], // Would need to load steps separately
+      status: _parseProjectStatus(data['status'] ?? 'planning'),
+      createdAt: DateTime.tryParse(data['created_at'] ?? '') ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(data['updated_at'] ?? ''),
+      estimatedHours: data['estimated_hours'] ?? 0,
+      estimatedCost: (data['estimated_cost'] ?? 0).toDouble(),
+      tags: data['tags'] != null
+          ? (data['tags'] is String
+              ? List<String>.from(json.decode(data['tags']))
+              : List<String>.from(data['tags']))
+          : [],
+      aiInsights: data['ai_insights'] != null
+          ? (data['ai_insights'] is String
+              ? Map<String, dynamic>.from(json.decode(data['ai_insights']))
+              : Map<String, dynamic>.from(data['ai_insights']))
+          : {},
+      environmentalImpact: (data['environmental_impact'] ?? 0.0).toDouble(),
+      isPublic: data['is_public'] == 1 || data['is_public'] == true,
+      likesCount: data['likes_count'] ?? 0,
+      viewsCount: data['views_count'] ?? 0,
+    );
+  }
+
+  ProjectCategory _parseProjectCategory(String category) {
+    switch (category.toLowerCase()) {
+      case 'functional':
+        return ProjectCategory.functional;
+      case 'decor':
+        return ProjectCategory.decor;
+      case 'wearable':
+        return ProjectCategory.wearable;
+      case 'tech':
+        return ProjectCategory.tech;
+      case 'art':
+        return ProjectCategory.art;
+      default:
+        return ProjectCategory.other;
+    }
+  }
+
+  DifficultyLevel _parseDifficultyLevel(String difficulty) {
+    switch (difficulty.toLowerCase()) {
+      case 'beginner':
+        return DifficultyLevel.beginner;
+      case 'intermediate':
+        return DifficultyLevel.intermediate;
+      case 'advanced':
+        return DifficultyLevel.advanced;
+      case 'expert':
+        return DifficultyLevel.expert;
+      default:
+        return DifficultyLevel.beginner;
+    }
+  }
+
+  ProjectStatus _parseProjectStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'planning':
+        return ProjectStatus.planning;
+      case 'inprogress':
+      case 'in_progress':
+        return ProjectStatus.inProgress;
+      case 'completed':
+        return ProjectStatus.completed;
+      case 'paused':
+        return ProjectStatus.paused;
+      default:
+        return ProjectStatus.planning;
+    }
   }
 }
 
