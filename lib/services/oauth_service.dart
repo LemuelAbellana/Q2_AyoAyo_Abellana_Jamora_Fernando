@@ -168,7 +168,7 @@ class OAuthService {
           print('Alternatively, the app will continue with basic user info.');
         }
 
-        throw authError;
+        rethrow;
       }
 
       if (firebaseUser != null) {

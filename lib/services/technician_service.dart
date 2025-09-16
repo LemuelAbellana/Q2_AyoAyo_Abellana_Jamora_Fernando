@@ -118,21 +118,21 @@ class TechnicianService {
         // Apply filters to mock data
         if (specialization != null && specialization.isNotEmpty) {
           mockTechnicians = mockTechnicians.where((tech) =>
-              tech.specialization.toLowerCase().contains(specialization!.toLowerCase())).toList();
+              tech.specialization.toLowerCase().contains(specialization.toLowerCase())).toList();
         }
 
         if (location != null && location.isNotEmpty) {
           mockTechnicians = mockTechnicians.where((tech) =>
-              tech.city.toLowerCase().contains(location!.toLowerCase()) ||
-              tech.province.toLowerCase().contains(location!.toLowerCase())).toList();
+              tech.city.toLowerCase().contains(location.toLowerCase()) ||
+              tech.province.toLowerCase().contains(location.toLowerCase())).toList();
         }
 
         if (minRating != null && minRating > 0) {
-          mockTechnicians = mockTechnicians.where((tech) => tech.rating >= minRating!).toList();
+          mockTechnicians = mockTechnicians.where((tech) => tech.rating >= minRating).toList();
         }
 
         if (minExperience != null && minExperience > 0) {
-          mockTechnicians = mockTechnicians.where((tech) => tech.experienceYears >= minExperience!).toList();
+          mockTechnicians = mockTechnicians.where((tech) => tech.experienceYears >= minExperience).toList();
         }
 
         if (onlyVetted == true) {

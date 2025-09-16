@@ -16,7 +16,6 @@ import 'services/oauth_service.dart';
 
 // Import sqflite for mobile platforms only
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:flutter/foundation.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

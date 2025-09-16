@@ -63,7 +63,7 @@ class UserService {
               );
               oauthUserData = await OAuthService.signInWithGoogleBasic();
             } else {
-              throw googleError;
+              rethrow;
             }
           }
           break;

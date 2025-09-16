@@ -1,5 +1,4 @@
 import 'package:ayoayo/services/technician_service.dart';
-import 'package:flutter/foundation.dart';
 
 void main() async {
   print('🧪 Testing Technician Service...');

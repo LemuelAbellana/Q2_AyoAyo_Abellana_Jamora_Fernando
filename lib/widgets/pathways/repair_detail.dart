@@ -1,5 +1,4 @@
 import 'package:ayoayo/screens/technician_chatbot_screen.dart';
-import 'package:ayoayo/screens/technician_finder_screen.dart';
 import 'package:ayoayo/models/technician.dart';
 import 'package:ayoayo/services/technician_service.dart';
 import 'package:flutter/material.dart';

@@ -15,8 +15,9 @@ class UserDao {
   }
 
   Future<SharedPreferences> get _prefs async {
-    if (!kIsWeb)
+    if (!kIsWeb) {
       throw UnsupportedError('SharedPreferences only available on web');
+    }
     return await SharedPreferences.getInstance();
   }
 
