@@ -7,7 +7,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -57,8 +56,7 @@ class DatabaseService {
     } catch (e) {
       // Fallback to application documents directory
       try {
-        Directory documentsDirectory =
-            await getApplicationDocumentsDirectory();
+        Directory documentsDirectory = await getApplicationDocumentsDirectory();
         path = join(documentsDirectory.path, 'ayoayo.db');
         print('Database path (Documents): $path');
       } catch (e2) {
@@ -80,12 +78,16 @@ class DatabaseService {
   Future<List<Map<String, dynamic>>> getWebListings() async {
     final prefs = await _getPrefs();
     final listingsJson = prefs.getStringList('resell_listings') ?? [];
-    return listingsJson.map((json) => jsonDecode(json) as Map<String, dynamic>).toList();
+    return listingsJson
+        .map((json) => jsonDecode(json) as Map<String, dynamic>)
+        .toList();
   }
 
   Future<void> saveWebListings(List<Map<String, dynamic>> listings) async {
     final prefs = await _getPrefs();
-    final listingsJson = listings.map((listing) => jsonEncode(listing)).toList();
+    final listingsJson = listings
+        .map((listing) => jsonEncode(listing))
+        .toList();
     await prefs.setStringList('resell_listings', listingsJson);
   }
 
@@ -96,6 +98,68 @@ class DatabaseService {
     // Create all tables in dependency order
     await _createTables(db);
     await _createIndexes(db);
+    await _seedDonations(db);
+  }
+
+  Future<void> _seedDonations(Database db) async {
+    final now = DateTime.now();
+
+    await db.insert('donations', {
+      'id': now.millisecondsSinceEpoch,
+      'name': 'John Doe',
+      'school': 'University of Example',
+      'story':
+          'John is a hardworking computer science student who needs a new laptop for his studies. His current device is 6 years old and frequently crashes during important assignments.',
+      'email': 'john.doe@example.edu',
+      'phone': '+63 917 123 4567',
+      'target_amount': 25000,
+      'amount_raised': 8500,
+      'category': 'Education',
+      'status': 'active',
+      'created_at': now.subtract(const Duration(days: 14)).toIso8601String(),
+      'deadline': now.add(const Duration(days: 30)).toIso8601String(),
+      'is_urgent': 0,
+      'location': 'Davao City',
+      'is_active': 1,
+    });
+
+    await db.insert('donations', {
+      'id': now.millisecondsSinceEpoch + 1,
+      'name': 'Jane Smith',
+      'school': 'Example High School',
+      'story':
+          'Jane is a talented digital art student who needs a new graphics tablet. Her current one broke during a crucial project deadline, and she needs to complete her portfolio for college applications.',
+      'email': 'jane.smith@example.hs.edu.ph',
+      'phone': '+63 918 234 5678',
+      'target_amount': 15000,
+      'amount_raised': 12000,
+      'category': 'Arts & Design',
+      'status': 'active',
+      'created_at': now.subtract(const Duration(days: 7)).toIso8601String(),
+      'deadline': now.add(const Duration(days: 20)).toIso8601String(),
+      'is_urgent': 1,
+      'location': 'Mandaluyong City',
+      'is_active': 1,
+    });
+
+    await db.insert('donations', {
+      'id': now.millisecondsSinceEpoch + 2,
+      'name': 'Peter Jones',
+      'school': 'Another University',
+      'story':
+          'Peter is a dedicated biology researcher who needs a new microscope for his thesis work. His current equipment is outdated and insufficient for the detailed analysis required for his research.',
+      'email': 'peter.jones@research.uni.edu.ph',
+      'phone': '+63 919 345 6789',
+      'target_amount': 35000,
+      'amount_raised': 5200,
+      'category': 'Science & Research',
+      'status': 'active',
+      'created_at': now.subtract(const Duration(days: 21)).toIso8601String(),
+      'deadline': now.add(const Duration(days: 45)).toIso8601String(),
+      'is_urgent': 0,
+      'location': 'Cebu City',
+      'is_active': 1,
+    });
   }
 
   Future<void> _createTables(Database db) async {
@@ -302,6 +366,29 @@ class DatabaseService {
         updated_at DATETIME
       )
     ''');
+
+    // 11. Donations table
+    await db.execute('''
+      CREATE TABLE donations (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        school TEXT NOT NULL,
+        story TEXT NOT NULL,
+        email TEXT,
+        phone TEXT,
+        target_amount DECIMAL(10,2),
+        amount_raised DECIMAL(10,2) DEFAULT 0,
+        category TEXT,
+        status TEXT DEFAULT 'active',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME,
+        deadline DATETIME,
+        is_urgent BOOLEAN DEFAULT 0,
+        location TEXT,
+        images TEXT,
+        is_active BOOLEAN DEFAULT 1
+      )
+    ''');
   }
 
   Future<void> _createIndexes(Database db) async {
@@ -391,6 +478,40 @@ class DatabaseService {
     await db.execute(
       'CREATE INDEX idx_technicians_is_available ON technicians(is_available)',
     );
+
+    // Donation indexes
+    await db.execute(
+      'CREATE INDEX idx_donations_is_active ON donations(is_active)',
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getWebDonations() async {
+    final prefs = await _getPrefs();
+    final donationsJson = prefs.getStringList('donations') ?? [];
+    return donationsJson
+        .map((json) => jsonDecode(json) as Map<String, dynamic>)
+        .toList();
+  }
+
+  Future<void> saveWebDonations(List<Map<String, dynamic>> donations) async {
+    final prefs = await _getPrefs();
+    final donationsJson = donations
+        .map((donation) => jsonEncode(donation))
+        .toList();
+    await prefs.setStringList('donations', donationsJson);
+  }
+
+  Future<List<Map<String, dynamic>>> getDonations() async {
+    if (kIsWeb) {
+      return await getWebDonations();
+    } else {
+      final db = await database as Database;
+      return await db.query(
+        'donations',
+        where: 'is_active = ?',
+        whereArgs: [1],
+      );
+    }
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -448,35 +569,33 @@ class DatabaseService {
   Future<int> _saveUpcyclingProjectSQLite(Map<String, dynamic> project) async {
     final db = await database as Database;
 
-    return await db.insert(
-      'upcycling_projects',
-      {
-        'project_uuid': project['project_uuid'] ?? '',
-        'creator_id': project['creator_id'] ?? 1,
-        'device_passport_id': project['device_passport_id'] ?? 1,
-        'title': project['title'] ?? '',
-        'description': project['description'] ?? '',
-        'difficulty_level': project['difficulty_level'] ?? 'beginner',
-        'category': project['category'] ?? 'other',
-        'status': project['status'] ?? 'planning',
-        'materials_needed': jsonEncode(project['materials_needed'] ?? []),
-        'tools_required': jsonEncode(project['tools_required'] ?? []),
-        'estimated_hours': project['estimated_hours'] ?? 0,
-        'estimated_cost': project['estimated_cost'] ?? 0,
-        'tags': jsonEncode(project['tags'] ?? []),
-        'ai_insights': jsonEncode(project['ai_insights'] ?? {}),
-        'environmental_impact': project['environmental_impact'] ?? 0.0,
-        'is_public': project['is_public'] == true ? 1 : 0,
-        'likes_count': project['likes_count'] ?? 0,
-        'views_count': project['views_count'] ?? 0,
-        'created_at': project['created_at'] ?? DateTime.now().toIso8601String(),
-        'updated_at': project['updated_at'] ?? DateTime.now().toIso8601String(),
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    return await db.insert('upcycling_projects', {
+      'project_uuid': project['project_uuid'] ?? '',
+      'creator_id': project['creator_id'] ?? 1,
+      'device_passport_id': project['device_passport_id'] ?? 1,
+      'title': project['title'] ?? '',
+      'description': project['description'] ?? '',
+      'difficulty_level': project['difficulty_level'] ?? 'beginner',
+      'category': project['category'] ?? 'other',
+      'status': project['status'] ?? 'planning',
+      'materials_needed': jsonEncode(project['materials_needed'] ?? []),
+      'tools_required': jsonEncode(project['tools_required'] ?? []),
+      'estimated_hours': project['estimated_hours'] ?? 0,
+      'estimated_cost': project['estimated_cost'] ?? 0,
+      'tags': jsonEncode(project['tags'] ?? []),
+      'ai_insights': jsonEncode(project['ai_insights'] ?? {}),
+      'environmental_impact': project['environmental_impact'] ?? 0.0,
+      'is_public': project['is_public'] == true ? 1 : 0,
+      'likes_count': project['likes_count'] ?? 0,
+      'views_count': project['views_count'] ?? 0,
+      'created_at': project['created_at'] ?? DateTime.now().toIso8601String(),
+      'updated_at': project['updated_at'] ?? DateTime.now().toIso8601String(),
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  Future<List<Map<String, dynamic>>> getUpcyclingProjects({String? creatorId}) async {
+  Future<List<Map<String, dynamic>>> getUpcyclingProjects({
+    String? creatorId,
+  }) async {
     if (kIsWeb) {
       return await _getUpcyclingProjectsWeb(creatorId: creatorId);
     } else {
@@ -484,19 +603,27 @@ class DatabaseService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _getUpcyclingProjectsWeb({String? creatorId}) async {
+  Future<List<Map<String, dynamic>>> _getUpcyclingProjectsWeb({
+    String? creatorId,
+  }) async {
     final prefs = await _getPrefs();
     final projectsJson = prefs.getStringList('upcycling_projects') ?? [];
-    final projects = projectsJson.map((json) => jsonDecode(json) as Map<String, dynamic>).toList();
+    final projects = projectsJson
+        .map((json) => jsonDecode(json) as Map<String, dynamic>)
+        .toList();
 
     if (creatorId != null) {
-      return projects.where((p) => p['creator_id']?.toString() == creatorId).toList();
+      return projects
+          .where((p) => p['creator_id']?.toString() == creatorId)
+          .toList();
     }
 
     return projects;
   }
 
-  Future<List<Map<String, dynamic>>> _getUpcyclingProjectsSQLite({String? creatorId}) async {
+  Future<List<Map<String, dynamic>>> _getUpcyclingProjectsSQLite({
+    String? creatorId,
+  }) async {
     final db = await database as Database;
 
     String query = 'SELECT * FROM upcycling_projects';
@@ -512,7 +639,10 @@ class DatabaseService {
     return await db.rawQuery(query, args);
   }
 
-  Future<void> updateUpcyclingProjectStatus(String projectId, String status) async {
+  Future<void> updateUpcyclingProjectStatus(
+    String projectId,
+    String status,
+  ) async {
     if (kIsWeb) {
       await _updateUpcyclingProjectStatusWeb(projectId, status);
     } else {
@@ -520,7 +650,10 @@ class DatabaseService {
     }
   }
 
-  Future<void> _updateUpcyclingProjectStatusWeb(String projectId, String status) async {
+  Future<void> _updateUpcyclingProjectStatusWeb(
+    String projectId,
+    String status,
+  ) async {
     final projects = await getUpcyclingProjects();
     final index = projects.indexWhere((p) => p['id'].toString() == projectId);
 
@@ -534,15 +667,15 @@ class DatabaseService {
     }
   }
 
-  Future<void> _updateUpcyclingProjectStatusSQLite(String projectId, String status) async {
+  Future<void> _updateUpcyclingProjectStatusSQLite(
+    String projectId,
+    String status,
+  ) async {
     final db = await database as Database;
 
     await db.update(
       'upcycling_projects',
-      {
-        'status': status,
-        'updated_at': DateTime.now().toIso8601String(),
-      },
+      {'status': status, 'updated_at': DateTime.now().toIso8601String()},
       where: 'id = ? OR project_uuid = ?',
       whereArgs: [projectId, projectId],
     );

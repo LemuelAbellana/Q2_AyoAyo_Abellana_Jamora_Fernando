@@ -5,6 +5,7 @@ import '../../screens/resell_marketplace_screen.dart';
 import '../../screens/upcycling_workspace_screen.dart';
 import '../../screens/technician_chatbot_screen.dart';
 import '../../screens/devices_overview_screen.dart';
+import '../../screens/donation_screen.dart';
 
 class NavigationItem {
   final String label;
@@ -75,6 +76,12 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper>
         icon: LucideIcons.smartphone,
         screen: const DevicesOverviewScreen(),
         route: '/devices',
+      ),
+      NavigationItem(
+        label: 'Donation',
+        icon: LucideIcons.heart,
+        screen: const DonationScreen(),
+        route: '/donation',
       ),
     ];
 

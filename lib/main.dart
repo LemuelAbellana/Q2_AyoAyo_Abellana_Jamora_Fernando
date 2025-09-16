@@ -9,6 +9,7 @@ import '/utils/app_theme.dart';
 import 'providers/diagnosis_provider.dart';
 import 'providers/resell_provider.dart';
 import 'providers/upcycling_provider.dart';
+import 'providers/donation_provider.dart';
 import 'config/api_config.dart';
 import 'services/database_service.dart';
 import 'services/user_service.dart';
@@ -104,6 +105,7 @@ class AyoAyoApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (context) => UpcyclingProvider(ApiConfig.geminiApiKey),
         ),
+        ChangeNotifierProvider(create: (context) => DonationProvider()),
       ],
       child: MaterialApp(
         title: 'AYOAYO',
