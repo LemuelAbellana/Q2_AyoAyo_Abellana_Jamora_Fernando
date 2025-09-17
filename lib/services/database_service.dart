@@ -501,6 +501,22 @@ class DatabaseService {
     await prefs.setStringList('donations', donationsJson);
   }
 
+  Future<List<Map<String, dynamic>>> getWebDevicePassports() async {
+    final prefs = await _getPrefs();
+    final devicesJson = prefs.getStringList('device_passports') ?? [];
+    return devicesJson
+        .map((json) => jsonDecode(json) as Map<String, dynamic>)
+        .toList();
+  }
+
+  Future<void> saveWebDevicePassports(List<Map<String, dynamic>> devices) async {
+    final prefs = await _getPrefs();
+    final devicesJson = devices
+        .map((device) => jsonEncode(device))
+        .toList();
+    await prefs.setStringList('device_passports', devicesJson);
+  }
+
   Future<List<Map<String, dynamic>>> getDonations() async {
     if (kIsWeb) {
       return await getWebDonations();

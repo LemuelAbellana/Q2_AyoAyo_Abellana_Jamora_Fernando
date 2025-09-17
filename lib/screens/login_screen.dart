@@ -149,7 +149,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-
   // Debug method to test popup functionality
   Future<void> _testPopupBlocker() async {
     setState(() {
@@ -423,15 +422,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(3),
                               ),
-                              child: const Center(
-                                child: Text(
-                                  'G',
-                                  style: TextStyle(
-                                    color: Color(0xFF4285F4), // Google Blue
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                              child: Image.asset(
+                                'assets/images/Google.png',
+                                fit: BoxFit.contain,
                               ),
                             ),
                             label: const Text(

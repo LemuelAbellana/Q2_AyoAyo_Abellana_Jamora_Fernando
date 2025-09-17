@@ -108,28 +108,7 @@ class DonationProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> startDonationProcess(Donation donation) async {
-    _setLoading(true);
-    try {
-      // TODO: Implement actual donation process (payment integration, etc.)
-      // For now, just simulate a successful donation
-      await Future.delayed(const Duration(seconds: 2));
-
-      // In a real implementation, this would:
-      // 1. Process payment
-      // 2. Update donation status
-      // 3. Send confirmation emails
-      // 4. Update database records
-
-      _errorMessage = null;
-      return true;
-    } catch (e) {
-      _errorMessage = 'Failed to process donation: $e';
-      return false;
-    } finally {
-      _setLoading(false);
-    }
-  }
+  
 
   void _setLoading(bool loading) {
     _isLoading = loading;

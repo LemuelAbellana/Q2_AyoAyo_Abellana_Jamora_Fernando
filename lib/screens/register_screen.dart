@@ -181,7 +181,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-
   bool _validateRegistrationForm() {
     if (_nameController.text.isEmpty) {
       setState(() {
@@ -539,15 +538,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(3),
                               ),
-                              child: const Center(
-                                child: Text(
-                                  'G',
-                                  style: TextStyle(
-                                    color: Color(0xFF4285F4), // Google Blue
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                              child: Image.asset(
+                                'assets/images/Google.png',
+                                fit: BoxFit.contain,
                               ),
                             ),
                             label: const Text(

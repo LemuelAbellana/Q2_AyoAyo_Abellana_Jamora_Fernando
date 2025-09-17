@@ -5,11 +5,12 @@ import 'package:flutter/foundation.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'widgets/navigation/main_navigation_wrapper.dart';
-import '/utils/app_theme.dart';
+import 'utils/app_theme.dart';
 import 'providers/diagnosis_provider.dart';
 import 'providers/resell_provider.dart';
 import 'providers/upcycling_provider.dart';
 import 'providers/donation_provider.dart';
+import 'providers/device_provider.dart';
 import 'config/api_config.dart';
 import 'services/database_service.dart';
 import 'services/user_service.dart';
@@ -106,6 +107,7 @@ class AyoAyoApp extends StatelessWidget {
           create: (context) => UpcyclingProvider(ApiConfig.geminiApiKey),
         ),
         ChangeNotifierProvider(create: (context) => DonationProvider()),
+        ChangeNotifierProvider(create: (context) => DeviceProvider()),
       ],
       child: MaterialApp(
         title: 'AYOAYO',

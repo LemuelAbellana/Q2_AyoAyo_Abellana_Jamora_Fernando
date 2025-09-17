@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
-import '/widgets/diagnosis/diagnosis_flow_container.dart';
-import '/widgets/home/about_section.dart';
-import '/widgets/home/community_hub.dart';
-import '/widgets/home/hero_section.dart';
-import 'package:ayoayo/screens/device_passport_form_screen.dart';
-import 'package:ayoayo/screens/technician_finder_screen.dart';
-import 'package:ayoayo/widgets/shared/app_footer.dart';
+import '../widgets/diagnosis/diagnosis_flow_container.dart';
+import '../widgets/home/about_section.dart';
+import '../widgets/home/community_hub.dart';
+import '../widgets/home/hero_section.dart';
+import '../widgets/shared/app_footer.dart';
+import 'device_passport_form_screen.dart';
+import 'technician_finder_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

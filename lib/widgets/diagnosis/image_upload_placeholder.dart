@@ -27,104 +27,244 @@ class _ImageUploadPlaceholderState extends State<ImageUploadPlaceholder> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-                Container(
+        Container(
           width: double.infinity,
-          height: 160,
+          height: _selectedImages.isEmpty ? 180 : 200,
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300, width: 2),
-            borderRadius: BorderRadius.circular(12),
-            color: Colors.grey.shade50,
+            border: Border.all(
+              color: _selectedImages.isEmpty
+                  ? Colors.grey.shade300
+                  : Colors.green.shade300,
+              width: 2,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            color: _selectedImages.isEmpty
+                ? Colors.grey.shade50
+                : Colors.green.shade50,
           ),
           child: InkWell(
             onTap: () => _pickImage(context),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             child: _selectedImages.isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        LucideIcons.camera,
-                        size: 48,
-                        color: Colors.grey.shade600,
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).primaryColor.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          LucideIcons.camera,
+                          size: 32,
+                          color: Theme.of(context).primaryColor,
+                        ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
                       Text(
                         widget.label,
                         style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.w600,
                           fontSize: 16,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Tap to upload',
+                        'Camera • Gallery',
                         style: TextStyle(
                           color: Colors.grey.shade500,
-                          fontSize: 12,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Text(
+                          'Multiple photos recommended',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ],
                   )
-                : ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _selectedImages.length,
-                    itemBuilder: (context, index) {
-                      final imageFile = _selectedImages[index];
-                      return Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Stack(
+                : Column(
+                    children: [
+                      // Header with count
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade100,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            topRight: Radius.circular(16),
+                          ),
+                        ),
+                        child: Row(
                           children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: kIsWeb
-                                  ? Image.network(
-                                      imageFile.path,
-                                      width: 140,
-                                      height: 140,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                            return Container(
-                                              width: 140,
-                                              height: 140,
-                                              color: Colors.grey[300],
-                                              child: const Icon(Icons.error),
-                                            );
-                                          },
-                                    )
-                                  : Image.file(
-                                      imageFile,
-                                      width: 140,
-                                      height: 140,
-                                      fit: BoxFit.cover,
-                                    ),
+                            Icon(
+                              LucideIcons.check,
+                              color: Colors.green.shade700,
+                              size: 20,
                             ),
-                            Positioned(
-                              top: 0,
-                              right: 0,
-                              child: GestureDetector(
-                                onTap: () => _removeImage(index),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.shade700,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.close,
-                                    color: Colors.white,
-                                    size: 18,
-                                  ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${_selectedImages.length} photo${_selectedImages.length == 1 ? '' : 's'} selected',
+                              style: TextStyle(
+                                color: Colors.green.shade700,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const Spacer(),
+                            TextButton.icon(
+                              onPressed: () => _pickImage(context),
+                              icon: Icon(
+                                LucideIcons.plus,
+                                size: 16,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                              label: Text(
+                                'Add More',
+                                style: TextStyle(
+                                  color: Theme.of(context).primaryColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
                                 ),
                               ),
                             ),
                           ],
                         ),
-                      );
-                    },
+                      ),
+                      // Images list
+                      Expanded(
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.all(12),
+                          itemCount: _selectedImages.length,
+                          itemBuilder: (context, index) {
+                            final imageFile = _selectedImages[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: kIsWeb
+                                        ? Image.network(
+                                            imageFile.path,
+                                            width: 140,
+                                            height: 140,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                                  return Container(
+                                                    width: 140,
+                                                    height: 140,
+                                                    color: Colors.grey[300],
+                                                    child: const Icon(
+                                                      Icons.error,
+                                                    ),
+                                                  );
+                                                },
+                                          )
+                                        : Image.file(
+                                            imageFile,
+                                            width: 140,
+                                            height: 140,
+                                            fit: BoxFit.cover,
+                                          ),
+                                  ),
+                                  Positioned(
+                                    top: 6,
+                                    right: 6,
+                                    child: GestureDetector(
+                                      onTap: () => _removeImage(index),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.shade700,
+                                          shape: BoxShape.circle,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(
+                                                0.2,
+                                              ),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: const Icon(
+                                          Icons.close,
+                                          color: Colors.white,
+                                          size: 14,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
           ),
         ),
+
+        // Tips section when images are selected
+        if (_selectedImages.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.blue.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(LucideIcons.info, color: Colors.blue.shade700, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Tip: Include photos of the front, back, and any damage for the best diagnosis.',
+                    style: TextStyle(
+                      color: Colors.blue.shade700,
+                      fontSize: 13,
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
