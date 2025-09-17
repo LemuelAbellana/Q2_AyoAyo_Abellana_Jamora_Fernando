@@ -1,5 +1,3 @@
-import 'package:ayoayo/screens/technician_chatbot_screen.dart';
-import 'package:ayoayo/screens/donation_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
@@ -18,70 +16,37 @@ class CommunityHub extends StatelessWidget {
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          Card(
-            color: Colors.grey[100],
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  const Icon(LucideIcons.graduationCap, size: 40, color: Colors.blue),
-                  const SizedBox(height: 8),
-                  const Text(
-                    "AyoAyo University",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  ListTile(
-                    leading: const Icon(LucideIcons.bot, color: Colors.blue),
-                    title: const Text("Technician Chatbot"),
-                    subtitle: const Text("Get instant help from our AI assistant"),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const TechnicianChatbotScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
 
-          // Quick Donation Access Card
+          // Device Care Center
           Card(
-            color: Colors.pink[600],
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            color: Colors.blue[50],
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(LucideIcons.heart, size: 40, color: Colors.white),
+                      Icon(
+                        LucideIcons.wrench,
+                        size: 32,
+                        color: Colors.blue[700],
+                      ),
                       const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
-                              "Tech-Pahiram Hub",
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            Text(
-                              "Help students in need",
-                              style: TextStyle(color: Colors.white70),
-                            ),
-                          ],
+                      Text(
+                        "Device Care Center",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue[700],
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Essential tips to keep your devices running smoothly",
+                    style: TextStyle(fontSize: 14, color: Colors.blue[600]),
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -90,50 +55,100 @@ class CommunityHub extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue[200]!),
                           ),
-                          child: const Column(
+                          child: Column(
                             children: [
-                              Text(
-                                "12",
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
+                              Icon(
+                                LucideIcons.battery,
+                                color: Colors.blue[600],
                               ),
-                              Text(
-                                "Active Requests",
+                              const SizedBox(height: 8),
+                              const Text(
+                                "Battery Health",
                                 style: TextStyle(
-                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w600,
                                   fontSize: 12,
                                 ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "Avoid extreme temps, charge to 80%",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey[600],
+                                ),
+                                textAlign: TextAlign.center,
                               ),
                             ],
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                       Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const DonationScreen(),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue[200]!),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(LucideIcons.shield, color: Colors.blue[600]),
+                              const SizedBox(height: 8),
+                              const Text(
+                                "Screen Protection",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
                               ),
-                            );
-                          },
-                          icon: const Icon(LucideIcons.arrowRight, size: 16),
-                          label: const Text('Donate Now'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.pink[600],
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "Use tempered glass, avoid sharp objects",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey[600],
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue[200]!),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(LucideIcons.zap, color: Colors.blue[600]),
+                              const SizedBox(height: 8),
+                              const Text(
+                                "Performance",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "Clear cache monthly, update software",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey[600],
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -143,7 +158,187 @@ class CommunityHub extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 16),
 
+          // Your Environmental Impact
+          Card(
+            color: Colors.teal[50],
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(LucideIcons.leaf, size: 32, color: Colors.teal[700]),
+                      const SizedBox(width: 12),
+                      Text(
+                        "Your Environmental Impact",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.teal[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    "See how your device management contributes to sustainability",
+                    style: TextStyle(fontSize: 14, color: Colors.teal[600]),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.teal[200]!),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                "2.3kg",
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.teal[700],
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "CO₂ Saved",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.teal[600],
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                "This month",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.teal[200]!),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                "45%",
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.teal[700],
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "Device Lifespan",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.teal[600],
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                "Extended",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.teal[200]!),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                "8",
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.teal[700],
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "Devices",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.teal[600],
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                "Tracked",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.teal[100],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          LucideIcons.trendingUp,
+                          size: 16,
+                          color: Colors.teal[700],
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            "By extending device lifespans, you're preventing e-waste and reducing environmental impact.",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.teal[700],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: 16),
           Card(
             color: Colors.green[600],
