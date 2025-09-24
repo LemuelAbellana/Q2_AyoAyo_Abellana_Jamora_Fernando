@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 
 class CreateListingScreen extends StatefulWidget {
-  const CreateListingScreen({Key? key}) : super(key: key);
+  const CreateListingScreen({super.key});
 
   @override
   _CreateListingScreenState createState() => _CreateListingScreenState();

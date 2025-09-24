@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:ayoayo/services/resell_listing_dao.dart';
-import 'package:flutter/material.dart';
 import 'package:ayoayo/models/resell_listing.dart';
 import 'package:ayoayo/models/device_passport.dart';
 import 'package:ayoayo/models/device_diagnosis.dart';

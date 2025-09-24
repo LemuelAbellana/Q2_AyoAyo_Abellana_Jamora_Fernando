@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ayoayo/models/device_passport.dart';
 import 'package:ayoayo/models/device_diagnosis.dart';
-import 'package:ayoayo/screens/device_passport_screen.dart';
 import 'package:ayoayo/services/gemini_diagnosis_service.dart';
 import 'package:ayoayo/widgets/diagnosis/device_passport_form.dart';
 import 'package:ayoayo/providers/device_provider.dart';
@@ -98,7 +97,7 @@ class DevicePassportFormScreenState extends State<DevicePassportFormScreen> {
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${deviceModel} added successfully!'),
+          content: Text('$deviceModel added successfully!'),
           backgroundColor: Colors.green,
         ),
       );
