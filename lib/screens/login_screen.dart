@@ -16,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isLoading = false;
   String? _errorMessage;
+  bool _showDebugMode = false;
 
   @override
   void dispose() {
@@ -149,31 +150,67 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Debug method to test popup functionality
-  Future<void> _testPopupBlocker() async {
+  // Test Google OAuth configuration
+  Future<void> _testGoogleOAuth() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = 'Testing popup functionality...';
+      _errorMessage = null;
     });
 
     try {
-      // Import OAuthService here or pass it as a parameter
-      // For now, we'll just show a message
-      setState(() {
-        _errorMessage = 'Check browser console for popup blocker test results';
-      });
+      final isWorking = await UserService.testGoogleOAuthConfiguration();
+      final diagnostics = await UserService.getGoogleOAuthDiagnostics();
 
-      // In a real implementation, you would call:
-      // final result = await OAuthService.testPopupFunctionality();
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Google OAuth Test Results'),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Status: ${isWorking ? "✅ Working" : "❌ Failed"}'),
+                  SizedBox(height: 16),
+                  Text('Diagnostics:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(height: 8),
+                  Text(diagnostics, style: TextStyle(fontFamily: 'monospace', fontSize: 12)),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('Close'),
+              ),
+            ],
+          ),
+        );
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Popup test error: ${e.toString()}';
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'OAuth test failed: $e';
+        });
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  void _toggleRealAuth() {
+    final currentState = UserService.isRealGoogleAuthEnabled;
+    UserService.setUseRealGoogleAuth(!currentState);
+    setState(() {
+      _errorMessage = !currentState
+          ? '🔐 Real Google OAuth enabled'
+          : '🎭 Demo mode enabled';
+    });
   }
 
   bool _validateLoginForm() {
@@ -260,19 +297,34 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        // App name with enhanced styling
-                        ShaderMask(
-                          shaderCallback: (bounds) =>
-                              AppTheme.primaryGradient.createShader(bounds),
-                          child: const Text(
-                            'AyoAyo',
-                            style: TextStyle(
-                              fontSize: 40,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              letterSpacing: 1.2,
+                        // App name with enhanced styling (long press for debug)
+                        GestureDetector(
+                          onLongPress: () {
+                            setState(() {
+                              _showDebugMode = !_showDebugMode;
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(_showDebugMode
+                                    ? '🔧 Debug mode enabled'
+                                    : '🔧 Debug mode disabled'),
+                                duration: Duration(seconds: 1),
+                              ),
+                            );
+                          },
+                          child: ShaderMask(
+                            shaderCallback: (bounds) =>
+                                AppTheme.primaryGradient.createShader(bounds),
+                            child: const Text(
+                              'AyoAyo',
+                              style: TextStyle(
+                                fontSize: 40,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                letterSpacing: 1.2,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -491,6 +543,61 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
 
                   const SizedBox(height: 32),
+
+                  // Debug Section (show with long press on logo)
+                  if (_showDebugMode)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            '🔧 Debug Mode',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange.shade800,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              ElevatedButton(
+                                onPressed: _testGoogleOAuth,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  foregroundColor: Colors.white,
+                                ),
+                                child: Text('Test OAuth'),
+                              ),
+                              ElevatedButton(
+                                onPressed: _toggleRealAuth,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: UserService.isRealGoogleAuthEnabled
+                                      ? Colors.green
+                                      : Colors.grey,
+                                  foregroundColor: Colors.white,
+                                ),
+                                child: Text(UserService.isRealGoogleAuthEnabled
+                                    ? 'Real OAuth'
+                                    : 'Demo Mode'),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: () => setState(() => _showDebugMode = false),
+                            child: Text('Hide Debug'),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  if (_showDebugMode) const SizedBox(height: 16),
 
                   // Register Navigation with modern styling
                   Row(

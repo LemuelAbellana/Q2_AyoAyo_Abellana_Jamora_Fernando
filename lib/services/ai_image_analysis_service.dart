@@ -4,17 +4,22 @@ import 'package:ayoayo/config/api_config.dart';
 
 class AIImageAnalysisService {
   static const String _apiKey = ApiConfig.geminiApiKey;
-  late final GenerativeModel _visionModel;
+  GenerativeModel? _visionModel;
 
   AIImageAnalysisService() {
-    _visionModel = GenerativeModel(
-      model: 'gemini-1.5-flash',
-      apiKey: _apiKey,
-    );
+    try {
+      _visionModel = GenerativeModel(
+        model: 'gemini-1.5-flash',
+        apiKey: _apiKey,
+      );
+    } catch (e) {
+      print('⚠️ Warning: Failed to initialize Gemini Vision Model: $e');
+      // The service will still work in demo mode
+    }
   }
   Future<String> analyzeDeviceImages(List<File> images) async {
-    // Skip analysis if API key is not configured or demo mode is enabled
-    if (ApiConfig.useDemoMode || _apiKey == 'YOUR_GEMINI_API_KEY_HERE') {
+    // Skip analysis if API key is not configured, demo mode is enabled, or vision model is null
+    if (ApiConfig.useDemoMode || _apiKey == 'YOUR_GEMINI_API_KEY_HERE' || _visionModel == null) {
       return _generateDemoAnalysis(images);
     }
 
@@ -85,7 +90,7 @@ Analyze the device thoroughly and be as specific as possible with the model iden
 
           try {
             // Use Gemini Vision API for actual phone recognition
-            final response = await _visionModel.generateContent([
+            final response = await _visionModel!.generateContent([
               Content.multi([
                 TextPart(imagePrompt),
                 DataPart('image/jpeg', bytes),

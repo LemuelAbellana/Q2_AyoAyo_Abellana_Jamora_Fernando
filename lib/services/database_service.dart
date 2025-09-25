@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite/sqflite.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -34,34 +34,31 @@ class DatabaseService {
   }
 
   Future<Database> _initDatabase() async {
-    // Initialize sqflite for FFI on desktop
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      sqfliteFfiInit();
-      databaseFactory = databaseFactoryFfi;
-    }
+    // All platforms use native sqflite
 
     String path;
 
-    // For development/testing, use a local path in project directory
-    try {
-      // Try to use project directory for easier database inspection
-      final currentDir = Directory.current;
-      final dbDir = Directory(join(currentDir.path, 'database'));
-      if (!await dbDir.exists()) {
-        await dbDir.create(recursive: true);
-      }
-      path = join(dbDir.path, 'ayoayo.db');
-      print('Database path (Development): $path');
-    } catch (e) {
-      // Fallback to application documents directory
+    // Use appropriate path based on platform
+    if (Platform.isAndroid || Platform.isIOS) {
+      // Mobile: use application documents directory
+      Directory documentsDirectory = await getApplicationDocumentsDirectory();
+      path = join(documentsDirectory.path, 'ayoayo.db');
+      print('Database path (Mobile): $path');
+    } else {
+      // Desktop: try project directory first, then fallback
       try {
+        final currentDir = Directory.current;
+        final dbDir = Directory(join(currentDir.path, 'database'));
+        if (!await dbDir.exists()) {
+          await dbDir.create(recursive: true);
+        }
+        path = join(dbDir.path, 'ayoayo.db');
+        print('Database path (Desktop): $path');
+      } catch (e) {
+        // Fallback for desktop
         Directory documentsDirectory = await getApplicationDocumentsDirectory();
         path = join(documentsDirectory.path, 'ayoayo.db');
-        print('Database path (Documents): $path');
-      } catch (e2) {
-        // Final fallback
-        path = 'ayoayo.db';
-        print('Database path (Fallback): $path');
+        print('Database path (Desktop Fallback): $path');
       }
     }
 
@@ -172,6 +169,7 @@ class DatabaseService {
         photo_url TEXT,
         auth_provider TEXT NOT NULL DEFAULT 'email',
         provider_id TEXT,
+        password_hash TEXT,
         email_verified BOOLEAN DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME,

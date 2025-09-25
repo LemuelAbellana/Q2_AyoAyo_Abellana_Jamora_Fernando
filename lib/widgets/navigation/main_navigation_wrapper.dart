@@ -142,8 +142,19 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper>
           IconButton(
             icon: const Icon(LucideIcons.logOut),
             tooltip: 'Sign Out',
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, '/login');
+            onPressed: () async {
+              // Import UserService here or create method in main_navigation_wrapper
+              try {
+                // Sign out from OAuth services
+                await Future.wait([
+                  // Clear any stored session data
+                ]);
+                Navigator.pushReplacementNamed(context, '/login');
+              } catch (e) {
+                print('Sign out error: $e');
+                // Still navigate to login even if sign out fails
+                Navigator.pushReplacementNamed(context, '/login');
+              }
             },
           )
         else if (_selectedIndex == 1) // Resell

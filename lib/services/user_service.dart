@@ -1,5 +1,9 @@
 import 'user_dao.dart';
 import 'oauth_service.dart';
+import 'simple_google_auth.dart';
+import 'local_auth_service.dart';
+import 'demo_auth_service.dart';
+import 'real_google_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 
@@ -13,30 +17,45 @@ class UserService {
     String password,
   ) async {
     try {
+      print('👤 Starting user registration...');
+
+      // Validate input
+      if (!LocalAuthService.isValidEmail(email)) {
+        print('❌ Invalid email format: $email');
+        return false;
+      }
+
+      if (!LocalAuthService.isValidPassword(password)) {
+        print('❌ Invalid password (must be at least 6 characters)');
+        return false;
+      }
+
       // Check if user already exists
       final existingUser = await _userDao.getUserByEmail(email);
       if (existingUser != null) {
-        return false; // User already exists
+        print('❌ User already exists with email: $email');
+        return false;
       }
 
-      // Generate Firebase-compatible UID for local users
-      final uid =
-          'local_${DateTime.now().millisecondsSinceEpoch}_${email.hashCode}';
+      // Create user data with hashed password
+      final userData = LocalAuthService.createUserData(
+        name: name,
+        email: email,
+        password: password,
+      );
 
-      final userData = {
-        'uid': uid,
-        'email': email.toLowerCase(),
-        'display_name': name.trim(),
-        'auth_provider': 'email',
-        'email_verified': 0,
-        'is_active': 1,
-        'preferences': '{}',
-      };
-
+      print('💾 Inserting user data into database...');
       final result = await _userDao.insertUser(userData);
-      return result > 0;
+
+      if (result > 0) {
+        print('✅ User registration successful: $email');
+        return true;
+      } else {
+        print('❌ Database insertion failed');
+        return false;
+      }
     } catch (e) {
-      print('Error registering user: $e');
+      print('❌ Error registering user: $e');
       return false;
     }
   }
@@ -53,19 +72,9 @@ class UserService {
       // Call the appropriate OAuth service based on provider
       switch (provider.toLowerCase()) {
         case 'google':
-          try {
-            oauthUserData = await OAuthService.signInWithGoogle();
-          } catch (googleError) {
-            if (googleError.toString().contains('People API') ||
-                googleError.toString().contains('SERVICE_DISABLED')) {
-              print(
-                '🔄 Falling back to basic Google Sign-In (no People API required)',
-              );
-              oauthUserData = await OAuthService.signInWithGoogleBasic();
-            } else {
-              rethrow;
-            }
-          }
+          // Use real Google Sign-In with demo fallback
+          print('🔐 Attempting real Google OAuth...');
+          oauthUserData = await RealGoogleAuth.signIn();
           break;
         case 'github':
           oauthUserData = await OAuthService.signInWithGitHub();
@@ -162,16 +171,36 @@ class UserService {
     String password,
   ) async {
     try {
+      print('🔍 Authenticating user: $email');
+
       final user = await _userDao.getUserByEmail(email);
-      if (user != null && user['auth_provider'] == 'email') {
-        // In a real app, you'd verify the password hash here
-        // For now, we'll assume successful authentication
+      if (user == null) {
+        print('❌ User not found: $email');
+        return null;
+      }
+
+      // Check if this is a local account with password
+      if (user['auth_provider'] == 'local' && user['password_hash'] != null) {
+        // Verify password
+        if (LocalAuthService.verifyPassword(password, user['password_hash'])) {
+          print('✅ Password authentication successful');
+          await _userDao.updateLastLogin(user['id']);
+          return user;
+        } else {
+          print('❌ Invalid password');
+          return null;
+        }
+      } else if (user['auth_provider'] == 'email') {
+        // Legacy users without password hash - allow login
+        print('⚠️ Legacy user login (no password hash)');
         await _userDao.updateLastLogin(user['id']);
         return user;
+      } else {
+        print('❌ User exists but wrong auth provider: ${user['auth_provider']}');
+        return null;
       }
-      return null;
     } catch (e) {
-      print('Authentication error: $e');
+      print('❌ Authentication error: $e');
       return null;
     }
   }
@@ -180,23 +209,22 @@ class UserService {
   static Future<Map<String, dynamic>?> getCurrentUser() async {
     try {
       print('🔍 Getting current user...');
-      final firebaseUser = OAuthService.getCurrentUser();
+      final googleUser = RealGoogleAuth.currentUser;
 
-      if (firebaseUser != null) {
-        print('✅ Firebase user found: ${firebaseUser.email}');
-        final user = await _userDao.getUserByUid(firebaseUser.uid);
+      if (googleUser != null) {
+        print('✅ Google user found: ${googleUser.email}');
+        final uid = 'google_${googleUser.id}';
+        final user = await _userDao.getUserByUid(uid);
 
         if (user != null) {
           print('✅ Database user found: ${user['email']}');
           return user;
         } else {
-          print(
-            '⚠️ Firebase user exists but not in database, this shouldn\'t happen',
-          );
+          print('⚠️ Google user exists but not in database, this shouldn\'t happen');
           return null;
         }
       } else {
-        print('❌ No Firebase user found');
+        print('❌ No Google user found');
         return null;
       }
     } catch (e) {
@@ -224,7 +252,7 @@ class UserService {
   // Sign out user
   static Future<void> signOut() async {
     try {
-      await OAuthService.signOut();
+      await RealGoogleAuth.signOut();
       await clearUserSession(); // Clear saved session
       print('✅ User signed out successfully');
       print('🔄 Ready to sign in with any Google account');
@@ -238,8 +266,9 @@ class UserService {
     try {
       print('🔄 Switching Google account...');
 
-      // Use the OAuth service to switch accounts
-      final userData = await OAuthService.switchGoogleAccount();
+      // Sign out first, then sign in again
+      await RealGoogleAuth.signOut();
+      final userData = await RealGoogleAuth.signIn();
 
       if (userData != null) {
         print('✅ Account switched successfully: ${userData['email']}');
@@ -293,10 +322,34 @@ class UserService {
   }
 
   // Check if user is currently signed in
-  static bool get isSignedIn => OAuthService.isSignedIn;
+  static bool get isSignedIn => RealGoogleAuth.isSignedIn;
 
-  // Listen to authentication state changes
-  static Stream get authStateChanges => OAuthService.authStateChanges;
+  // Listen to authentication state changes (disabled for simple auth)
+  static Stream get authStateChanges => const Stream.empty();
+
+  // Test Google OAuth configuration
+  static Future<bool> testGoogleOAuthConfiguration() async {
+    try {
+      print('🧪 Testing Google OAuth configuration...');
+      return await RealGoogleAuth.testConfiguration();
+    } catch (e) {
+      print('❌ Google OAuth test failed: $e');
+      return false;
+    }
+  }
+
+  // Get Google OAuth diagnostic information
+  static Future<String> getGoogleOAuthDiagnostics() async {
+    return await RealGoogleAuth.getDiagnosticInfo();
+  }
+
+  // Force enable/disable real Google OAuth (for testing)
+  static void setUseRealGoogleAuth(bool useReal) {
+    RealGoogleAuth.setUseRealAuth(useReal);
+  }
+
+  // Check if real Google OAuth is enabled
+  static bool get isRealGoogleAuthEnabled => RealGoogleAuth.isRealAuthEnabled;
 
   // Session management methods
   static Future<void> saveUserSession(Map<String, dynamic> user) async {
