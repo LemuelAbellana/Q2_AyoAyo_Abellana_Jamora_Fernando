@@ -48,7 +48,6 @@ class AIValueEngine {
     Map<String, dynamic>? deviceData
   ) {
     final conditions = {
-      'batteryHealth': deviceHealth.batteryHealth,
       'screenCondition': deviceHealth.screenCondition.toString().split('.').last,
       'hardwareCondition': deviceHealth.hardwareCondition.toString().split('.').last,
     };
@@ -158,17 +157,17 @@ class AIValueEngine {
       ));
     }
     
-    // Battery replacement scenario
-    if (deviceHealth.batteryHealth < 85) {
-      final batteryCost = repairCosts['battery'] ?? 1500;
-      final valueIncrease = (100 - deviceHealth.batteryHealth) / 100 * currentValue * 0.3;
+    // Hardware component replacement scenario
+    if (deviceHealth.hardwareCondition == HardwareCondition.fair || deviceHealth.hardwareCondition == HardwareCondition.poor) {
+      final componentCost = repairCosts['hardware'] ?? 2000;
+      final valueIncrease = currentValue * 0.25; // Improve hardware condition increases value
       final postRepairValue = currentValue + valueIncrease;
-      final roi = (valueIncrease - batteryCost) / batteryCost * 100;
-      
+      final roi = (valueIncrease - componentCost) / componentCost * 100;
+
       scenarios.add(RepairScenario(
-        title: 'Battery Replacement',
-        description: 'Replace battery to improve performance and longevity',
-        repairCost: batteryCost,
+        title: 'Hardware Component Replacement',
+        description: 'Replace faulty hardware components to restore full functionality',
+        repairCost: componentCost,
         postRepairValue: postRepairValue,
         roi: roi,
         timeToSell: '2-4 days',
@@ -256,7 +255,8 @@ class AIValueEngine {
     
     if (deviceData != null) confidence += 0.2; // Device in database
     if (deviceHealth.identifiedIssues.isNotEmpty) confidence += 0.1; // More data points
-    if (deviceHealth.batteryHealth > 0) confidence += 0.1; // Battery data available
+    if (deviceHealth.screenCondition != ScreenCondition.unknown) confidence += 0.1; // Screen data available
+    if (deviceHealth.hardwareCondition != HardwareCondition.unknown) confidence += 0.1; // Hardware data available
     
     return confidence.clamp(0.5, 0.95);
   }

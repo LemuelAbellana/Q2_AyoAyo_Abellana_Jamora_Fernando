@@ -412,7 +412,6 @@ class UpcyclingProvider extends ChangeNotifier {
         lastDiagnosis: DiagnosisResult(
           deviceModel: 'Unknown Device',
           deviceHealth: DeviceHealth(
-            batteryHealth: 0.5,
             screenCondition: ScreenCondition.unknown,
             hardwareCondition: HardwareCondition.unknown,
             identifiedIssues: [],

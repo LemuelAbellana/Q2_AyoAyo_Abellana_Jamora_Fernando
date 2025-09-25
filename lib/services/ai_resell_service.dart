@@ -24,8 +24,8 @@ Device Details:
 - Year: ${devicePassport.yearOfRelease}
 - OS: ${devicePassport.operatingSystem}
 - Condition: ${condition.toString().split('.').last}
-- Battery Health: ${devicePassport.lastDiagnosis.deviceHealth.batteryHealth}%
 - Screen Condition: ${devicePassport.lastDiagnosis.deviceHealth.screenCondition.toString().split('.').last}
+- Hardware Condition: ${devicePassport.lastDiagnosis.deviceHealth.hardwareCondition.toString().split('.').last}
 - Issues: ${devicePassport.lastDiagnosis.deviceHealth.identifiedIssues.join(', ')}
 
 Create:
@@ -307,7 +307,8 @@ Provide 5-7 specific, actionable tips to increase sale probability.
         'Transparent condition reporting',
         'Environmentally friendly purchase',
         'Competitive pricing',
-        '${device.lastDiagnosis.deviceHealth.batteryHealth}% battery health',
+        '${device.lastDiagnosis.deviceHealth.screenCondition.name} screen condition',
+        '${device.lastDiagnosis.deviceHealth.hardwareCondition.name} hardware',
       ],
       seoKeywords: _generateSEOKeywords(device),
     );

@@ -186,7 +186,6 @@ class DiagnosisProvider extends ChangeNotifier {
       return '''
       TEST RESULT:
       Screen Condition: ${testResult.deviceHealth.screenCondition.toString().split('.').last}
-      Battery Health: ${testResult.deviceHealth.batteryHealth.toStringAsFixed(0)}%
       Hardware Condition: ${testResult.deviceHealth.hardwareCondition.toString().split('.').last}
 
       Values:
@@ -220,13 +219,11 @@ class DiagnosisProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Get formatted battery health
-  String getFormattedBatteryHealth() {
-    if (_currentResult?.deviceHealth.batteryHealth != null) {
-      final health = _currentResult!.deviceHealth.batteryHealth;
-      if (health > 0) {
-        return '${health.toStringAsFixed(0)}%';
-      }
+  // Get device health summary (removed battery health)
+  String getDeviceHealthSummary() {
+    if (_currentResult?.deviceHealth != null) {
+      final deviceHealth = _currentResult!.deviceHealth;
+      return 'Screen: ${deviceHealth.screenCondition.name}, Hardware: ${deviceHealth.hardwareCondition.name}';
     }
     return 'Unknown';
   }
@@ -320,13 +317,23 @@ class DiagnosisProvider extends ChangeNotifier {
     return 'Unknown';
   }
 
-  // Get color for battery health
-  Color getBatteryHealthColor() {
-    final health = _currentResult?.deviceHealth.batteryHealth ?? 0;
-    if (health == 0) return Colors.grey; // Unknown/undetermined
-    if (health >= 80) return Colors.green;
-    if (health >= 60) return Colors.orange;
-    return Colors.red;
+  // Get color for hardware condition
+  Color getHardwareConditionColor() {
+    if (_currentResult == null) return Colors.grey;
+
+    final condition = _currentResult!.deviceHealth.hardwareCondition;
+    switch (condition) {
+      case HardwareCondition.excellent:
+      case HardwareCondition.good:
+        return Colors.green;
+      case HardwareCondition.fair:
+        return Colors.orange;
+      case HardwareCondition.poor:
+      case HardwareCondition.damaged:
+        return Colors.red;
+      case HardwareCondition.unknown:
+        return Colors.grey;
+    }
   }
 
   // Get color for screen condition
@@ -368,5 +375,50 @@ class DiagnosisProvider extends ChangeNotifier {
     );
     recommendations.sort((a, b) => b.priority.compareTo(a.priority));
     return recommendations;
+  }
+
+  // Get formatted battery health (if available in device specs)
+  String getFormattedBatteryHealth() {
+    if (_currentResult?.deviceSpecifications?.battery != null) {
+      // Estimate battery health based on device age and condition
+      final batteryHealth = _estimateBatteryHealth();
+      return '${(batteryHealth * 100).toStringAsFixed(0)}%';
+    }
+    return 'Unknown';
+  }
+
+  // Get battery health color based on estimated health
+  Color getBatteryHealthColor() {
+    if (_currentResult?.deviceSpecifications?.battery != null) {
+      final batteryHealth = _estimateBatteryHealth();
+      if (batteryHealth >= 0.8) return Colors.green;
+      if (batteryHealth >= 0.6) return Colors.orange;
+      return Colors.red;
+    }
+    return Colors.grey; // Unknown
+  }
+
+  // Helper method to estimate battery health
+  double _estimateBatteryHealth() {
+    if (_currentResult?.deviceSpecifications == null) return 0.8; // Default
+
+    // Simple estimation based on device condition and model
+    final screenCondition = _currentResult!.deviceHealth.screenCondition;
+
+    // Base health on screen condition as a proxy for device care
+    switch (screenCondition) {
+      case ScreenCondition.excellent:
+        return 0.9;
+      case ScreenCondition.good:
+        return 0.8;
+      case ScreenCondition.fair:
+        return 0.7;
+      case ScreenCondition.poor:
+        return 0.5;
+      case ScreenCondition.cracked:
+        return 0.4;
+      case ScreenCondition.unknown:
+        return 0.8; // Default assumption
+    }
   }
 }

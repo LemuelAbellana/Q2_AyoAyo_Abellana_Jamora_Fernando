@@ -21,8 +21,8 @@ Device Analysis:
 - Manufacturer: ${devicePassport.manufacturer}
 - Year: ${devicePassport.yearOfRelease}
 - OS: ${devicePassport.operatingSystem}
-- Battery Health: ${devicePassport.lastDiagnosis.deviceHealth.batteryHealth}%
 - Screen Condition: ${devicePassport.lastDiagnosis.deviceHealth.screenCondition.toString().split('.').last}
+- Hardware Condition: ${devicePassport.lastDiagnosis.deviceHealth.hardwareCondition.toString().split('.').last}
 - Hardware Issues: ${devicePassport.lastDiagnosis.deviceHealth.identifiedIssues.join(', ')}
 
 Available Components:
@@ -111,7 +111,7 @@ Ensure the project is:
 Analyze this device for upcycling potential:
 
 Device: ${devicePassport.deviceModel}
-Condition: Screen - ${devicePassport.lastDiagnosis.deviceHealth.screenCondition}, Battery - ${devicePassport.lastDiagnosis.deviceHealth.batteryHealth}%, Hardware - ${devicePassport.lastDiagnosis.deviceHealth.hardwareCondition}
+Condition: Screen - ${devicePassport.lastDiagnosis.deviceHealth.screenCondition}, Hardware - ${devicePassport.lastDiagnosis.deviceHealth.hardwareCondition}
 Issues: ${devicePassport.lastDiagnosis.deviceHealth.identifiedIssues.join(', ')}
 
 Evaluate:

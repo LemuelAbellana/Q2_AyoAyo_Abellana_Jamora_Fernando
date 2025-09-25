@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
+import '../services/device_specifications_service.dart';
 
 class DeviceDiagnosis {
   final String deviceModel;
@@ -29,6 +30,7 @@ class DeviceDiagnosis {
 
 class DiagnosisResult {
   final String deviceModel;
+  final DeviceSpecification? deviceSpecifications;
   final DeviceHealth deviceHealth;
   final ValueEstimation valueEstimation;
   final List<RecommendedAction> recommendations;
@@ -38,6 +40,7 @@ class DiagnosisResult {
 
   DiagnosisResult({
     required this.deviceModel,
+    this.deviceSpecifications,
     required this.deviceHealth,
     required this.valueEstimation,
     required this.recommendations,
@@ -49,6 +52,9 @@ class DiagnosisResult {
   factory DiagnosisResult.fromJson(Map<String, dynamic> json) {
     return DiagnosisResult(
       deviceModel: json['deviceModel'] ?? '',
+      deviceSpecifications: json['deviceSpecifications'] != null
+          ? DeviceSpecification.fromJson(json['deviceSpecifications'])
+          : null,
       deviceHealth: DeviceHealth.fromJson(json['deviceHealth'] ?? {}),
       valueEstimation: ValueEstimation.fromJson(json['valueEstimation'] ?? {}),
       recommendations:
@@ -65,6 +71,7 @@ class DiagnosisResult {
   Map<String, dynamic> toJson() {
     return {
       'deviceModel': deviceModel,
+      'deviceSpecifications': deviceSpecifications?.toJson(),
       'deviceHealth': deviceHealth.toJson(),
       'valueEstimation': valueEstimation.toJson(),
       'recommendations': recommendations.map((e) => e.toJson()).toList(),
@@ -76,7 +83,6 @@ class DiagnosisResult {
 }
 
 class DeviceHealth {
-  final double batteryHealth;
   final ScreenCondition screenCondition;
   final HardwareCondition hardwareCondition;
   final List<String> identifiedIssues;
@@ -85,7 +91,6 @@ class DeviceHealth {
   final String environmentalImpact;
 
   DeviceHealth({
-    required this.batteryHealth,
     required this.screenCondition,
     required this.hardwareCondition,
     required this.identifiedIssues,
@@ -96,7 +101,6 @@ class DeviceHealth {
 
   factory DeviceHealth.fromJson(Map<String, dynamic> json) {
     return DeviceHealth(
-      batteryHealth: (json['batteryHealth'] ?? 0.0).toDouble(),
       screenCondition: ScreenCondition.values.firstWhere(
         (e) => e.name == json['screenCondition'],
         orElse: () => ScreenCondition.unknown,
@@ -114,7 +118,6 @@ class DeviceHealth {
 
   Map<String, dynamic> toJson() {
     return {
-      'batteryHealth': batteryHealth,
       'screenCondition': screenCondition.name,
       'hardwareCondition': hardwareCondition.name,
       'identifiedIssues': identifiedIssues,

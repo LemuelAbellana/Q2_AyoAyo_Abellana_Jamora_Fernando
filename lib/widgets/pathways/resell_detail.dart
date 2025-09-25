@@ -115,9 +115,9 @@ class ResellDetail extends StatelessWidget {
             _getConditionColor(diagnosisResult!.deviceHealth.screenCondition),
           ),
           _buildConditionRow(
-            "Battery Health",
-            "${diagnosisResult!.deviceHealth.batteryHealth.toStringAsFixed(0)}%",
-            _getBatteryColor(diagnosisResult!.deviceHealth.batteryHealth),
+            "Overall Health",
+            "${diagnosisResult!.deviceHealth.screenCondition.name} • ${diagnosisResult!.deviceHealth.hardwareCondition.name}",
+            _getOverallHealthColor(diagnosisResult!.deviceHealth),
           ),
           _buildConditionRow(
             "Hardware Condition",
@@ -245,7 +245,7 @@ class ResellDetail extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -326,7 +326,7 @@ class ResellDetail extends StatelessWidget {
       return;
     }
 
-    final provider = context.read<ResellProvider>();
+    // Get condition grade for the listing
     final condition = _getConditionGrade(diagnosisResult!);
 
     showDialog(
@@ -358,15 +358,14 @@ class ResellDetail extends StatelessWidget {
     final screenGood =
         result.deviceHealth.screenCondition == ScreenCondition.excellent ||
         result.deviceHealth.screenCondition == ScreenCondition.good;
-    final batteryGood = result.deviceHealth.batteryHealth > 0.7;
     final hardwareGood =
         result.deviceHealth.hardwareCondition == HardwareCondition.excellent ||
         result.deviceHealth.hardwareCondition == HardwareCondition.good;
 
-    if (screenGood && batteryGood && hardwareGood) {
+    if (screenGood && hardwareGood) {
       return ConditionGrade.excellent;
     }
-    if (screenGood || batteryGood || hardwareGood) return ConditionGrade.good;
+    if (screenGood || hardwareGood) return ConditionGrade.good;
     if (result.deviceHealth.screenCondition == ScreenCondition.cracked) {
       return ConditionGrade.damaged;
     }
@@ -389,11 +388,6 @@ class ResellDetail extends StatelessWidget {
     }
   }
 
-  Color _getBatteryColor(double batteryHealth) {
-    if (batteryHealth > 0.8) return Colors.green;
-    if (batteryHealth > 0.5) return Colors.orange;
-    return Colors.red;
-  }
 
   Color _getHardwareColor(HardwareCondition condition) {
     switch (condition) {
@@ -407,6 +401,21 @@ class ResellDetail extends StatelessWidget {
         return Colors.red;
       case HardwareCondition.unknown:
         return Colors.grey;
+    }
+  }
+
+  Color _getOverallHealthColor(DeviceHealth deviceHealth) {
+    final screenGood = deviceHealth.screenCondition == ScreenCondition.excellent ||
+                      deviceHealth.screenCondition == ScreenCondition.good;
+    final hardwareGood = deviceHealth.hardwareCondition == HardwareCondition.excellent ||
+                        deviceHealth.hardwareCondition == HardwareCondition.good;
+
+    if (screenGood && hardwareGood) {
+      return Colors.green;
+    } else if (screenGood || hardwareGood) {
+      return Colors.orange;
+    } else {
+      return Colors.red;
     }
   }
 }

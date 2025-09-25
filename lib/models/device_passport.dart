@@ -171,10 +171,6 @@ class DevicePassport {
             ),
             const SizedBox(height: 8.0),
             _buildPassportRow(
-              'Battery Health',
-              _formatBatteryHealth(lastDiagnosis.deviceHealth.batteryHealth),
-            ),
-            _buildPassportRow(
               'Screen Condition',
               _formatScreenCondition(
                 lastDiagnosis.deviceHealth.screenCondition,
@@ -228,13 +224,6 @@ class DevicePassport {
     );
   }
 
-  String _formatBatteryHealth(double batteryHealth) {
-    // If battery health is 0 or negative, show as unknown
-    if (batteryHealth <= 0) {
-      return 'Unknown';
-    }
-    return '${batteryHealth.toStringAsFixed(0)}%';
-  }
 
   String _formatScreenCondition(ScreenCondition condition) {
     switch (condition) {

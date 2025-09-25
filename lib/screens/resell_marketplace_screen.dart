@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import '../models/resell_listing.dart';
 import '../models/marketplace.dart';
+import '../models/device_diagnosis.dart';
 import '../providers/resell_provider.dart';
 
 class ResellMarketplaceScreen extends StatefulWidget {
@@ -327,7 +328,7 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
-      shadowColor: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+      shadowColor: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: () => _showListingDetails(context, listing),
@@ -339,7 +340,7 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
             gradient: LinearGradient(
               colors: [
                 Theme.of(context).colorScheme.surface,
-                Theme.of(context).colorScheme.surface.withOpacity(0.8),
+                Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -373,12 +374,12 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
                     decoration: BoxDecoration(
                       color: _getConditionColor(
                         listing.condition,
-                      ).withOpacity(0.1),
+                      ).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: _getConditionColor(
                           listing.condition,
-                        ).withOpacity(0.3),
+                        ).withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
@@ -402,7 +403,7 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
                 decoration: BoxDecoration(
                   color: Theme.of(
                     context,
-                  ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -465,7 +466,7 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
                 decoration: BoxDecoration(
                   color: Theme.of(
                     context,
-                  ).colorScheme.primaryContainer.withOpacity(0.3),
+                  ).colorScheme.primaryContainer.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -502,13 +503,13 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
                         ),
                         decoration: BoxDecoration(
                           color: listing.isPriceOptimal
-                              ? Colors.green.withOpacity(0.1)
-                              : Colors.orange.withOpacity(0.1),
+                              ? Colors.green.withValues(alpha: 0.1)
+                              : Colors.orange.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                             color: listing.isPriceOptimal
-                                ? Colors.green.withOpacity(0.3)
-                                : Colors.orange.withOpacity(0.3),
+                                ? Colors.green.withValues(alpha: 0.3)
+                                : Colors.orange.withValues(alpha: 0.3),
                           ),
                         ),
                         child: Row(
@@ -548,19 +549,19 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
               Row(
                 children: [
                   Icon(
-                    LucideIcons.battery,
+                    LucideIcons.cpu,
                     size: 16,
-                    color: _getBatteryColor(
+                    color: _getHardwareColor(
                       listing
                           .devicePassport
                           .lastDiagnosis
                           .deviceHealth
-                          .batteryHealth,
+                          .hardwareCondition,
                     ),
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    '${listing.devicePassport.lastDiagnosis.deviceHealth.batteryHealth.toStringAsFixed(0)}% Battery',
+                    '${listing.devicePassport.lastDiagnosis.deviceHealth.hardwareCondition.name} Hardware',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[600],
@@ -583,10 +584,19 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
     );
   }
 
-  Color _getBatteryColor(double batteryHealth) {
-    if (batteryHealth >= 80) return Colors.green;
-    if (batteryHealth >= 50) return Colors.orange;
-    return Colors.red;
+  Color _getHardwareColor(HardwareCondition condition) {
+    switch (condition) {
+      case HardwareCondition.excellent:
+      case HardwareCondition.good:
+        return Colors.green;
+      case HardwareCondition.fair:
+        return Colors.orange;
+      case HardwareCondition.poor:
+      case HardwareCondition.damaged:
+        return Colors.red;
+      case HardwareCondition.unknown:
+        return Colors.grey;
+    }
   }
 
   Widget _buildMyListingCard(ResellListing listing) {
@@ -707,7 +717,7 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 24),

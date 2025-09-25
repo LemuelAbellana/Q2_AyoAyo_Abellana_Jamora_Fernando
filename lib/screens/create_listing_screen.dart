@@ -12,10 +12,10 @@ class CreateListingScreen extends StatefulWidget {
   const CreateListingScreen({super.key});
 
   @override
-  _CreateListingScreenState createState() => _CreateListingScreenState();
+  CreateListingScreenState createState() => CreateListingScreenState();
 }
 
-class _CreateListingScreenState extends State<CreateListingScreen> {
+class CreateListingScreenState extends State<CreateListingScreen> {
   final _formKey = GlobalKey<FormState>();
 
   // Listing form controllers
@@ -157,7 +157,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -251,7 +251,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryGreen.withOpacity(0.3),
+                    color: AppTheme.primaryGreen.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -288,7 +288,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
           ],
         ),
         const SizedBox(height: 16),
-        Divider(color: AppTheme.textSecondary.withOpacity(0.2), thickness: 1),
+        Divider(color: AppTheme.textSecondary.withValues(alpha: 0.2), thickness: 1),
       ],
     );
   }
@@ -304,14 +304,14 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         boxShadow: isEnabled
             ? [
                 BoxShadow(
-                  color: AppTheme.primaryGreen.withOpacity(0.3),
+                  color: AppTheme.primaryGreen.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
               ]
             : [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
+                  color: Colors.grey.withValues(alpha: 0.2),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -393,7 +393,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 decoration: BoxDecoration(
                   color: Theme.of(
                     context,
-                  ).colorScheme.primaryContainer.withOpacity(0.3),
+                  ).colorScheme.primaryContainer.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -477,7 +477,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -579,10 +579,10 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.1),
+                color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: AppTheme.primaryGreen.withOpacity(0.3),
+                  color: AppTheme.primaryGreen.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -620,7 +620,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -640,7 +640,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.primaryGreen.withOpacity(0.3),
+                        color: AppTheme.primaryGreen.withValues(alpha: 0.3),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
@@ -701,7 +701,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 style: TextStyle(color: AppTheme.textSecondary),
               ),
               trailing: Icon(Icons.chevron_right, color: AppTheme.primaryBlue),
-              tileColor: AppTheme.primaryBlue.withOpacity(0.05),
+              tileColor: AppTheme.primaryBlue.withValues(alpha: 0.05),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -720,7 +720,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -834,10 +834,10 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.1),
+                color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: AppTheme.primaryGreen.withOpacity(0.3),
+                  color: AppTheme.primaryGreen.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -974,7 +974,6 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         lastDiagnosis: DiagnosisResult(
           deviceModel: _deviceModelController.text.trim(),
           deviceHealth: DeviceHealth(
-            batteryHealth: 85, // Default good battery
             screenCondition:
                 _selectedCondition == ConditionGrade.excellent ||
                     _selectedCondition == ConditionGrade.good
@@ -1100,7 +1099,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
               decoration: BoxDecoration(
                 color: Theme.of(
                   context,
-                ).colorScheme.primaryContainer.withOpacity(0.3),
+                ).colorScheme.primaryContainer.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(

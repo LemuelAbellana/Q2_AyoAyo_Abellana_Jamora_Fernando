@@ -68,7 +68,6 @@ class ResellProvider extends ChangeNotifier {
           lastDiagnosis: DiagnosisResult(
             deviceModel: 'iPhone 13 Pro',
             deviceHealth: DeviceHealth(
-              batteryHealth: 85,
               screenCondition: ScreenCondition.excellent,
               hardwareCondition: HardwareCondition.excellent,
               identifiedIssues: [],
@@ -99,7 +98,6 @@ class ResellProvider extends ChangeNotifier {
           lastDiagnosis: DiagnosisResult(
             deviceModel: 'Samsung Galaxy S22',
             deviceHealth: DeviceHealth(
-              batteryHealth: 90,
               screenCondition: ScreenCondition.good,
               hardwareCondition: HardwareCondition.good,
               identifiedIssues: [],
@@ -133,7 +131,7 @@ class ResellProvider extends ChangeNotifier {
           aiSuggestedPrice: 23500,
           title: 'iPhone 13 Pro 256GB - Like New Condition',
           description:
-              'Barely used iPhone 13 Pro in excellent condition. Comes with original box and all accessories. Battery health at 85%.',
+              'Barely used iPhone 13 Pro in excellent condition. Comes with original box and all accessories.',
           location: 'Facebook Marketplace',
           imageUrls: ['https://via.placeholder.com/300x300?text=iPhone+13+Pro'],
           status: ListingStatus.active,
@@ -203,7 +201,8 @@ class ResellProvider extends ChangeNotifier {
       final description = customDescription?.trim().isNotEmpty == true
           ? customDescription!
           : 'Quality device in ${condition.toString().split('.').last} condition. '
-                'Battery health: ${devicePassport.lastDiagnosis.deviceHealth.batteryHealth}%. '
+                'Screen: ${devicePassport.lastDiagnosis.deviceHealth.screenCondition.name}, '
+                'Hardware: ${devicePassport.lastDiagnosis.deviceHealth.hardwareCondition.name}. '
                 'Help reduce e-waste by giving this device a second life!';
 
       // Create new listing

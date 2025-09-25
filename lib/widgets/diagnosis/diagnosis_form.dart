@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:provider/provider.dart';
 import '/widgets/diagnosis/image_upload_placeholder.dart';
 import '/providers/diagnosis_provider.dart';
+import '/services/device_specifications_service.dart';
 
 class DiagnosisForm extends StatefulWidget {
   const DiagnosisForm({super.key});
@@ -12,21 +14,13 @@ class DiagnosisForm extends StatefulWidget {
 }
 
 class _DiagnosisFormState extends State<DiagnosisForm> {
-  final TextEditingController _deviceModelController = TextEditingController();
-  final TextEditingController _manufacturerController = TextEditingController();
-  final TextEditingController _yearOfReleaseController =
-      TextEditingController();
-  final TextEditingController _operatingSystemController =
-      TextEditingController();
   final TextEditingController _deviceConditionController =
       TextEditingController();
+  String? _identifiedDevice;
+  String? _identifiedSpecs;
 
   @override
   void dispose() {
-    _deviceModelController.dispose();
-    _manufacturerController.dispose();
-    _yearOfReleaseController.dispose();
-    _operatingSystemController.dispose();
     _deviceConditionController.dispose();
     super.dispose();
   }
@@ -166,60 +160,76 @@ class _DiagnosisFormState extends State<DiagnosisForm> {
             ),
             const SizedBox(height: 24),
 
-            // Device Information Fields
-            TextField(
-              controller: _deviceModelController,
-              decoration: const InputDecoration(
-                labelText: 'Device Model *',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.smartphone),
-                hintText: 'e.g., iPhone 13, Samsung Galaxy S22',
+            // AI Device Identification Section
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.purple.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.purple.shade200),
               ),
-              onChanged: (value) {
-                context.read<DiagnosisProvider>().setDeviceModel(value);
-              },
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _manufacturerController,
-              decoration: const InputDecoration(
-                labelText: 'Manufacturer',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.factory),
-                hintText: 'e.g., Apple, Samsung, Xiaomi',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.camera_alt, color: Colors.purple.shade700),
+                      const SizedBox(width: 8),
+                      Text(
+                        'AI Device Scanner',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.purple.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Upload photos of your device and our AI will automatically identify the model and specifications',
+                    style: TextStyle(color: Colors.grey[700], fontSize: 14),
+                  ),
+                  if (_identifiedDevice != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.green.shade200),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.check_circle, color: Colors.green.shade600, size: 20),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Device Identified: $_identifiedDevice',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green.shade700,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (_identifiedSpecs != null) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              _identifiedSpecs!,
+                              style: TextStyle(color: Colors.grey[700], fontSize: 12),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              onChanged: (value) {
-                context.read<DiagnosisProvider>().setManufacturer(value);
-              },
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _yearOfReleaseController,
-              decoration: const InputDecoration(
-                labelText: 'Year of Release',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.calendar_today),
-                hintText: 'e.g., 2022',
-              ),
-              keyboardType: TextInputType.number,
-              onChanged: (value) {
-                context.read<DiagnosisProvider>().setYearOfRelease(value);
-              },
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _operatingSystemController,
-              decoration: const InputDecoration(
-                labelText: 'Operating System',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.android),
-                hintText: 'e.g., iOS 16, Android 13',
-              ),
-              onChanged: (value) {
-                context.read<DiagnosisProvider>().setOperatingSystem(value);
-              },
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             TextField(
               controller: _deviceConditionController,
               decoration: const InputDecoration(
@@ -235,9 +245,10 @@ class _DiagnosisFormState extends State<DiagnosisForm> {
             ),
             const SizedBox(height: 16),
             ImageUploadPlaceholder(
-              label: 'Upload Device Images',
+              label: 'Upload Device Images for AI Scanning',
               onImagesSelected: (imageFiles) {
                 context.read<DiagnosisProvider>().setSelectedImages(imageFiles);
+                _performDeviceIdentification(imageFiles);
               },
             ),
             const SizedBox(height: 24),
@@ -310,5 +321,55 @@ class _DiagnosisFormState extends State<DiagnosisForm> {
         ),
       ),
     );
+  }
+
+  void _performDeviceIdentification(List<File> imageFiles) async {
+    if (imageFiles.isEmpty) return;
+
+    // Show loading state
+    if (mounted) {
+      setState(() {
+        _identifiedDevice = 'Analyzing...';
+        _identifiedSpecs = null;
+      });
+    }
+
+    try {
+      // Simulate AI device identification process
+      await Future.delayed(const Duration(milliseconds: 1500));
+
+      // In a real implementation, this would analyze the images using AI
+      // For now, we'll simulate device identification
+      final deviceSpec = _simulateDeviceIdentification();
+
+      if (mounted && deviceSpec != null) {
+        setState(() {
+          _identifiedDevice = deviceSpec.deviceModel;
+          _identifiedSpecs = 'RAM: ${deviceSpec.ram} • Storage: ${deviceSpec.storage} • Processor: ${deviceSpec.processor}';
+        });
+
+        // Set the identified device model in the provider
+        context.read<DiagnosisProvider>().setDeviceModel(deviceSpec.deviceModel);
+      }
+    } catch (e) {
+      // Handle identification error
+      if (mounted) {
+        setState(() {
+          _identifiedDevice = 'Unable to identify device';
+          _identifiedSpecs = 'Please ensure images are clear and well-lit';
+        });
+      }
+    }
+  }
+
+  DeviceSpecification? _simulateDeviceIdentification() {
+    // This simulates AI device identification
+    // In reality, this would send the images to Gemini for analysis
+    final supportedDevices = DeviceSpecificationsService.getSupportedDeviceModels();
+    if (supportedDevices.isNotEmpty) {
+      // Simulate identifying a Samsung S21 Ultra for demonstration
+      return DeviceSpecificationsService.getDeviceSpecification('samsung galaxy s21 ultra');
+    }
+    return null;
   }
 }

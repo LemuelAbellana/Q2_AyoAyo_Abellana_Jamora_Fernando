@@ -205,6 +205,56 @@ class _DevicePassportCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 20),
+
+              // AI Phone Recognition Section
+              if (provider.currentResult != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.teal.shade50, Colors.cyan.shade50],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.teal.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.teal.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              LucideIcons.smartphone,
+                              color: Colors.teal.shade700,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            "🤖 AI Device Recognition",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.teal.shade900,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _buildPhoneRecognitionInfo(provider),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+
               // Diagnosis Indicators Section
               const Text(
                 "Component Analysis",
@@ -295,12 +345,12 @@ class _DevicePassportCard extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: _getConfidenceColor(
                             provider.currentResult!.confidenceScore,
-                          ).withOpacity(0.1),
+                          ).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: _getConfidenceColor(
                               provider.currentResult!.confidenceScore,
-                            ).withOpacity(0.3),
+                            ).withValues(alpha: 0.3),
                           ),
                         ),
                         child: Text(
@@ -477,16 +527,16 @@ class _DevicePassportCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -514,7 +564,7 @@ class _DevicePassportCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -545,6 +595,189 @@ class _DevicePassportCard extends StatelessWidget {
     if (color == Colors.orange) return "Functional";
     if (color == Colors.red) return "Issues Found";
     return "Check";
+  }
+
+  // Phone Recognition Info Builder
+  Widget _buildPhoneRecognitionInfo(DiagnosisProvider provider) {
+    final result = provider.currentResult;
+    if (result == null) return const SizedBox();
+
+    // Extract phone model from AI analysis or use provided device model
+    final recognizedModel = _extractPhoneModel(result.aiAnalysis) ?? result.deviceModel;
+    final confidence = _extractConfidence(result.aiAnalysis);
+    final manufacturer = _extractManufacturer(result.aiAnalysis) ?? _extractManufacturerFromModel(recognizedModel);
+
+    return Column(
+      children: [
+        // Recognized Phone Model
+        Row(
+          children: [
+            Icon(
+              LucideIcons.tag,
+              size: 16,
+              color: Colors.teal.shade700,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: RichText(
+                text: TextSpan(
+                  style: TextStyle(color: Colors.teal.shade800, fontSize: 14),
+                  children: [
+                    const TextSpan(
+                      text: 'Model: ',
+                      style: TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    TextSpan(
+                      text: recognizedModel,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+
+        // Manufacturer
+        Row(
+          children: [
+            Icon(
+              LucideIcons.building2,
+              size: 16,
+              color: Colors.teal.shade700,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: RichText(
+                text: TextSpan(
+                  style: TextStyle(color: Colors.teal.shade800, fontSize: 14),
+                  children: [
+                    const TextSpan(
+                      text: 'Brand: ',
+                      style: TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    TextSpan(
+                      text: manufacturer,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+
+        // Recognition Confidence
+        if (confidence != null) ...[
+          Row(
+            children: [
+              Icon(
+                LucideIcons.target,
+                size: 16,
+                color: Colors.teal.shade700,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: RichText(
+                  text: TextSpan(
+                    style: TextStyle(color: Colors.teal.shade800, fontSize: 14),
+                    children: [
+                      const TextSpan(
+                        text: 'AI Confidence: ',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      TextSpan(
+                        text: confidence,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: _getRecognitionConfidenceColor(confidence),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+        ],
+
+        // Status indicator
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.teal.shade100,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                LucideIcons.eye,
+                size: 14,
+                color: Colors.teal.shade700,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'AI Vision Analysis Complete',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.teal.shade700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Helper methods for extracting information from AI analysis
+  String? _extractPhoneModel(String aiAnalysis) {
+    // Look for phone model in the AI analysis text
+    final modelPattern = RegExp(r'Model:\s*(.+?)(?:\n|$)', caseSensitive: false);
+    final match = modelPattern.firstMatch(aiAnalysis);
+    return match?.group(1)?.trim();
+  }
+
+  String? _extractManufacturer(String aiAnalysis) {
+    // Look for manufacturer in the AI analysis text
+    final manufacturerPattern = RegExp(r'Manufacturer:\s*(.+?)(?:\n|$)', caseSensitive: false);
+    final match = manufacturerPattern.firstMatch(aiAnalysis);
+    return match?.group(1)?.trim();
+  }
+
+  String _extractManufacturerFromModel(String model) {
+    // Extract manufacturer from model name if not found in analysis
+    final lowerModel = model.toLowerCase();
+    if (lowerModel.contains('iphone') || lowerModel.contains('apple')) return 'Apple';
+    if (lowerModel.contains('samsung') || lowerModel.contains('galaxy')) return 'Samsung';
+    if (lowerModel.contains('pixel') || lowerModel.contains('google')) return 'Google';
+    if (lowerModel.contains('huawei')) return 'Huawei';
+    if (lowerModel.contains('xiaomi') || lowerModel.contains('redmi')) return 'Xiaomi';
+    if (lowerModel.contains('oneplus')) return 'OnePlus';
+    if (lowerModel.contains('oppo')) return 'Oppo';
+    if (lowerModel.contains('vivo')) return 'Vivo';
+    if (lowerModel.contains('realme')) return 'Realme';
+    return 'Unknown';
+  }
+
+  String? _extractConfidence(String aiAnalysis) {
+    // Look for confidence level in the AI analysis text
+    final confidencePattern = RegExp(r'Confidence:\s*(.+?)(?:\n|$)', caseSensitive: false);
+    final match = confidencePattern.firstMatch(aiAnalysis);
+    return match?.group(1)?.trim();
+  }
+
+  Color _getRecognitionConfidenceColor(String confidence) {
+    final lowerConfidence = confidence.toLowerCase();
+    if (lowerConfidence.contains('high')) return Colors.green.shade600;
+    if (lowerConfidence.contains('medium')) return Colors.orange.shade600;
+    if (lowerConfidence.contains('low')) return Colors.red.shade600;
+    return Colors.grey.shade600;
   }
 }
 

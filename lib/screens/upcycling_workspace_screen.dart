@@ -807,10 +807,6 @@ class _AIProjectGeneratorDialogState extends State<_AIProjectGeneratorDialog> {
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   Text(
-                    'Battery: ${widget.diagnosisResult.deviceHealth.batteryHealth.toStringAsFixed(0)}%',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                  Text(
                     'Hardware: ${widget.diagnosisResult.deviceHealth.hardwareCondition.name}',
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),

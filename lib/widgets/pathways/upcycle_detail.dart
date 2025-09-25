@@ -3,22 +3,9 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../models/device_diagnosis.dart';
 import '../../providers/upcycling_provider.dart';
+import '../../services/upcycle_steps_service.dart';
 
-class UpcycleProject {
-  final String title;
-  final String description;
-  final IconData icon;
-  final List<String> requiredComponents;
-  final String difficulty;
-
-  UpcycleProject({
-    required this.title,
-    required this.description,
-    required this.icon,
-    this.requiredComponents = const [],
-    required this.difficulty,
-  });
-}
+// Removed local UpcycleProject class - using the one from upcycle_steps_service.dart
 
 class UpcycleDetail extends StatelessWidget {
   final DiagnosisResult diagnosisResult;
@@ -29,7 +16,7 @@ class UpcycleDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<UpcyclingProvider>(
       builder: (context, upcyclingProvider, child) {
-        final suggestions = _buildUpcycleSuggestions(diagnosisResult);
+        final suggestions = UpcycleStepsService.generateDetailedUpcycleProjects(diagnosisResult);
 
         return Card(
           color: Colors.grey[50],
@@ -122,11 +109,6 @@ class UpcycleDetail extends StatelessWidget {
             _getConditionColor(diagnosisResult.deviceHealth.screenCondition),
           ),
           _buildConditionRow(
-            "Battery Health",
-            "${diagnosisResult.deviceHealth.batteryHealth.toStringAsFixed(0)}%",
-            _getBatteryColor(diagnosisResult.deviceHealth.batteryHealth),
-          ),
-          _buildConditionRow(
             "Hardware Condition",
             diagnosisResult.deviceHealth.hardwareCondition.name,
             _getHardwareColor(diagnosisResult.deviceHealth.hardwareCondition),
@@ -184,27 +166,101 @@ class UpcycleDetail extends StatelessWidget {
             ...suggestions
                 .take(2)
                 .map(
-                  (project) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
+                  (project) => Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.purple.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(project.icon, size: 20, color: Colors.purple[600]),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            project.title,
-                            style: const TextStyle(fontWeight: FontWeight.w500),
-                          ),
+                        Row(
+                          children: [
+                            Icon(_getProjectIcon(project.category),
+                                 size: 20, color: Colors.purple[600]),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                project.title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            Chip(
+                              label: Text(project.difficulty),
+                              backgroundColor: _getDifficultyColor(project.difficulty),
+                              labelStyle: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
                         ),
-                        Chip(
-                          label: Text(project.difficulty),
-                          backgroundColor: _getDifficultyColor(
-                            project.difficulty,
+                        const SizedBox(height: 8),
+                        Text(
+                          project.description,
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 12,
                           ),
-                          labelStyle: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(LucideIcons.clock, size: 14, color: Colors.grey[600]),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${project.totalEstimatedHours}h',
+                              style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                            ),
+                            const SizedBox(width: 16),
+                            Icon(LucideIcons.dollarSign, size: 14, color: Colors.grey[600]),
+                            const SizedBox(width: 4),
+                            Text(
+                              '₱${project.estimatedCost.toStringAsFixed(0)}',
+                              style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                            ),
+                            const SizedBox(width: 16),
+                            Icon(LucideIcons.leaf, size: 14, color: Colors.green[600]),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${project.sustainabilityScore}/10',
+                              style: TextStyle(color: Colors.green[600], fontSize: 11),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '${project.steps.length} detailed steps',
+                                style: TextStyle(
+                                  color: Colors.purple[600],
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () => _showProjectDetails(context, project),
+                              child: Text(
+                                'View Details →',
+                                style: TextStyle(
+                                  color: Colors.purple[600],
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -346,11 +402,6 @@ class UpcycleDetail extends StatelessWidget {
     }
   }
 
-  Color _getBatteryColor(double batteryHealth) {
-    if (batteryHealth > 0.8) return Colors.green;
-    if (batteryHealth > 0.5) return Colors.orange;
-    return Colors.red;
-  }
 
   Color _getHardwareColor(HardwareCondition condition) {
     switch (condition) {
@@ -367,119 +418,285 @@ class UpcycleDetail extends StatelessWidget {
     }
   }
 
-  List<UpcycleProject> _buildUpcycleSuggestions(DiagnosisResult result) {
-    final projects = _getAllProjects();
-    final Set<UpcycleProject> suggestions = {};
-
-    // --- Decision-Making Logic ---
-
-    final bool goodScreen =
-        result.deviceHealth.screenCondition == ScreenCondition.excellent ||
-        result.deviceHealth.screenCondition == ScreenCondition.good;
-
-    final bool goodHardware =
-        result.deviceHealth.hardwareCondition == HardwareCondition.excellent ||
-        result.deviceHealth.hardwareCondition == HardwareCondition.good;
-
-    final bool poorBattery = result.deviceHealth.batteryHealth < 0.5;
-
-    // Rule 1: Screen-based projects
-    if (goodScreen) {
-      _addProject(suggestions, projects, "Digital Photo Frame");
+  IconData _getProjectIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'home decor':
+        return LucideIcons.image;
+      case 'smart home':
+        return LucideIcons.house;
+      case 'gaming':
+        return LucideIcons.gamepad2;
+      case 'security':
+        return LucideIcons.camera;
+      case 'component recovery':
+        return LucideIcons.wrench;
+      default:
+        return LucideIcons.cpu;
     }
+  }
 
-    // Rule 2: High-performance projects
-    if (goodHardware) {
-      _addProject(suggestions, projects, "Smart Home Hub");
-      if (goodScreen) {
-        _addProject(suggestions, projects, "Retro Game Emulator");
-      }
-    }
-
-    // Rule 3: Component-based projects
-    bool cameraIsOK = !result.deviceHealth.identifiedIssues.any(
-      (issue) => issue.toLowerCase().contains('camera'),
+  void _showProjectDetails(BuildContext context, UpcycleProject project) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.95,
+        minChildSize: 0.5,
+        builder: (context, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    Row(
+                      children: [
+                        Icon(_getProjectIcon(project.category),
+                             size: 24, color: Colors.purple[600]),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            project.title,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Chip(
+                          label: Text(project.difficulty),
+                          backgroundColor: _getDifficultyColor(project.difficulty),
+                          labelStyle: const TextStyle(color: Colors.white),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      project.description,
+                      style: TextStyle(color: Colors.grey[700], fontSize: 16),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        _buildProjectInfoCard(
+                          'Duration',
+                          '${project.totalEstimatedHours}h',
+                          LucideIcons.clock,
+                          Colors.blue
+                        ),
+                        const SizedBox(width: 12),
+                        _buildProjectInfoCard(
+                          'Cost',
+                          '₱${project.estimatedCost.toStringAsFixed(0)}',
+                          LucideIcons.dollarSign,
+                          Colors.orange
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        _buildProjectInfoCard(
+                          'Sustainability',
+                          '${project.sustainabilityScore}/10',
+                          LucideIcons.leaf,
+                          Colors.green
+                        ),
+                        const SizedBox(width: 12),
+                        _buildProjectInfoCard(
+                          'Steps',
+                          '${project.steps.length}',
+                          LucideIcons.list,
+                          Colors.purple
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Project Steps',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...project.steps.map((step) => _buildStepCard(step)).toList(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
-
-    if (cameraIsOK) {
-      _addProject(suggestions, projects, "Security Camera");
-    }
-
-    if (!poorBattery) {
-      _addProject(suggestions, projects, "Portable Bluetooth Speaker");
-    }
-
-    // Add a fallback project if no specific suggestions are generated
-    if (suggestions.isEmpty) {
-      _addProject(suggestions, projects, "Component Practice");
-    }
-
-    return suggestions.toList();
   }
 
-  void _addProject(
-    Set<UpcycleProject> suggestions,
-    List<UpcycleProject> projects,
-    String title,
-  ) {
-    for (final p in projects) {
-      if (p.title == title) {
-        suggestions.add(p);
-        return; // Found it, no need to look further
-      }
-    }
+  Widget _buildProjectInfoCard(String label, String value, IconData icon, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: color,
+                fontSize: 16,
+              ),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  List<UpcycleProject> _getAllProjects() {
-    return [
-      UpcycleProject(
-        title: "Smart Home Hub",
-        description:
-            "Use the mainboard and screen to create a central dashboard for controlling smart home devices.",
-        icon: LucideIcons.house,
-        difficulty: "Hard",
-        requiredComponents: ["Mainboard", "Screen", "Wi-Fi Module"],
+  Widget _buildStepCard(UpcycleStep step) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
       ),
-      UpcycleProject(
-        title: "Digital Photo Frame",
-        description:
-            "A classic project. If the screen is in good condition, it can display a slideshow of your favorite photos.",
-        icon: LucideIcons.image,
-        difficulty: "Easy",
-        requiredComponents: ["Screen", "Mainboard"],
+      child: ExpansionTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.purple[100],
+          child: Text(
+            '${step.stepNumber}',
+            style: TextStyle(
+              color: Colors.purple[700],
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        title: Text(
+          step.title,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(
+          '~${step.estimatedMinutes} min • ${step.difficulty}',
+          style: TextStyle(color: Colors.grey[600]),
+        ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(step.description),
+                if (step.materials.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Materials:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  ...step.materials.map((material) => Text('• $material')).toList(),
+                ],
+                if (step.tools.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Tools:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  ...step.tools.map((tool) => Text('• $tool')).toList(),
+                ],
+                if (step.safetyNote.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.orange[200]!),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(LucideIcons.triangleAlert,
+                             color: Colors.orange[700], size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            step.safetyNote,
+                            style: TextStyle(color: Colors.orange[700], fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                if (step.tips.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Pro Tips:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  ...step.tips.map((tip) => Container(
+                    margin: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(LucideIcons.lightbulb,
+                             color: Colors.yellow[700], size: 14),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            tip,
+                            style: TextStyle(color: Colors.grey[700], fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )).toList(),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
-      UpcycleProject(
-        title: "Portable Bluetooth Speaker",
-        description:
-            "Salvage the speakers and battery to create a portable music player. Requires some soldering and a Bluetooth audio module.",
-        icon: LucideIcons.volume2,
-        difficulty: "Medium",
-        requiredComponents: ["Speakers", "Battery", "Charging Port"],
-      ),
-      UpcycleProject(
-        title: "Security Camera",
-        description:
-            "If the camera module still works, you can set it up as a DIY security camera, streaming video over your local network.",
-        icon: LucideIcons.camera,
-        difficulty: "Medium",
-        requiredComponents: ["Camera Module", "Mainboard", "Wi-Fi Module"],
-      ),
-      UpcycleProject(
-        title: "Retro Game Emulator",
-        description:
-            "The processor might be powerful enough to emulate old game consoles. A fun project for gamers.",
-        icon: LucideIcons.gamepad2,
-        difficulty: "Hard",
-        requiredComponents: ["Mainboard", "Screen", "Buttons (optional)"],
-      ),
-      UpcycleProject(
-        title: "Component Practice",
-        description:
-            "Carefully disassemble the device to learn how it was constructed. A great way to practice soldering and identify components for future projects.",
-        icon: LucideIcons.wrench,
-        difficulty: "Easy",
-        requiredComponents: ["All components"],
-      ),
-    ];
+    );
   }
 }

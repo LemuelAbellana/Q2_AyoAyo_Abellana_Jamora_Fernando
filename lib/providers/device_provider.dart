@@ -114,7 +114,6 @@ class DeviceProvider extends ChangeNotifier {
         aiAnalysis: row['ai_analysis']?.toString() ?? 'No analysis available',
         confidenceScore: (row['confidence_score'] as num?)?.toDouble() ?? 0.8,
         deviceHealth: DeviceHealth(
-          batteryHealth: (row['battery_health'] as num?)?.toDouble() ?? 80.0,
           screenCondition: _parseScreenCondition(row['screen_condition']?.toString()),
           hardwareCondition: _parseHardwareCondition(row['hardware_condition']?.toString()),
           identifiedIssues: identifiedIssues,
@@ -162,7 +161,6 @@ class DeviceProvider extends ChangeNotifier {
           aiAnalysis: 'Error loading device data',
           confidenceScore: 0.0,
           deviceHealth: DeviceHealth(
-            batteryHealth: 0.0,
             screenCondition: ScreenCondition.unknown,
             hardwareCondition: HardwareCondition.unknown,
             identifiedIssues: [],
@@ -270,7 +268,6 @@ class DeviceProvider extends ChangeNotifier {
         'user_id': 1, // TODO: Get from auth service
         'device_id': deviceId,
         'diagnosis_uuid': 'diag_${DateTime.now().millisecondsSinceEpoch}',
-        'battery_health': passport.lastDiagnosis.deviceHealth.batteryHealth,
         'screen_condition': passport.lastDiagnosis.deviceHealth.screenCondition.name,
         'hardware_condition': passport.lastDiagnosis.deviceHealth.hardwareCondition.name,
         'identified_issues': passport.lastDiagnosis.deviceHealth.identifiedIssues.join(','),
