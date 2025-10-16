@@ -72,10 +72,12 @@ class UserService {
 
       print('✅ OAuth authentication successful for user: ${oauthUserData['email']}');
 
-      // Sync with backend (optional - fallback to local if it fails)
+      // Sync with Laravel backend (creates/updates user in database)
       if (ApiConfig.useBackendApi) {
         try {
-          print('🌐 Syncing OAuth with Laravel backend...');
+          print('🌐 Syncing OAuth user with Laravel backend...');
+          print('📤 Creating/updating user in MySQL database...');
+
           final backendResponse = await ApiService.oauthSignIn(
             uid: oauthUserData['uid'],
             email: oauthUserData['email'],
@@ -87,21 +89,44 @@ class UserService {
           );
 
           if (backendResponse['user'] != null) {
+            // User successfully created/updated in Laravel MySQL database
             _currentUser = backendResponse['user'];
             await _saveUserLocally(_currentUser!);
-            print('✅ Backend OAuth sync successful');
+
+            print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            print('✅ User saved to Laravel database successfully!');
+            print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            print('📊 Database ID: ${_currentUser!['id']}');
+            print('📧 Email: ${_currentUser!['email']}');
+            print('👤 Name: ${_currentUser!['name'] ?? _currentUser!['display_name']}');
+            print('🔐 Provider: ${_currentUser!['auth_provider'] ?? provider}');
+            print('🔑 Auth Token: ${backendResponse['token'] != null ? "✅ Received" : "❌ None"}');
+            print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
             return _currentUser;
+          } else {
+            throw Exception('Backend returned invalid user data');
           }
         } catch (e) {
+          print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           print('⚠️ Backend OAuth sync failed: $e');
+          print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           print('📱 Falling back to local-only mode...');
+          print('💡 Make sure Laravel backend is running at: ${ApiConfig.backendUrl}');
+          print('💡 Check: php artisan serve');
+          print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
           // Fallback to local storage when backend fails
           _currentUser = oauthUserData;
           await _saveUserLocally(_currentUser!);
           return _currentUser;
         }
       } else {
+        print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         print('⚠️ Backend API is disabled - using local OAuth data only');
+        print('💡 To save users to Laravel database: Set USE_BACKEND_API=true in .env');
+        print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
         _currentUser = oauthUserData;
         await _saveUserLocally(_currentUser!);
         return _currentUser;
