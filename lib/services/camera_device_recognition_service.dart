@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:ayoayo/config/api_config.dart';
 import 'package:ayoayo/services/database_service.dart';
+import 'package:ayoayo/services/api_service.dart';
 
 class DeviceRecognitionResult {
   final String deviceModel;
@@ -44,11 +45,12 @@ class DeviceRecognitionResult {
 }
 
 class CameraDeviceRecognitionService {
-  static const String _apiKey = ApiConfig.geminiApiKey;
+  late final String _apiKey;
   late final GenerativeModel _model;
   final DatabaseService _databaseService = DatabaseService();
 
   CameraDeviceRecognitionService() {
+    _apiKey = ApiConfig.geminiApiKey;
     _model = GenerativeModel(
       model: 'gemini-1.5-flash',
       apiKey: _apiKey,
@@ -59,10 +61,12 @@ class CameraDeviceRecognitionService {
         maxOutputTokens: 2048,
       ),
     );
+    print('✅ Camera Device Recognition Service initialized');
   }
 
   Future<DeviceRecognitionResult> recognizeDeviceFromImage(File imageFile) async {
-    if (ApiConfig.useDemoMode || _apiKey == 'YOUR_GEMINI_API_KEY_HERE') {
+    if (ApiConfig.useDemoMode || _apiKey == 'YOUR_GEMINI_API_KEY_HERE' || _apiKey.isEmpty) {
+      print('📱 Using demo mode for device recognition');
       return _generateDemoRecognitionResult();
     }
 
@@ -91,7 +95,8 @@ class CameraDeviceRecognitionService {
       throw ArgumentError('No images provided for device recognition');
     }
 
-    if (ApiConfig.useDemoMode || _apiKey == 'YOUR_GEMINI_API_KEY_HERE') {
+    if (ApiConfig.useDemoMode || _apiKey == 'YOUR_GEMINI_API_KEY_HERE' || _apiKey.isEmpty) {
+      print('📱 Using demo mode for multiple image device recognition');
       return _generateDemoRecognitionResult();
     }
 
@@ -355,7 +360,35 @@ Use multiple images to increase accuracy and confidence in identification.
 
   Future<String> saveRecognizedDevice(DeviceRecognitionResult result, String userId, List<String> imageUrls) async {
     try {
+      // Use backend API if enabled and user is authenticated
+      if (ApiConfig.useBackendApi && ApiService.isAuthenticated) {
+        print('💾 Saving device to backend API');
 
+        try {
+          final response = await ApiService.saveRecognizedDevice(
+            userId: userId,
+            deviceModel: result.deviceModel,
+            manufacturer: result.manufacturer,
+            yearOfRelease: result.yearOfRelease,
+            operatingSystem: result.operatingSystem,
+            confidence: result.confidence,
+            analysisDetails: result.analysisDetails,
+            imageUrls: imageUrls,
+          );
+
+          final devicePassportId = response['devicePassportId']?.toString();
+          if (devicePassportId != null) {
+            print('✅ Device saved to backend: $devicePassportId');
+            return devicePassportId;
+          }
+        } catch (e) {
+          print('⚠️ Backend save failed, falling back to local storage: $e');
+          // Fall through to local save
+        }
+      }
+
+      // Local SQLite storage (original implementation)
+      print('💾 Saving device to local storage');
       final devicePassportData = {
         'id': DateTime.now().millisecondsSinceEpoch,
         'userId': userId,
@@ -401,10 +434,11 @@ Use multiple images to increase accuracy and confidence in identification.
       };
 
       await _databaseService.saveWebDevicePassports([devicePassportData]);
+      print('✅ Device saved to local storage: ${devicePassportData['id']}');
 
       return devicePassportData['id'].toString();
     } catch (e) {
-      print('Error saving recognized device: $e');
+      print('❌ Error saving recognized device: $e');
       rethrow;
     }
   }
@@ -441,16 +475,22 @@ Use multiple images to increase accuracy and confidence in identification.
   }
 
   Future<bool> validateApiKey() async {
-    if (ApiConfig.useDemoMode || _apiKey == 'YOUR_GEMINI_API_KEY_HERE') {
+    if (ApiConfig.useDemoMode || _apiKey == 'YOUR_GEMINI_API_KEY_HERE' || _apiKey.isEmpty) {
+      print('⚠️ API key validation skipped - using demo mode');
       return true;
     }
 
     try {
       final testResponse = await _model.generateContent([
         Content.text('Test connection')
-      ]);
+      ]).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw Exception('Validation timeout'),
+      );
+      print('✅ Gemini API key validated successfully');
       return testResponse.text != null;
     } catch (e) {
+      print('❌ API key validation failed: $e');
       return false;
     }
   }

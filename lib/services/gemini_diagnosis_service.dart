@@ -10,7 +10,7 @@ import 'package:ayoayo/services/ai_response_parser_service.dart';
 import 'package:ayoayo/services/ai_chatbot_service.dart';
 
 class GeminiDiagnosisService {
-  static const String _apiKey = ApiConfig.geminiApiKey;
+  late final String _apiKey;
   late final GenerativeModel _model;
 
   // AI Services
@@ -21,14 +21,26 @@ class GeminiDiagnosisService {
   final AIChatbotService _chatbotService = AIChatbotService();
 
   GeminiDiagnosisService() {
-    _model = GenerativeModel(model: 'gemini-1.5-flash', apiKey: _apiKey);
+    _apiKey = ApiConfig.geminiApiKey;
+    _model = GenerativeModel(
+      model: 'gemini-1.5-flash',
+      apiKey: _apiKey,
+      generationConfig: GenerationConfig(
+        temperature: 0.5,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 2048,
+      ),
+    );
+    print('✅ Gemini Diagnosis Service initialized');
   }
 
   Future<DiagnosisResult> diagnoseMobileDevice(
     DeviceDiagnosis diagnosis,
   ) async {
     // Use demo mode if API key is not configured or demo mode is enabled
-    if (ApiConfig.useDemoMode || _apiKey == 'YOUR_GEMINI_API_KEY_HERE') {
+    if (ApiConfig.useDemoMode || _apiKey == 'YOUR_GEMINI_API_KEY_HERE' || _apiKey.isEmpty) {
+      print('🔬 Using demo mode for device diagnosis');
       return await _generateEnhancedDemoResponse(
         diagnosis,
         [],
@@ -227,16 +239,22 @@ class GeminiDiagnosisService {
   }
 
   Future<bool> validateApiKey() async {
-    if (ApiConfig.useDemoMode || _apiKey == 'YOUR_GEMINI_API_KEY_HERE') {
+    if (ApiConfig.useDemoMode || _apiKey == 'YOUR_GEMINI_API_KEY_HERE' || _apiKey.isEmpty) {
+      print('⚠️ API key validation skipped - using demo mode');
       return true;
     }
 
     try {
       final testResponse = await _model.generateContent([
         Content.text('Test connection')
-      ]);
+      ]).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw Exception('Validation timeout'),
+      );
+      print('✅ Gemini API key validated successfully');
       return testResponse.text != null;
     } catch (e) {
+      print('❌ API key validation failed: $e');
       return false;
     }
   }

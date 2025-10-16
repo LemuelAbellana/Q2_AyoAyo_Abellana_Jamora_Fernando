@@ -1,6 +1,7 @@
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import 'demo_auth_service.dart';
+import '../config/api_config.dart';
 
 class RealGoogleAuth {
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
@@ -8,7 +9,8 @@ class RealGoogleAuth {
       'email',
       'profile',
     ],
-    // Remove server client ID to use default configuration from google-services.json
+    // For web, we need to pass the client ID explicitly
+    clientId: kIsWeb ? ApiConfig.googleOAuthClientId : null,
   );
 
   static bool _useRealAuth = true; // Set to true to attempt real Google Sign-In
@@ -18,31 +20,53 @@ class RealGoogleAuth {
     if (_useRealAuth) {
       try {
         print('🔐 Attempting real Google Sign-In...');
+        print('📊 Platform: web');
+        print('📊 Google Sign-In configuration check:');
+        print('   - Client ID should be configured in web/index.html');
+        print('   - Google Identity Services script should be loaded');
+
         final result = await _performRealGoogleSignIn();
         if (result != null) {
-          print('✅ Real Google Sign-In successful');
+          print('✅ Real Google Sign-In successful!');
+          print('👤 User: ${result['email']}');
+          print('📛 Display name: ${result['display_name']}');
           return result;
         }
-        print('⚠️ Real Google Sign-In failed, falling back to demo mode');
-      } catch (e) {
-        print('❌ Real Google Sign-In error: $e');
+        print('⚠️ Real Google Sign-In returned null (user may have cancelled)');
         print('🔄 Falling back to demo mode');
+      } catch (e, stackTrace) {
+        print('❌ Real Google Sign-In error: $e');
+        print('📍 Stack trace (first 3 lines):');
+        print(stackTrace.toString().split('\n').take(3).join('\n'));
+
+        // Detailed error analysis
+        final errorStr = e.toString().toLowerCase();
+        if (errorStr.contains('popup')) {
+          print('🚫 Popup blocker detected - user needs to allow popups');
+        } else if (errorStr.contains('network')) {
+          print('🌐 Network error - check internet connection');
+        } else if (errorStr.contains('configuration') || errorStr.contains('client')) {
+          print('⚙️ Configuration error - check Google OAuth setup');
+        }
+
+        print('🔄 Falling back to demo mode due to error');
       }
+    } else {
+      print('🎭 Real auth disabled, using demo mode directly');
     }
 
     // Fallback to demo mode
-    print('🎭 Using demo Google Sign-In');
+    print('🎭 Using demo Google Sign-In (fallback)');
+    print('⚠️ This means real Google authentication is not working');
+    print('💡 To fix: Check console errors above for the root cause');
     return await DemoAuthService.demoGoogleSignIn();
   }
 
   static Future<Map<String, dynamic>?> _performRealGoogleSignIn() async {
     try {
-      // Sign out first to ensure fresh authentication
-      await _googleSignIn.signOut();
-
       print('📱 Starting Google Sign-In flow...');
 
-      // Trigger sign-in
+      // Trigger sign-in (don't sign out first on web - causes issues)
       final GoogleSignInAccount? account = await _googleSignIn.signIn();
 
       if (account == null) {
