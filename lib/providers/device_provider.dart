@@ -3,6 +3,9 @@ import 'package:sqflite/sqflite.dart';
 import '../models/device_passport.dart';
 import '../models/device_diagnosis.dart';
 import '../services/database_service.dart';
+import '../services/api_service.dart';
+import '../services/user_service.dart';
+import '../config/api_config.dart';
 
 class DeviceProvider extends ChangeNotifier {
   final DatabaseService _databaseService = DatabaseService();
@@ -17,13 +20,25 @@ class DeviceProvider extends ChangeNotifier {
   String? get error => _error;
   bool get hasDevices => _devices.isNotEmpty;
 
-  // Load devices from database
+  // Load devices from database or backend
   Future<void> loadDevices() async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
+      // Try backend first if enabled and authenticated
+      if (ApiConfig.useBackendApi && ApiService.isAuthenticated) {
+        try {
+          await _loadDevicesFromBackend();
+          return; // Success, exit early
+        } catch (e) {
+          debugPrint('⚠️ Backend load failed, falling back to local: $e');
+          // Fall through to local load
+        }
+      }
+
+      // Local storage fallback
       if (kIsWeb) {
         await _loadDevicesWeb();
       } else {
@@ -31,11 +46,30 @@ class DeviceProvider extends ChangeNotifier {
       }
     } catch (e) {
       _error = 'Failed to load devices: ${e.toString()}';
-      debugPrint('Error loading devices: $e');
+      debugPrint('❌ Error loading devices: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  // Load devices from backend API
+  Future<void> _loadDevicesFromBackend() async {
+    debugPrint('📡 Loading devices from backend');
+
+    final currentUser = await UserService.getCurrentUser();
+    if (currentUser == null) {
+      throw Exception('User not authenticated');
+    }
+
+    final userId = currentUser['uid'] ?? currentUser['id'].toString();
+    final devicesData = await ApiService.getDevicePassports(userId);
+
+    _devices = devicesData
+        .map((data) => DevicePassport.fromJson(data as Map<String, dynamic>))
+        .toList();
+
+    debugPrint('✅ Loaded ${_devices.length} devices from backend');
   }
 
   Future<void> _loadDevicesWeb() async {

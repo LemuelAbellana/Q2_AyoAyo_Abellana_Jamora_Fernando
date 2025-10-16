@@ -3,23 +3,33 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:ayoayo/config/api_config.dart';
 
 class AIImageAnalysisService {
-  static const String _apiKey = ApiConfig.geminiApiKey;
+  late final String _apiKey;
   GenerativeModel? _visionModel;
 
   AIImageAnalysisService() {
+    _apiKey = ApiConfig.geminiApiKey;
     try {
       _visionModel = GenerativeModel(
         model: 'gemini-1.5-flash',
         apiKey: _apiKey,
+        generationConfig: GenerationConfig(
+          temperature: 0.4,
+          topK: 32,
+          topP: 0.95,
+          maxOutputTokens: 2048,
+        ),
       );
+      print('✅ Gemini Vision Model initialized successfully');
     } catch (e) {
       print('⚠️ Warning: Failed to initialize Gemini Vision Model: $e');
       // The service will still work in demo mode
     }
   }
+
   Future<String> analyzeDeviceImages(List<File> images) async {
     // Skip analysis if API key is not configured, demo mode is enabled, or vision model is null
-    if (ApiConfig.useDemoMode || _apiKey == 'YOUR_GEMINI_API_KEY_HERE' || _visionModel == null) {
+    if (ApiConfig.useDemoMode || _apiKey == 'YOUR_GEMINI_API_KEY_HERE' || _apiKey.isEmpty || _visionModel == null) {
+      print('📷 Using demo mode for image analysis');
       return _generateDemoAnalysis(images);
     }
 

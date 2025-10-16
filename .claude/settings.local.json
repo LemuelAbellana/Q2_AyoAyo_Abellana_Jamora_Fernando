@@ -1,8 +1,12 @@
 {
   "permissions": {
     "allow": [
+      "Bash(php artisan tinker --execute=\"echo json_encode(DB::select(''DESCRIBE users''));\")",
+      "Bash(flutter pub:*)",
       "Bash(flutter analyze:*)",
-      "mcp__ide__getDiagnostics"
+      "Bash(findstr:*)",
+      "Bash(flutter:*)",
+      "Bash(git check-ignore:*)"
     ],
     "deny": [],
     "ask": []

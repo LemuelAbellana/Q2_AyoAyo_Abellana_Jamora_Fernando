@@ -308,7 +308,7 @@ class _DevicesOverviewScreenState extends State<DevicesOverviewScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
-                  LucideIcons.edit3,
+                  LucideIcons.pencil,
                   color: Colors.grey,
                 ),
               ),

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'widgets/navigation/main_navigation_wrapper.dart';
@@ -19,6 +20,15 @@ import 'package:sqflite/sqflite.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize environment variables
+  try {
+    await dotenv.load(fileName: ".env");
+    print('✅ Environment variables loaded successfully');
+  } catch (e) {
+    print('⚠️ Failed to load .env file: $e');
+    print('⚠️ Using default configuration values');
+  }
 
   print('✅ App starting without Firebase - using simple Google Sign-In');
 

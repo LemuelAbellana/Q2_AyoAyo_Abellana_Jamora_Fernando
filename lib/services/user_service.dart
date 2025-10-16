@@ -4,6 +4,8 @@ import 'simple_google_auth.dart';
 import 'local_auth_service.dart';
 import 'demo_auth_service.dart';
 import 'real_google_auth.dart';
+import 'api_service.dart';
+import 'package:ayoayo/config/api_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 
@@ -91,6 +93,30 @@ class UserService {
       print(
         '✅ OAuth authentication successful for user: ${oauthUserData['email']}',
       );
+
+      // Sync with backend if enabled
+      if (ApiConfig.useBackendApi) {
+        try {
+          print('🌐 Syncing OAuth with backend API...');
+          final backendResponse = await ApiService.oauthSignIn(
+            uid: oauthUserData['uid'],
+            email: oauthUserData['email'],
+            displayName: oauthUserData['display_name'] ?? '',
+            photoUrl: oauthUserData['photo_url'],
+            authProvider: provider,
+            providerId: oauthUserData['provider_id'] ?? '',
+            emailVerified: oauthUserData['email_verified'] ?? false,
+          );
+
+          if (backendResponse['token'] != null) {
+            ApiService.setToken(backendResponse['token']);
+            print('✅ Backend OAuth sync successful, token set');
+          }
+        } catch (e) {
+          print('⚠️ Backend OAuth sync failed, continuing with local: $e');
+          // Continue with local auth even if backend fails
+        }
+      }
 
       // Check if user already exists in database
       print('🔍 Checking if user exists in database...');
@@ -252,8 +278,20 @@ class UserService {
   // Sign out user
   static Future<void> signOut() async {
     try {
+      // Logout from backend if enabled
+      if (ApiConfig.useBackendApi && ApiService.isAuthenticated) {
+        try {
+          await ApiService.logout();
+          print('✅ Backend logout successful');
+        } catch (e) {
+          print('⚠️ Backend logout failed: $e');
+          // Continue with local logout even if backend fails
+        }
+      }
+
       await RealGoogleAuth.signOut();
       await clearUserSession(); // Clear saved session
+      ApiService.clearToken(); // Clear API token
       print('✅ User signed out successfully');
       print('🔄 Ready to sign in with any Google account');
     } catch (e) {

@@ -26,7 +26,7 @@ class _DeviceScannerScreenState extends State<DeviceScannerScreen> {
         actions: [
           IconButton(
             onPressed: () => _showScanningTips(context),
-            icon: Icon(LucideIcons.helpCircle),
+            icon: Icon(LucideIcons.info),
             tooltip: 'Scanning Tips',
           ),
         ],
@@ -262,7 +262,7 @@ class _DeviceScannerScreenState extends State<DeviceScannerScreen> {
       SnackBar(
         content: Row(
           children: [
-            Icon(LucideIcons.alertCircle, color: Colors.white),
+            Icon(LucideIcons.x, color: Colors.white),
             const SizedBox(width: 12),
             Expanded(child: Text(error)),
           ],
