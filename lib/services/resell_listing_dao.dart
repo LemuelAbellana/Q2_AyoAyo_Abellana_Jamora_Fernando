@@ -1,133 +1,61 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:ayoayo/models/resell_listing.dart';
 import 'package:ayoayo/models/device_passport.dart';
 import 'package:ayoayo/services/database_service.dart';
-import 'package:sqflite/sqflite.dart';
 
 class ResellListingDao {
   final dbService = DatabaseService();
 
   Future<int> createListing(ResellListing listing) async {
-    if (kIsWeb) {
-      // Web implementation using SharedPreferences
-      final currentListings = await dbService.getWebListings();
-      final data = _listingToMap(listing);
-      currentListings.add(data);
-      await dbService.saveWebListings(currentListings);
-      return 1; // Return success indicator
-    } else {
-      // Mobile implementation using SQLite
-      final db = await dbService.database as Database;
-      final data = _listingToMap(listing);
-      return await db.insert(
-        'resell_listings',
-        data,
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-    }
+    final currentListings = await dbService.getWebListings();
+    final data = _listingToMap(listing);
+    currentListings.add(data);
+    await dbService.saveWebListings(currentListings);
+    return 1;
   }
 
   Future<List<ResellListing>> getActiveListings() async {
-    if (kIsWeb) {
-      // Web implementation using SharedPreferences
-      final listings = await dbService.getWebListings();
-      final activeListings = listings.where((listing) =>
-        listing['status'] == 'ListingStatus.active'
-      ).toList();
-      return activeListings.map((map) => _mapToListing(map)).toList();
-    } else {
-      // Mobile implementation using SQLite
-      final db = await dbService.database as Database;
-      final List<Map<String, dynamic>> maps = await db.query(
-        'resell_listings',
-        where: 'status = ?',
-        whereArgs: ['ListingStatus.active'],
-      );
-      return List.generate(maps.length, (i) {
-        return _mapToListing(maps[i]);
-      });
-    }
+    final listings = await dbService.getWebListings();
+    final activeListings = listings.where((listing) =>
+      listing['status'] == 'ListingStatus.active'
+    ).toList();
+    return activeListings.map((map) => _mapToListing(map)).toList();
   }
 
   Future<List<ResellListing>> getUserListings(String sellerId) async {
-    if (kIsWeb) {
-      // Web implementation using SharedPreferences
-      final listings = await dbService.getWebListings();
-      final userListings = listings.where((listing) =>
-        listing['seller_id'] == sellerId
-      ).toList();
-      return userListings.map((map) => _mapToListing(map)).toList();
-    } else {
-      // Mobile implementation using SQLite
-      final db = await dbService.database as Database;
-      final List<Map<String, dynamic>> maps = await db.query(
-        'resell_listings',
-        where: 'seller_id = ?',
-        whereArgs: [sellerId],
-      );
-      return List.generate(maps.length, (i) {
-        return _mapToListing(maps[i]);
-      });
-    }
+    final listings = await dbService.getWebListings();
+    final userListings = listings.where((listing) =>
+      listing['seller_id'] == sellerId
+    ).toList();
+    return userListings.map((map) => _mapToListing(map)).toList();
   }
 
   Future<List<ResellListing>> getAllListings() async {
-    if (kIsWeb) {
-      // Web implementation using SharedPreferences
-      final listings = await dbService.getWebListings();
-      return listings.map((map) => _mapToListing(map)).toList();
-    } else {
-      // Mobile implementation using SQLite
-      final db = await dbService.database as Database;
-      final List<Map<String, dynamic>> maps = await db.query('resell_listings');
-      return List.generate(maps.length, (i) {
-        return _mapToListing(maps[i]);
-      });
-    }
+    final listings = await dbService.getWebListings();
+    return listings.map((map) => _mapToListing(map)).toList();
   }
 
   Future<int> updateListing(ResellListing listing) async {
-    if (kIsWeb) {
-      // Web implementation using SharedPreferences
-      final currentListings = await dbService.getWebListings();
-      final index = currentListings.indexWhere((l) => l['id'] == listing.id);
-      if (index != -1) {
-        currentListings[index] = _listingToMap(listing);
-        await dbService.saveWebListings(currentListings);
-        return 1;
-      }
-      return 0;
-    } else {
-      // Mobile implementation using SQLite
-      final db = await dbService.database as Database;
-      final data = _listingToMap(listing);
-      return await db.update(
-        'resell_listings',
-        data,
-        where: 'id = ?',
-        whereArgs: [listing.id],
-      );
+    final currentListings = await dbService.getWebListings();
+    final index = currentListings.indexWhere((l) => l['id'] == listing.id);
+    if (index != -1) {
+      currentListings[index] = _listingToMap(listing);
+      await dbService.saveWebListings(currentListings);
+      return 1;
     }
+    return 0;
   }
 
   Future<int> deleteListing(String id) async {
-    if (kIsWeb) {
-      // Web implementation using SharedPreferences
-      final currentListings = await dbService.getWebListings();
-      final filteredListings = currentListings.where((listing) =>
-        listing['id'] != id
-      ).toList();
-      if (filteredListings.length != currentListings.length) {
-        await dbService.saveWebListings(filteredListings);
-        return 1;
-      }
-      return 0;
-    } else {
-      // Mobile implementation using SQLite
-      final db = await dbService.database as Database;
-      return await db.delete('resell_listings', where: 'id = ?', whereArgs: [id]);
+    final currentListings = await dbService.getWebListings();
+    final filteredListings = currentListings.where((listing) =>
+      listing['id'] != id
+    ).toList();
+    if (filteredListings.length != currentListings.length) {
+      await dbService.saveWebListings(filteredListings);
+      return 1;
     }
+    return 0;
   }
 
   // Helper method to convert ResellListing to database map

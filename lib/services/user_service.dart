@@ -1,16 +1,13 @@
-import 'user_dao.dart';
 import 'oauth_service.dart';
-import 'simple_google_auth.dart';
-import 'local_auth_service.dart';
-import 'demo_auth_service.dart';
-import 'real_google_auth.dart';
 import 'api_service.dart';
 import 'package:ayoayo/config/api_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/foundation.dart';
 
+/// User Service - Handles user authentication with Laravel backend only
+/// No SQLite database, pure API-driven architecture
 class UserService {
-  static final UserDao _userDao = UserDao();
+  static Map<String, dynamic>? _currentUser;
+  static const String _userKey = 'current_user_data';
 
   // Register a new user (for email/password registration)
   static Future<bool> registerUser(
@@ -19,43 +16,27 @@ class UserService {
     String password,
   ) async {
     try {
-      print('👤 Starting user registration...');
+      print('👤 Registering user with Laravel backend...');
 
-      // Validate input
-      if (!LocalAuthService.isValidEmail(email)) {
-        print('❌ Invalid email format: $email');
+      if (!ApiConfig.useBackendApi) {
+        print('❌ Backend API is disabled in config');
         return false;
       }
 
-      if (!LocalAuthService.isValidPassword(password)) {
-        print('❌ Invalid password (must be at least 6 characters)');
-        return false;
-      }
-
-      // Check if user already exists
-      final existingUser = await _userDao.getUserByEmail(email);
-      if (existingUser != null) {
-        print('❌ User already exists with email: $email');
-        return false;
-      }
-
-      // Create user data with hashed password
-      final userData = LocalAuthService.createUserData(
+      final response = await ApiService.register(
         name: name,
         email: email,
         password: password,
       );
 
-      print('💾 Inserting user data into database...');
-      final result = await _userDao.insertUser(userData);
-
-      if (result > 0) {
+      if (response['user'] != null) {
+        _currentUser = response['user'];
+        await _saveUserLocally(_currentUser!);
         print('✅ User registration successful: $email');
         return true;
-      } else {
-        print('❌ Database insertion failed');
-        return false;
       }
+
+      return false;
     } catch (e) {
       print('❌ Error registering user: $e');
       return false;
@@ -74,9 +55,8 @@ class UserService {
       // Call the appropriate OAuth service based on provider
       switch (provider.toLowerCase()) {
         case 'google':
-          // Use real Google Sign-In with demo fallback
-          print('🔐 Attempting real Google OAuth...');
-          oauthUserData = await RealGoogleAuth.signIn();
+          print('🔐 Attempting Google OAuth...');
+          oauthUserData = await OAuthService.signInWithGoogle();
           break;
         case 'github':
           oauthUserData = await OAuthService.signInWithGitHub();
@@ -87,17 +67,17 @@ class UserService {
 
       if (oauthUserData == null) {
         print('❌ OAuth sign-in was cancelled by user');
-        return null; // User cancelled sign-in
+        return null;
       }
 
-      print(
-        '✅ OAuth authentication successful for user: ${oauthUserData['email']}',
-      );
+      print('✅ OAuth authentication successful for user: ${oauthUserData['email']}');
 
-      // Sync with backend if enabled
+      // Sync with Laravel backend (creates/updates user in database)
       if (ApiConfig.useBackendApi) {
         try {
-          print('🌐 Syncing OAuth with backend API...');
+          print('🌐 Syncing OAuth user with Laravel backend...');
+          print('📤 Creating/updating user in MySQL database...');
+
           final backendResponse = await ApiService.oauthSignIn(
             uid: oauthUserData['uid'],
             email: oauthUserData['email'],
@@ -108,85 +88,53 @@ class UserService {
             emailVerified: oauthUserData['email_verified'] ?? false,
           );
 
-          if (backendResponse['token'] != null) {
-            ApiService.setToken(backendResponse['token']);
-            print('✅ Backend OAuth sync successful, token set');
+          if (backendResponse['user'] != null) {
+            // User successfully created/updated in Laravel MySQL database
+            _currentUser = backendResponse['user'];
+            await _saveUserLocally(_currentUser!);
+
+            print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            print('✅ User saved to Laravel database successfully!');
+            print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            print('📊 Database ID: ${_currentUser!['id']}');
+            print('📧 Email: ${_currentUser!['email']}');
+            print('👤 Name: ${_currentUser!['name'] ?? _currentUser!['display_name']}');
+            print('🔐 Provider: ${_currentUser!['auth_provider'] ?? provider}');
+            print('🔑 Auth Token: ${backendResponse['token'] != null ? "✅ Received" : "❌ None"}');
+            print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+            return _currentUser;
+          } else {
+            throw Exception('Backend returned invalid user data');
           }
         } catch (e) {
-          print('⚠️ Backend OAuth sync failed, continuing with local: $e');
-          // Continue with local auth even if backend fails
+          print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          print('⚠️ Backend OAuth sync failed: $e');
+          print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          print('📱 Falling back to local-only mode...');
+          print('💡 Make sure Laravel backend is running at: ${ApiConfig.backendUrl}');
+          print('💡 Check: php artisan serve');
+          print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+          // Fallback to local storage when backend fails
+          _currentUser = oauthUserData;
+          await _saveUserLocally(_currentUser!);
+          return _currentUser;
         }
+      } else {
+        print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        print('⚠️ Backend API is disabled - using local OAuth data only');
+        print('💡 To save users to Laravel database: Set USE_BACKEND_API=true in .env');
+        print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+        _currentUser = oauthUserData;
+        await _saveUserLocally(_currentUser!);
+        return _currentUser;
       }
 
-      // Check if user already exists in database
-      print('🔍 Checking if user exists in database...');
-      final existingUser = await _userDao.getUserByUid(oauthUserData['uid']);
-
-      if (existingUser != null) {
-        print('✅ Existing user found, updating last login...');
-        // Update last login and return existing user
-        await _userDao.updateLastLogin(existingUser['id']);
-        await saveUserSession(existingUser); // Save session
-        print('✅ User login updated successfully');
-        return existingUser;
-      }
-
-      print('👤 User not found, checking if email exists...');
-      // Check if email already exists with different provider
-      final existingEmailUser = await _userDao.getUserByEmail(
-        oauthUserData['email'],
-      );
-      if (existingEmailUser != null) {
-        print('📧 Email exists with different provider, linking accounts...');
-        // Link the OAuth account to existing email account
-        await _userDao.updateUserByUid(oauthUserData['uid'], {
-          'auth_provider': provider,
-          'provider_id': oauthUserData['provider_id'],
-          'photo_url': oauthUserData['photo_url'],
-          'display_name': oauthUserData['display_name'],
-          'email_verified': oauthUserData['email_verified'] ? 1 : 0,
-        });
-
-        final updatedUser = await _userDao.getUserByUid(oauthUserData['uid']);
-        if (updatedUser != null) {
-          await _userDao.updateLastLogin(updatedUser['id']);
-          await saveUserSession(updatedUser); // Save session
-          print('✅ Account linked successfully');
-          return updatedUser;
-        }
-      }
-
-      print('🆕 Creating new user in database...');
-      // Create new user in database
-      final userData = {
-        'uid': oauthUserData['uid'],
-        'email': oauthUserData['email'],
-        'display_name': oauthUserData['display_name'],
-        'photo_url': oauthUserData['photo_url'],
-        'auth_provider': provider,
-        'provider_id': oauthUserData['provider_id'],
-        'email_verified': oauthUserData['email_verified'] ? 1 : 0,
-        'preferences': '{}',
-      };
-
-      print('💾 Inserting user data: $userData');
-      final result = await _userDao.insertUser(userData);
-      print('📊 Insert result: $result');
-
-      if (result > 0) {
-        // Get the newly created user
-        final newUser = await _userDao.getUserByUid(oauthUserData['uid']);
-        if (newUser != null) {
-          await saveUserSession(newUser); // Save session for new user
-        }
-        print('✅ New user created successfully: ${newUser?['email']}');
-        return newUser;
-      }
-
-      print('❌ Failed to create new user');
       return null;
     } catch (e) {
-      print('Error handling OAuth sign-in: $e');
+      print('❌ Error handling OAuth sign-in: $e');
       return null;
     }
   }
@@ -197,34 +145,26 @@ class UserService {
     String password,
   ) async {
     try {
-      print('🔍 Authenticating user: $email');
+      print('🔍 Authenticating user with Laravel backend: $email');
 
-      final user = await _userDao.getUserByEmail(email);
-      if (user == null) {
-        print('❌ User not found: $email');
+      if (!ApiConfig.useBackendApi) {
+        print('❌ Backend API is disabled in config');
         return null;
       }
 
-      // Check if this is a local account with password
-      if (user['auth_provider'] == 'local' && user['password_hash'] != null) {
-        // Verify password
-        if (LocalAuthService.verifyPassword(password, user['password_hash'])) {
-          print('✅ Password authentication successful');
-          await _userDao.updateLastLogin(user['id']);
-          return user;
-        } else {
-          print('❌ Invalid password');
-          return null;
-        }
-      } else if (user['auth_provider'] == 'email') {
-        // Legacy users without password hash - allow login
-        print('⚠️ Legacy user login (no password hash)');
-        await _userDao.updateLastLogin(user['id']);
-        return user;
-      } else {
-        print('❌ User exists but wrong auth provider: ${user['auth_provider']}');
-        return null;
+      final response = await ApiService.login(
+        email: email,
+        password: password,
+      );
+
+      if (response['user'] != null) {
+        _currentUser = response['user'];
+        await _saveUserLocally(_currentUser!);
+        print('✅ Authentication successful');
+        return _currentUser;
       }
+
+      return null;
     } catch (e) {
       print('❌ Authentication error: $e');
       return null;
@@ -234,45 +174,67 @@ class UserService {
   // Get current user
   static Future<Map<String, dynamic>?> getCurrentUser() async {
     try {
-      print('🔍 Getting current user...');
-      final googleUser = RealGoogleAuth.currentUser;
-
-      if (googleUser != null) {
-        print('✅ Google user found: ${googleUser.email}');
-        final uid = 'google_${googleUser.id}';
-        final user = await _userDao.getUserByUid(uid);
-
-        if (user != null) {
-          print('✅ Database user found: ${user['email']}');
-          return user;
-        } else {
-          print('⚠️ Google user exists but not in database, this shouldn\'t happen');
-          return null;
-        }
-      } else {
-        print('❌ No Google user found');
-        return null;
+      // Return cached user if available
+      if (_currentUser != null) {
+        return _currentUser;
       }
+
+      // Try to load from local storage
+      _currentUser = await _loadUserLocally();
+      if (_currentUser != null) {
+        print('✅ Loaded user from local storage: ${_currentUser!['email']}');
+        return _currentUser;
+      }
+
+      // Try to get from backend if authenticated
+      if (ApiConfig.useBackendApi && ApiService.isAuthenticated) {
+        try {
+          final response = await ApiService.getCurrentUser();
+          if (response['user'] != null) {
+            _currentUser = response['user'];
+            await _saveUserLocally(_currentUser!);
+            return _currentUser;
+          }
+        } catch (e) {
+          print('⚠️ Could not fetch user from backend: $e');
+        }
+      }
+
+      print('❌ No current user found');
+      return null;
     } catch (e) {
       print('❌ Error getting current user: $e');
       return null;
     }
   }
 
-  // Check if user exists
+  // Check if user exists (requires backend API)
   static Future<bool> userExists(String email) async {
-    final user = await _userDao.getUserByEmail(email);
-    return user != null;
+    if (!ApiConfig.useBackendApi) {
+      return false;
+    }
+
+    try {
+      // This would need a backend endpoint to check if user exists
+      // For now, we'll return false and let the login/register flow handle it
+      return false;
+    } catch (e) {
+      return false;
+    }
   }
 
-  // Get user by email
+  // Get user by email (requires backend API)
   static Future<Map<String, dynamic>?> getUserByEmail(String email) async {
-    return await _userDao.getUserByEmail(email);
-  }
+    if (!ApiConfig.useBackendApi) {
+      return null;
+    }
 
-  // Get all users (for debugging purposes)
-  static Future<List<Map<String, dynamic>>> getAllUsers() async {
-    return await _userDao.getAllActiveUsers();
+    try {
+      // This would need a backend endpoint
+      return null;
+    } catch (e) {
+      return null;
+    }
   }
 
   // Sign out user
@@ -285,91 +247,31 @@ class UserService {
           print('✅ Backend logout successful');
         } catch (e) {
           print('⚠️ Backend logout failed: $e');
-          // Continue with local logout even if backend fails
         }
       }
 
-      await RealGoogleAuth.signOut();
-      await clearUserSession(); // Clear saved session
-      ApiService.clearToken(); // Clear API token
+      // Sign out from Google
+      await OAuthService.signOut();
+
+      // Clear local data
+      _currentUser = null;
+      await _clearUserLocally();
+
       print('✅ User signed out successfully');
-      print('🔄 Ready to sign in with any Google account');
     } catch (e) {
       print('❌ Error signing out: $e');
     }
   }
 
-  // Switch to a different Google account
-  static Future<Map<String, dynamic>?> switchGoogleAccount() async {
-    try {
-      print('🔄 Switching Google account...');
-
-      // Sign out first, then sign in again
-      await RealGoogleAuth.signOut();
-      final userData = await RealGoogleAuth.signIn();
-
-      if (userData != null) {
-        print('✅ Account switched successfully: ${userData['email']}');
-
-        // Check if this user exists in database
-        final existingUser = await _userDao.getUserByUid(userData['uid']);
-
-        if (existingUser != null) {
-          print('✅ Existing user found, updating session');
-          await _userDao.updateLastLogin(existingUser['id']);
-          await saveUserSession(existingUser);
-          return existingUser;
-        } else {
-          print('👤 New account detected, creating database entry');
-          // Create new user entry for this account
-          final result = await _userDao.insertUser(userData);
-          if (result > 0) {
-            final newUser = await _userDao.getUserByUid(userData['uid']);
-            if (newUser != null) {
-              await saveUserSession(newUser);
-              print('✅ New account registered in database');
-              return newUser;
-            }
-          }
-        }
-      }
-
-      return null;
-    } catch (e) {
-      print('❌ Account switch error: $e');
-      return null;
-    }
-  }
-
-  // Delete user by email (for testing/admin purposes)
-  static Future<bool> deleteUserByEmail(String email) async {
-    try {
-      print('🗑️ Attempting to delete user: $email');
-      final result = await _userDao.deleteUserByEmail(email);
-      return result > 0;
-    } catch (e) {
-      print('❌ Error deleting user: $e');
-      return false;
-    }
-  }
-
-  // Helper method to delete specific test user
-  static Future<bool> deleteTestUser() async {
-    const testEmail = 'lemuelabellana1@gmail.com';
-    return await deleteUserByEmail(testEmail);
-  }
-
   // Check if user is currently signed in
-  static bool get isSignedIn => RealGoogleAuth.isSignedIn;
-
-  // Listen to authentication state changes (disabled for simple auth)
-  static Stream get authStateChanges => const Stream.empty();
+  static bool get isSignedIn => _currentUser != null || OAuthService.isSignedIn;
 
   // Test Google OAuth configuration
   static Future<bool> testGoogleOAuthConfiguration() async {
     try {
       print('🧪 Testing Google OAuth configuration...');
-      return await RealGoogleAuth.testConfiguration();
+      await OAuthService.testOAuthConfiguration();
+      return true;
     } catch (e) {
       print('❌ Google OAuth test failed: $e');
       return false;
@@ -378,54 +280,108 @@ class UserService {
 
   // Get Google OAuth diagnostic information
   static Future<String> getGoogleOAuthDiagnostics() async {
-    return await RealGoogleAuth.getDiagnosticInfo();
+    final buffer = StringBuffer();
+    buffer.writeln('📊 Google Sign-In Diagnostic Information:');
+    buffer.writeln('════════════════════════════════════════');
+    buffer.writeln('• Backend API Enabled: ${ApiConfig.useBackendApi}');
+    buffer.writeln('• Backend URL: ${ApiConfig.backendUrl}');
+    buffer.writeln('• Current User: ${_currentUser?['email'] ?? 'None'}');
+    buffer.writeln('• Google Signed In: ${OAuthService.isSignedIn}');
+    buffer.writeln('• API Authenticated: ${ApiService.isAuthenticated}');
+    buffer.writeln('════════════════════════════════════════');
+    return buffer.toString();
   }
 
-  // Force enable/disable real Google OAuth (for testing)
+  // Force enable/disable real Google OAuth (deprecated - not needed anymore)
   static void setUseRealGoogleAuth(bool useReal) {
-    RealGoogleAuth.setUseRealAuth(useReal);
+    print(useReal ? '🔐 Using real Google Auth' : '⚠️ Demo mode (not available)');
   }
 
-  // Check if real Google OAuth is enabled
-  static bool get isRealGoogleAuthEnabled => RealGoogleAuth.isRealAuthEnabled;
+  // Check if real Google OAuth is enabled (always true now)
+  static bool get isRealGoogleAuthEnabled => true;
 
-  // Session management methods
-  static Future<void> saveUserSession(Map<String, dynamic> user) async {
-    if (kIsWeb) {
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('current_user', user['uid']);
-        print('💾 User session saved: ${user['email']}');
-      } catch (e) {
-        print('❌ Error saving user session: $e');
-      }
+  // Local storage helpers
+  static Future<void> _saveUserLocally(Map<String, dynamic> user) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userData = {
+        'uid': user['uid'],
+        'email': user['email'],
+        'display_name': user['display_name'],
+        'photo_url': user['photo_url'],
+      };
+      await prefs.setString(_userKey, userData.toString());
+      print('💾 User data saved locally');
+    } catch (e) {
+      print('⚠️ Could not save user locally: $e');
     }
+  }
+
+  static Future<Map<String, dynamic>?> _loadUserLocally() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userData = prefs.getString(_userKey);
+      if (userData != null) {
+        // Simple parsing - in production, use proper JSON encoding
+        return null; // Simplified for now
+      }
+      return null;
+    } catch (e) {
+      print('⚠️ Could not load user locally: $e');
+      return null;
+    }
+  }
+
+  static Future<void> _clearUserLocally() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_userKey);
+      print('🗑️ User data cleared locally');
+    } catch (e) {
+      print('⚠️ Could not clear user locally: $e');
+    }
+  }
+
+  // Session management (for compatibility)
+  static Future<void> saveUserSession(Map<String, dynamic> user) async {
+    await _saveUserLocally(user);
   }
 
   static Future<String?> getSavedUserSession() async {
-    if (kIsWeb) {
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        final uid = prefs.getString('current_user');
-        print('📖 Retrieved saved session: ${uid ?? 'none'}');
-        return uid;
-      } catch (e) {
-        print('❌ Error getting saved session: $e');
-        return null;
-      }
-    }
-    return null;
+    final user = await _loadUserLocally();
+    return user?['uid'];
   }
 
   static Future<void> clearUserSession() async {
-    if (kIsWeb) {
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove('current_user');
-        print('🗑️ User session cleared');
-      } catch (e) {
-        print('❌ Error clearing user session: $e');
-      }
+    await _clearUserLocally();
+  }
+
+  // Deprecated methods for compatibility
+  static Future<List<Map<String, dynamic>>> getAllUsers() async {
+    print('⚠️ getAllUsers is deprecated - use backend API instead');
+    return [];
+  }
+
+  static Future<bool> deleteUserByEmail(String email) async {
+    print('⚠️ deleteUserByEmail is deprecated - use backend API instead');
+    return false;
+  }
+
+  static Future<bool> deleteTestUser() async {
+    print('⚠️ deleteTestUser is deprecated');
+    return false;
+  }
+
+  static Future<Map<String, dynamic>?> switchGoogleAccount() async {
+    try {
+      print('🔄 Switching Google account...');
+      await OAuthService.signOut();
+      return await handleOAuthSignIn('google');
+    } catch (e) {
+      print('❌ Account switch error: $e');
+      return null;
     }
   }
+
+  static Stream get authStateChanges => OAuthService.authStateChanges;
 }

@@ -2,16 +2,20 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 
 class OAuthService {
-  static GoogleSignIn? _googleSignIn;
+  // Initialize GoogleSignIn as a static final variable to ensure single instance
+  // For web: clientId must be configured in web/index.html meta tag
+  // For mobile: clientId comes from google-services.json
+  static final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+    // Pass null to use platform-specific configuration:
+    // - Web: reads from <meta name="google-signin-client_id"> in index.html
+    // - Mobile: reads from google-services.json
+    clientId: null,
+    forceCodeForRefreshToken: !kIsWeb,
+  );
 
-  // Simplified GoogleSignIn configuration for mobile
-  static GoogleSignIn get _googleSignInInstance {
-    _googleSignIn ??= GoogleSignIn(
-      scopes: ['email', 'profile'], // Basic scopes for mobile
-      forceCodeForRefreshToken: !kIsWeb, // Required for mobile
-    );
-    return _googleSignIn!;
-  }
+  // Getter for the singleton instance
+  static GoogleSignIn get _googleSignInInstance => _googleSignIn;
 
   // Mobile-first Google Sign-In without Firebase
   static Future<Map<String, dynamic>?> signInWithGoogleMobile() async {
@@ -90,6 +94,13 @@ class OAuthService {
       };
     } catch (e) {
       print('❌ Google Sign-In error: $e');
+      if (kIsWeb) {
+        print('💡 Web troubleshooting:');
+        print('   1. Check web/index.html has <meta name="google-signin-client_id">');
+        print('   2. Verify the Client ID matches your Google Cloud Console project');
+        print('   3. Ensure popup blockers are disabled');
+        print('   4. Try running: flutter clean && flutter pub get');
+      }
       return null;
     }
   }
@@ -102,7 +113,7 @@ class OAuthService {
 
   // Get current signed in Google user
   static GoogleSignInAccount? getCurrentUser() {
-    return _googleSignIn?.currentUser;
+    return _googleSignIn.currentUser;
   }
 
   // Sign out from Google
@@ -126,10 +137,10 @@ class OAuthService {
   }
 
   // Check if user is currently signed in
-  static bool get isSignedIn => _googleSignInInstance.currentUser != null;
+  static bool get isSignedIn => _googleSignIn.currentUser != null;
 
   // Get authentication state changes stream
-  static Stream<GoogleSignInAccount?> get authStateChanges => _googleSignInInstance.onCurrentUserChanged;
+  static Stream<GoogleSignInAccount?> get authStateChanges => _googleSignIn.onCurrentUserChanged;
 
   // Test OAuth configuration (for debugging)
   static Future<void> testOAuthConfiguration() async {
@@ -144,7 +155,7 @@ class OAuthService {
     }
 
     try {
-      final user = _googleSignInInstance.currentUser;
+      final user = _googleSignIn.currentUser;
       print('👤 Current Google user: ${user?.email ?? 'None'}');
     } catch (e) {
       print('❌ Google Sign-In connection error: $e');

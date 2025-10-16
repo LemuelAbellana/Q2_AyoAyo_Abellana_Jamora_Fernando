@@ -45,7 +45,10 @@ class ApiService {
   /// Handle API response and extract data
   static dynamic _handleResponse(http.Response response) {
     print('📡 Response Status: ${response.statusCode}');
-    print('📡 Response Body: ${response.body.substring(0, response.body.length > 200 ? 200 : response.body.length)}...');
+    final bodyPreview = response.body.length > 200
+        ? '${response.body.substring(0, 200)}...'
+        : response.body;
+    print('📡 Response Body: $bodyPreview');
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       try {
@@ -54,11 +57,14 @@ class ApiService {
         print('⚠️ Failed to parse JSON: $e');
         return {'success': true, 'data': response.body};
       }
+    } else if (response.statusCode == 400) {
+      final error = _extractError(response.body);
+      throw ApiException('Bad Request: $error. The server cannot process the request because it is malformed.', 400);
     } else if (response.statusCode == 401) {
       clearToken();
       throw ApiException('Unauthorized. Please log in again.', 401);
     } else if (response.statusCode == 404) {
-      throw ApiException('Resource not found', 404);
+      throw ApiException('Resource not found. The backend endpoint may not exist.', 404);
     } else if (response.statusCode >= 500) {
       throw ApiException('Server error. Please try again later.', response.statusCode);
     } else {
