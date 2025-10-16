@@ -1,0 +1,57 @@
+=====================================================
+   QUICK FIX: Google Sign-In NotInitializedError
+=====================================================
+
+ERROR: Instance of 'NotInitializedError'
+
+CAUSE: The Client ID in web/index.html doesn't match your
+       Google Cloud Console project.
+
+SOLUTION (2 minutes):
+-----------------------------------------------------
+
+1. Go to: https://console.cloud.google.com/apis/credentials
+
+2. Create OAuth 2.0 Client ID (Web Application):
+   - Authorized JavaScript origins: http://localhost:3000
+   - Click CREATE and copy the Client ID
+
+3. Open: web/index.html (line 32)
+
+4. Replace this line:
+   <meta name="google-signin-client_id" content="583476631419-3ar76b3sl0adai5vh0p42c467tn1f3s0.apps.googleusercontent.com">
+
+   With YOUR Client ID:
+   <meta name="google-signin-client_id" content="YOUR_CLIENT_ID_HERE.apps.googleusercontent.com">
+
+5. Run:
+   flutter clean
+   flutter pub get
+   flutter run -d chrome
+
+6. Test: Click "Sign in with Google"
+
+DONE! ✅
+
+-----------------------------------------------------
+
+Alternative: Test on Mobile Instead
+-----------------------------------------------------
+
+Don't want to set up web? Run on Android/iOS:
+
+Android:
+  1. Get google-services.json from Firebase
+  2. Place in android/app/google-services.json
+  3. Run: flutter run
+
+iOS:
+  1. Get GoogleService-Info.plist from Firebase
+  2. Add to Xcode project
+  3. Run: flutter run
+
+-----------------------------------------------------
+
+For detailed instructions: See WEB_OAUTH_FIX.md
+
+=====================================================

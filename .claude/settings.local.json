@@ -6,7 +6,10 @@
       "Bash(flutter analyze:*)",
       "Bash(findstr:*)",
       "Bash(flutter:*)",
-      "Bash(git check-ignore:*)"
+      "Bash(git check-ignore:*)",
+      "Bash(del /F /Q \"lib\\providers\\device_provider.dart\")",
+      "Bash(cat:*)",
+      "Bash(del .env)"
     ],
     "deny": [],
     "ask": []

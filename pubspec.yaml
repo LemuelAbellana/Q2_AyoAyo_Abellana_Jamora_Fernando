@@ -49,10 +49,6 @@ dependencies:
   shared_preferences: ^2.2.3
   google_fonts: ^6.2.1
 
-  # Database dependencies
-  sqflite: ^2.3.3
-  path: ^1.9.0
-
   # Authentication
   google_sign_in: ^6.2.1
   crypto: ^3.0.3
