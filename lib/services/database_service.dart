@@ -64,7 +64,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -386,6 +386,26 @@ class DatabaseService {
         is_active BOOLEAN DEFAULT 1
       )
     ''');
+
+    // 12. Device recognition history table
+    await db.execute('''
+      CREATE TABLE device_recognition_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        device_model TEXT NOT NULL,
+        manufacturer TEXT NOT NULL,
+        year_of_release INTEGER,
+        operating_system TEXT,
+        confidence_score DECIMAL(3,2),
+        analysis_details TEXT,
+        image_paths TEXT,
+        recognition_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        device_passport_id INTEGER,
+        is_saved BOOLEAN DEFAULT 0,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (device_passport_id) REFERENCES device_passports(id) ON DELETE SET NULL
+      )
+    ''');
   }
 
   Future<void> _createIndexes(Database db) async {
@@ -480,6 +500,17 @@ class DatabaseService {
     await db.execute(
       'CREATE INDEX idx_donations_is_active ON donations(is_active)',
     );
+
+    // Device recognition history indexes
+    await db.execute(
+      'CREATE INDEX idx_device_recognition_user_id ON device_recognition_history(user_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_device_recognition_timestamp ON device_recognition_history(recognition_timestamp)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_device_recognition_manufacturer ON device_recognition_history(manufacturer)',
+    );
   }
 
   Future<List<Map<String, dynamic>>> getWebDonations() async {
@@ -529,8 +560,37 @@ class DatabaseService {
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     // Handle database migrations here
-    if (oldVersion < newVersion) {
-      // Migration logic for future versions
+    if (oldVersion < 2 && newVersion >= 2) {
+      // Add device recognition history table
+      await db.execute('''
+        CREATE TABLE device_recognition_history (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          device_model TEXT NOT NULL,
+          manufacturer TEXT NOT NULL,
+          year_of_release INTEGER,
+          operating_system TEXT,
+          confidence_score DECIMAL(3,2),
+          analysis_details TEXT,
+          image_paths TEXT,
+          recognition_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+          device_passport_id INTEGER,
+          is_saved BOOLEAN DEFAULT 0,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY (device_passport_id) REFERENCES device_passports(id) ON DELETE SET NULL
+        )
+      ''');
+
+      // Add indexes for the new table
+      await db.execute(
+        'CREATE INDEX idx_device_recognition_user_id ON device_recognition_history(user_id)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_device_recognition_timestamp ON device_recognition_history(recognition_timestamp)',
+      );
+      await db.execute(
+        'CREATE INDEX idx_device_recognition_manufacturer ON device_recognition_history(manufacturer)',
+      );
     }
   }
 
@@ -691,6 +751,140 @@ class DatabaseService {
       {'status': status, 'updated_at': DateTime.now().toIso8601String()},
       where: 'id = ? OR project_uuid = ?',
       whereArgs: [projectId, projectId],
+    );
+  }
+
+  // Device recognition history methods
+  Future<int> saveDeviceRecognitionHistory(Map<String, dynamic> recognition) async {
+    if (kIsWeb) {
+      return await _saveDeviceRecognitionHistoryWeb(recognition);
+    } else {
+      return await _saveDeviceRecognitionHistorySQLite(recognition);
+    }
+  }
+
+  Future<int> _saveDeviceRecognitionHistoryWeb(Map<String, dynamic> recognition) async {
+    final prefs = await _getPrefs();
+    final history = await getDeviceRecognitionHistory();
+
+    final newId = DateTime.now().millisecondsSinceEpoch;
+    recognition['id'] = newId;
+
+    history.add(recognition);
+    final historyJson = history.map((h) => jsonEncode(h)).toList();
+    await prefs.setStringList('device_recognition_history', historyJson);
+
+    return newId;
+  }
+
+  Future<int> _saveDeviceRecognitionHistorySQLite(Map<String, dynamic> recognition) async {
+    final db = await database as Database;
+
+    return await db.insert('device_recognition_history', {
+      'user_id': recognition['user_id'] ?? 1,
+      'device_model': recognition['device_model'] ?? '',
+      'manufacturer': recognition['manufacturer'] ?? '',
+      'year_of_release': recognition['year_of_release'],
+      'operating_system': recognition['operating_system'] ?? '',
+      'confidence_score': recognition['confidence_score'] ?? 0.0,
+      'analysis_details': recognition['analysis_details'] ?? '',
+      'image_paths': jsonEncode(recognition['image_paths'] ?? []),
+      'recognition_timestamp': recognition['recognition_timestamp'] ?? DateTime.now().toIso8601String(),
+      'device_passport_id': recognition['device_passport_id'],
+      'is_saved': recognition['is_saved'] == true ? 1 : 0,
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getDeviceRecognitionHistory({
+    String? userId,
+    int? limit,
+  }) async {
+    if (kIsWeb) {
+      return await _getDeviceRecognitionHistoryWeb(userId: userId, limit: limit);
+    } else {
+      return await _getDeviceRecognitionHistorySQLite(userId: userId, limit: limit);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _getDeviceRecognitionHistoryWeb({
+    String? userId,
+    int? limit,
+  }) async {
+    final prefs = await _getPrefs();
+    final historyJson = prefs.getStringList('device_recognition_history') ?? [];
+    final history = historyJson
+        .map((json) => jsonDecode(json) as Map<String, dynamic>)
+        .toList();
+
+    if (userId != null) {
+      history.removeWhere((h) => h['user_id']?.toString() != userId);
+    }
+
+    // Sort by timestamp descending
+    history.sort((a, b) =>
+        DateTime.parse(b['recognition_timestamp'] ?? '').compareTo(
+            DateTime.parse(a['recognition_timestamp'] ?? '')));
+
+    if (limit != null && history.length > limit) {
+      return history.take(limit).toList();
+    }
+
+    return history;
+  }
+
+  Future<List<Map<String, dynamic>>> _getDeviceRecognitionHistorySQLite({
+    String? userId,
+    int? limit,
+  }) async {
+    final db = await database as Database;
+
+    String query = 'SELECT * FROM device_recognition_history';
+    List<dynamic> args = [];
+
+    if (userId != null) {
+      query += ' WHERE user_id = ?';
+      args.add(userId);
+    }
+
+    query += ' ORDER BY recognition_timestamp DESC';
+
+    if (limit != null) {
+      query += ' LIMIT ?';
+      args.add(limit);
+    }
+
+    return await db.rawQuery(query, args);
+  }
+
+  Future<void> updateDeviceRecognitionSaved(int recognitionId, bool isSaved) async {
+    if (kIsWeb) {
+      await _updateDeviceRecognitionSavedWeb(recognitionId, isSaved);
+    } else {
+      await _updateDeviceRecognitionSavedSQLite(recognitionId, isSaved);
+    }
+  }
+
+  Future<void> _updateDeviceRecognitionSavedWeb(int recognitionId, bool isSaved) async {
+    final history = await getDeviceRecognitionHistory();
+    final index = history.indexWhere((h) => h['id'] == recognitionId);
+
+    if (index != -1) {
+      history[index]['is_saved'] = isSaved;
+
+      final prefs = await _getPrefs();
+      final historyJson = history.map((h) => jsonEncode(h)).toList();
+      await prefs.setStringList('device_recognition_history', historyJson);
+    }
+  }
+
+  Future<void> _updateDeviceRecognitionSavedSQLite(int recognitionId, bool isSaved) async {
+    final db = await database as Database;
+
+    await db.update(
+      'device_recognition_history',
+      {'is_saved': isSaved ? 1 : 0},
+      where: 'id = ?',
+      whereArgs: [recognitionId],
     );
   }
 

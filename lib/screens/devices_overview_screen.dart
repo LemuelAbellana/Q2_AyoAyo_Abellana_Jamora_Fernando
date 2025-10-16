@@ -5,6 +5,7 @@ import '../providers/device_provider.dart';
 import '../models/device_passport.dart';
 import '../models/device_diagnosis.dart';
 import 'device_passport_form_screen.dart';
+import 'device_scanner_screen.dart';
 
 class DevicesOverviewScreen extends StatefulWidget {
   const DevicesOverviewScreen({super.key});
@@ -65,10 +66,11 @@ class _DevicesOverviewScreenState extends State<DevicesOverviewScreen> {
               : _buildDevicesList(context, deviceProvider.devices);
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToAddDevice(context),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddDeviceOptions(context),
         tooltip: 'Add Device',
-        child: const Icon(LucideIcons.plus),
+        label: const Text('Add Device'),
+        icon: const Icon(LucideIcons.plus),
       ),
     );
   }
@@ -259,6 +261,81 @@ class _DevicesOverviewScreenState extends State<DevicesOverviewScreen> {
         return 'Cracked';
       case ScreenCondition.unknown:
         return 'Unknown';
+    }
+  }
+
+  void _showAddDeviceOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Add Device',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  LucideIcons.scanLine,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+              title: const Text('Camera Scanner'),
+              subtitle: const Text('AI-powered device recognition'),
+              trailing: const Icon(LucideIcons.chevronRight),
+              onTap: () {
+                Navigator.pop(context);
+                _navigateToScanner(context);
+              },
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  LucideIcons.edit3,
+                  color: Colors.grey,
+                ),
+              ),
+              title: const Text('Manual Entry'),
+              subtitle: const Text('Fill out device details manually'),
+              trailing: const Icon(LucideIcons.chevronRight),
+              onTap: () {
+                Navigator.pop(context);
+                _navigateToAddDevice(context);
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _navigateToScanner(BuildContext context) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const DeviceScannerScreen()),
+    );
+
+    // If a device was added, refresh the list
+    if (result == true && mounted) {
+      context.read<DeviceProvider>().refresh();
     }
   }
 

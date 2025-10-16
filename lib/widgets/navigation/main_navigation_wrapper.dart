@@ -6,6 +6,7 @@ import '../../screens/upcycling_workspace_screen.dart';
 import '../../screens/technician_chatbot_screen.dart';
 import '../../screens/devices_overview_screen.dart';
 import '../../screens/donation_screen.dart';
+import '../../screens/device_scanner_screen.dart';
 
 class NavigationItem {
   final String label;
@@ -189,12 +190,14 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper>
           )
         else if (_selectedIndex == 4) // Devices
           IconButton(
-            icon: const Icon(LucideIcons.plus),
-            tooltip: 'Add Device',
+            icon: const Icon(LucideIcons.scanLine),
+            tooltip: 'Scan Device',
             onPressed: () {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('Add new device')));
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const DeviceScannerScreen(),
+                ),
+              );
             },
           ),
       ],
