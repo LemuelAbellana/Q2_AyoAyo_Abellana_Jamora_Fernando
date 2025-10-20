@@ -10,7 +10,7 @@ class AIImageAnalysisService {
     _apiKey = ApiConfig.geminiApiKey;
     try {
       _visionModel = GenerativeModel(
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.0-flash-exp',
         apiKey: _apiKey,
         generationConfig: GenerationConfig(
           temperature: 0.4,
@@ -19,17 +19,21 @@ class AIImageAnalysisService {
           maxOutputTokens: 2048,
         ),
       );
-      print('✅ Gemini Vision Model initialized successfully');
+
+      if (ApiConfig.isGeminiConfigured) {
+        print('✅ Image Analysis: Gemini 2.0 Flash Vision ready');
+      } else {
+        print('🎭 Image Analysis: Demo mode (add API key to enable)');
+      }
     } catch (e) {
-      print('⚠️ Warning: Failed to initialize Gemini Vision Model: $e');
-      // The service will still work in demo mode
+      print('⚠️ Failed to initialize Gemini Vision: $e');
     }
   }
 
   Future<String> analyzeDeviceImages(List<File> images) async {
-    // Skip analysis if API key is not configured, demo mode is enabled, or vision model is null
-    if (ApiConfig.useDemoMode || _apiKey == 'YOUR_GEMINI_API_KEY_HERE' || _apiKey.isEmpty || _visionModel == null) {
-      print('📷 Using demo mode for image analysis');
+    // Use demo mode if API not configured or vision model failed to initialize
+    if (!ApiConfig.isGeminiConfigured || _visionModel == null) {
+      print('📷 Demo mode - Add API key to .env for AI image analysis');
       return _generateDemoAnalysis(images);
     }
 
@@ -45,7 +49,8 @@ class AIImageAnalysisService {
           print('📷 Processing image ${i + 1} (${bytes.length} bytes)');
 
           // Create enhanced prompt for phone recognition and condition analysis
-          final imagePrompt = '''
+          final imagePrompt =
+              '''
 🔍 **MOBILE DEVICE AI RECOGNITION & ANALYSIS - Image ${i + 1}**
 
 You are an expert mobile device identification and assessment AI. Analyze this device image and provide detailed information.
@@ -110,17 +115,23 @@ Analyze the device thoroughly and be as specific as possible with the model iden
             if (response.text != null) {
               final analysisText = response.text!;
               print('🔍 Image ${i + 1} Analysis Result: $analysisText');
-              analysisResults.add('📷 **Image ${i + 1} AI Analysis:**\n$analysisText');
+              analysisResults.add(
+                '📷 **Image ${i + 1} AI Analysis:**\n$analysisText',
+              );
             } else {
               analysisResults.add(_generateFallbackAnalysis(i + 1));
             }
           } catch (aiError) {
             print('⚠️ AI Analysis failed for image ${i + 1}: $aiError');
-            analysisResults.add(_generateFallbackAnalysis(i + 1, aiError.toString()));
+            analysisResults.add(
+              _generateFallbackAnalysis(i + 1, aiError.toString()),
+            );
           }
         } catch (imageError) {
           print('❌ Error processing image ${i + 1}: $imageError');
-          analysisResults.add(_generateFallbackAnalysis(i + 1, imageError.toString()));
+          analysisResults.add(
+            _generateFallbackAnalysis(i + 1, imageError.toString()),
+          );
         }
       }
 
@@ -131,10 +142,16 @@ Analyze the device thoroughly and be as specific as possible with the model iden
 
       // Add enhanced analysis summary
       combinedAnalysis.writeln('\n\n📊 **AI ANALYSIS SUMMARY:**');
-      combinedAnalysis.writeln('• Total Images Processed: ${analysisResults.length}');
-      combinedAnalysis.writeln('• AI Model: Gemini 1.5 Flash Vision');
-      combinedAnalysis.writeln('• Analysis Type: Device Recognition + Condition Assessment');
-      combinedAnalysis.writeln('• Capabilities: Phone Model ID, Brand Detection, Damage Assessment');
+      combinedAnalysis.writeln(
+        '• Total Images Processed: ${analysisResults.length}',
+      );
+      combinedAnalysis.writeln('• AI Model: Gemini 2.0 Flash Vision');
+      combinedAnalysis.writeln(
+        '• Analysis Type: Device Recognition + Condition Assessment',
+      );
+      combinedAnalysis.writeln(
+        '• Capabilities: Phone Model ID, Brand Detection, Damage Assessment',
+      );
 
       return combinedAnalysis.toString();
     } catch (e) {
@@ -186,9 +203,11 @@ ${demoResults.join('\n\n---\n\n')}
 
 📊 **AI ANALYSIS SUMMARY:**
 • Total Images Processed: ${images.length}
-• AI Model: Gemini 1.5 Flash Vision (Demo Mode)
+• AI Model: Gemini 2.0 Flash Vision (Demo Mode)
 • Analysis Type: Device Recognition + Condition Assessment
-• Note: This is demo data. Configure Gemini API key for real analysis.
+
+💡 **Enable Real AI Analysis:**
+Add your Gemini API key to .env file (see SETUP_API_KEY.md)
     ''';
   }
 

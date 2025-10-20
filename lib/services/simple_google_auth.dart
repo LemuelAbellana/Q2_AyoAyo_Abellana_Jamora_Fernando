@@ -18,9 +18,7 @@ class SimpleGoogleAuth {
       GoogleSignInAccount? account = _googleSignIn.currentUser;
 
       // If not signed in, trigger sign in
-      if (account == null) {
-        account = await _googleSignIn.signIn();
-      }
+      account ??= await _googleSignIn.signIn();
 
       if (account == null) {
         print('❌ User cancelled Google Sign-In');

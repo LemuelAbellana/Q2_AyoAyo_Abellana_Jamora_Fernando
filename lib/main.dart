@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -11,6 +12,9 @@ import 'providers/upcycling_provider.dart';
 import 'providers/donation_provider.dart';
 import 'providers/device_provider.dart';
 import 'config/api_config.dart';
+import 'services/database_service.dart';
+
+// Import sqflite for database
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +28,16 @@ void main() async {
     print('⚠️ Using default configuration values');
   }
 
-  print('✅ App starting with Google Sign-In and Laravel backend');
+  print('✅ App starting without Firebase - using simple Google Sign-In');
+
+  // Initialize database factory for mobile platforms only
+  if (!kIsWeb) {
+    try {
+      print('✅ Using native SQLite database');
+    } catch (e) {
+      print('⚠️ Database initialization failed: $e');
+    }
+  }
 
   runApp(const AyoAyoApp());
 }
@@ -85,6 +98,7 @@ class AppInitializer extends StatefulWidget {
 }
 
 class _AppInitializerState extends State<AppInitializer> {
+  bool _isInitialized = false;
   String _initializationStatus = 'Starting app...';
 
   @override
@@ -94,22 +108,55 @@ class _AppInitializerState extends State<AppInitializer> {
   }
 
   Future<void> _initializeApp() async {
+    try {
+      // Add timeout to prevent hanging
+      await Future.any([
+        _performInitialization(),
+        Future.delayed(const Duration(seconds: 10)), // 10 second timeout
+      ]);
+    } catch (e) {
+      print('⚠️ App initialization failed: $e');
+    } finally {
+      // Always navigate to login screen
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/login');
+      }
+    }
+  }
+
+  Future<void> _performInitialization() async {
     setState(() {
-      _initializationStatus = 'Initializing...';
+      _initializationStatus = 'Initializing database...';
     });
 
-    // Add a small delay to show splash screen
+    // Initialize database only for non-web platforms with timeout
+    if (!kIsWeb) {
+      try {
+        await Future.any([
+          DatabaseService().database,
+          Future.delayed(const Duration(seconds: 5)), // 5 second timeout
+        ]);
+        print('✅ Database initialized successfully');
+      } catch (e) {
+        print('⚠️ Database initialization failed or timed out: $e');
+        // Continue without database - app should still work with reduced functionality
+      }
+    }
+
+    setState(() {
+      _initializationStatus = 'Loading application...';
+    });
+
+    // Add a small delay to show the loading state
     await Future.delayed(const Duration(milliseconds: 1000));
 
     setState(() {
+      _isInitialized = true;
       _initializationStatus = 'Ready!';
     });
 
-    // Navigate to login screen
+    // Small delay before navigation
     await Future.delayed(const Duration(milliseconds: 500));
-    if (mounted) {
-      Navigator.of(context).pushReplacementNamed('/login');
-    }
   }
 
   @override

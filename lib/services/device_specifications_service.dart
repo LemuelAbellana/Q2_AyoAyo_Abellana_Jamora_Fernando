@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 class DeviceSpecification {
   final String deviceModel;

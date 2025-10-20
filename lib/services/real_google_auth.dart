@@ -114,7 +114,7 @@ class RealGoogleAuth {
         print('🌐 Network error - check your internet connection');
       }
 
-      throw e; // Re-throw to trigger fallback
+      rethrow; // Re-throw to trigger fallback
     }
   }
 

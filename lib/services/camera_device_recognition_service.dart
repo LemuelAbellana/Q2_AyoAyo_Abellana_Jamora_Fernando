@@ -52,7 +52,7 @@ class CameraDeviceRecognitionService {
   CameraDeviceRecognitionService() {
     _apiKey = ApiConfig.geminiApiKey;
     _model = GenerativeModel(
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.0-flash-exp',
       apiKey: _apiKey,
       generationConfig: GenerationConfig(
         temperature: 0.1,
@@ -61,12 +61,19 @@ class CameraDeviceRecognitionService {
         maxOutputTokens: 2048,
       ),
     );
-    print('✅ Camera Device Recognition Service initialized');
+
+    if (ApiConfig.isGeminiConfigured) {
+      print('✅ Camera Recognition: Gemini 2.0 Flash ready');
+    } else {
+      print('🎭 Camera Recognition: Demo mode (add API key to enable)');
+    }
   }
 
-  Future<DeviceRecognitionResult> recognizeDeviceFromImage(File imageFile) async {
-    if (ApiConfig.useDemoMode || _apiKey == 'YOUR_GEMINI_API_KEY_HERE' || _apiKey.isEmpty) {
-      print('📱 Using demo mode for device recognition');
+  Future<DeviceRecognitionResult> recognizeDeviceFromImage(
+    File imageFile,
+  ) async {
+    if (!ApiConfig.isGeminiConfigured) {
+      print('📱 Demo mode - Add API key to .env for device recognition');
       return _generateDemoRecognitionResult();
     }
 
@@ -76,10 +83,7 @@ class CameraDeviceRecognitionService {
       final prompt = _buildDeviceRecognitionPrompt();
 
       final response = await _model.generateContent([
-        Content.multi([
-          TextPart(prompt),
-          DataPart('image/jpeg', bytes),
-        ])
+        Content.multi([TextPart(prompt), DataPart('image/jpeg', bytes)]),
       ]);
 
       final analysisText = response.text ?? '';
@@ -90,13 +94,17 @@ class CameraDeviceRecognitionService {
     }
   }
 
-  Future<DeviceRecognitionResult> recognizeDeviceFromImages(List<File> imageFiles) async {
+  Future<DeviceRecognitionResult> recognizeDeviceFromImages(
+    List<File> imageFiles,
+  ) async {
     if (imageFiles.isEmpty) {
       throw ArgumentError('No images provided for device recognition');
     }
 
-    if (ApiConfig.useDemoMode || _apiKey == 'YOUR_GEMINI_API_KEY_HERE' || _apiKey.isEmpty) {
-      print('📱 Using demo mode for multiple image device recognition');
+    if (!ApiConfig.isGeminiConfigured) {
+      print(
+        '📱 Demo mode - Add API key to .env for multiple image recognition',
+      );
       return _generateDemoRecognitionResult();
     }
 
@@ -110,7 +118,7 @@ class CameraDeviceRecognitionService {
       }
 
       final response = await _model.generateContent([
-        Content.multi(contentParts)
+        Content.multi(contentParts),
       ]);
 
       final analysisText = response.text ?? '';
@@ -206,12 +214,18 @@ Use multiple images to increase accuracy and confidence in identification.
             final parts = line.split(':');
             if (parts.length >= 2) {
               final key = parts[0].replaceAll(RegExp(r'["{}\s]'), '');
-              final value = parts.sublist(1).join(':').replaceAll(RegExp(r'[",\s]*$'), '').replaceAll(RegExp(r'^[\s"]*'), '');
+              final value = parts
+                  .sublist(1)
+                  .join(':')
+                  .replaceAll(RegExp(r'[",\s]*$'), '')
+                  .replaceAll(RegExp(r'^[\s"]*'), '');
 
               if (key.isNotEmpty) {
                 switch (key) {
                   case 'yearOfRelease':
-                    jsonData[key] = int.tryParse(value.replaceAll(RegExp(r'\D'), ''));
+                    jsonData[key] = int.tryParse(
+                      value.replaceAll(RegExp(r'\D'), ''),
+                    );
                     break;
                   case 'confidence':
                     jsonData[key] = double.tryParse(value) ?? 0.7;
@@ -268,27 +282,51 @@ Use multiple images to increase accuracy and confidence in identification.
     if (lowerText.contains('iphone')) {
       operatingSystem = 'iOS';
       final iPhoneModels = [
-        'iphone 15 pro max', 'iphone 15 pro', 'iphone 15 plus', 'iphone 15',
-        'iphone 14 pro max', 'iphone 14 pro', 'iphone 14 plus', 'iphone 14',
-        'iphone 13 pro max', 'iphone 13 pro', 'iphone 13 mini', 'iphone 13',
-        'iphone 12 pro max', 'iphone 12 pro', 'iphone 12 mini', 'iphone 12',
+        'iphone 15 pro max',
+        'iphone 15 pro',
+        'iphone 15 plus',
+        'iphone 15',
+        'iphone 14 pro max',
+        'iphone 14 pro',
+        'iphone 14 plus',
+        'iphone 14',
+        'iphone 13 pro max',
+        'iphone 13 pro',
+        'iphone 13 mini',
+        'iphone 13',
+        'iphone 12 pro max',
+        'iphone 12 pro',
+        'iphone 12 mini',
+        'iphone 12',
       ];
 
       for (final model in iPhoneModels) {
         if (lowerText.contains(model)) {
-          deviceModel = model.split(' ').map((word) =>
-            word[0].toUpperCase() + word.substring(1)).join(' ');
+          deviceModel = model
+              .split(' ')
+              .map((word) => word[0].toUpperCase() + word.substring(1))
+              .join(' ');
           break;
         }
       }
     } else if (lowerText.contains('galaxy') || lowerText.contains('samsung')) {
       operatingSystem = 'Android';
       final galaxyModels = [
-        's24 ultra', 's24 plus', 's24',
-        's23 ultra', 's23 plus', 's23',
-        's22 ultra', 's22 plus', 's22',
-        'note 20 ultra', 'note 20',
-        'a54', 'a34', 'a24', 'a14',
+        's24 ultra',
+        's24 plus',
+        's24',
+        's23 ultra',
+        's23 plus',
+        's23',
+        's22 ultra',
+        's22 plus',
+        's22',
+        'note 20 ultra',
+        'note 20',
+        'a54',
+        'a34',
+        'a24',
+        'a14',
       ];
 
       for (final model in galaxyModels) {
@@ -324,7 +362,8 @@ Use multiple images to increase accuracy and confidence in identification.
         yearOfRelease: 2022,
         operatingSystem: 'iOS',
         confidence: 0.92,
-        analysisDetails: 'Demo mode: Identified by distinctive triple camera system with LiDAR, Dynamic Island, and premium build quality typical of iPhone Pro models.',
+        analysisDetails:
+            'Demo mode: Identified by distinctive triple camera system with LiDAR, Dynamic Island, and premium build quality typical of iPhone Pro models.',
       ),
       DeviceRecognitionResult(
         deviceModel: 'Galaxy S23 Ultra',
@@ -332,7 +371,8 @@ Use multiple images to increase accuracy and confidence in identification.
         yearOfRelease: 2023,
         operatingSystem: 'Android',
         confidence: 0.88,
-        analysisDetails: 'Demo mode: Recognized by large camera bump with multiple sensors, S Pen integration, and Samsung branding.',
+        analysisDetails:
+            'Demo mode: Recognized by large camera bump with multiple sensors, S Pen integration, and Samsung branding.',
       ),
       DeviceRecognitionResult(
         deviceModel: 'Xiaomi 13 Pro',
@@ -340,7 +380,8 @@ Use multiple images to increase accuracy and confidence in identification.
         yearOfRelease: 2023,
         operatingSystem: 'Android',
         confidence: 0.85,
-        analysisDetails: 'Demo mode: Identified by Leica camera branding, distinctive rear design, and premium materials.',
+        analysisDetails:
+            'Demo mode: Identified by Leica camera branding, distinctive rear design, and premium materials.',
       ),
     ];
 
@@ -354,11 +395,16 @@ Use multiple images to increase accuracy and confidence in identification.
       yearOfRelease: null,
       operatingSystem: 'Unknown',
       confidence: 0.1,
-      analysisDetails: 'Recognition failed: $error. Manual identification may be required.',
+      analysisDetails:
+          'Recognition failed: $error. Manual identification may be required.',
     );
   }
 
-  Future<String> saveRecognizedDevice(DeviceRecognitionResult result, String userId, List<String> imageUrls) async {
+  Future<String> saveRecognizedDevice(
+    DeviceRecognitionResult result,
+    String userId,
+    List<String> imageUrls,
+  ) async {
     try {
       // Use backend API if enabled and user is authenticated
       if (ApiConfig.useBackendApi && ApiService.isAuthenticated) {
@@ -406,31 +452,39 @@ Use multiple images to increase accuracy and confidence in identification.
             'identifiedIssues': [],
             'lifeCycleStage': 'assessment_needed',
             'remainingUsefulLife': 'unknown',
-            'environmentalImpact': 'unknown'
+            'environmentalImpact': 'unknown',
           },
           'valueEstimation': {
-            'currentValue': _estimateBaseValue(result.manufacturer, result.deviceModel),
-            'postRepairValue': _estimateBaseValue(result.manufacturer, result.deviceModel) * 1.2,
-            'partsValue': _estimateBaseValue(result.manufacturer, result.deviceModel) * 0.4,
+            'currentValue': _estimateBaseValue(
+              result.manufacturer,
+              result.deviceModel,
+            ),
+            'postRepairValue':
+                _estimateBaseValue(result.manufacturer, result.deviceModel) *
+                1.2,
+            'partsValue':
+                _estimateBaseValue(result.manufacturer, result.deviceModel) *
+                0.4,
             'repairCost': 2000.0,
             'recyclingValue': 500.0,
             'currency': '₱',
             'marketPositioning': 'needs_assessment',
-            'depreciationRate': 'standard'
+            'depreciationRate': 'standard',
           },
           'recommendations': [
             {
               'title': 'Complete Device Assessment',
-              'description': 'Schedule a comprehensive diagnosis to determine the exact condition and value of your ${result.manufacturer} ${result.deviceModel}.',
+              'description':
+                  'Schedule a comprehensive diagnosis to determine the exact condition and value of your ${result.manufacturer} ${result.deviceModel}.',
               'type': 'assessment',
               'priority': 0.9,
               'costBenefitRatio': 1.5,
               'environmentalImpact': 'positive',
-              'timeframe': 'immediate'
-            }
+              'timeframe': 'immediate',
+            },
           ],
           'analysisTimestamp': DateTime.now().toIso8601String(),
-        }
+        },
       };
 
       await _databaseService.saveWebDevicePassports([devicePassportData]);
@@ -475,22 +529,19 @@ Use multiple images to increase accuracy and confidence in identification.
   }
 
   Future<bool> validateApiKey() async {
-    if (ApiConfig.useDemoMode || _apiKey == 'YOUR_GEMINI_API_KEY_HERE' || _apiKey.isEmpty) {
-      print('⚠️ API key validation skipped - using demo mode');
-      return true;
+    if (!ApiConfig.isGeminiConfigured) {
+      print('⚠️ No API key configured - using demo mode');
+      return false;
     }
 
     try {
-      final testResponse = await _model.generateContent([
-        Content.text('Test connection')
-      ]).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Validation timeout'),
-      );
-      print('✅ Gemini API key validated successfully');
+      final testResponse = await _model
+          .generateContent([Content.text('Test')])
+          .timeout(const Duration(seconds: 10));
+      print('✅ Gemini 2.0 Flash API validated for camera recognition');
       return testResponse.text != null;
     } catch (e) {
-      print('❌ API key validation failed: $e');
+      print('❌ API validation failed: $e');
       return false;
     }
   }

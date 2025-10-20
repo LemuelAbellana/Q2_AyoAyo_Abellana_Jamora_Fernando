@@ -1,4 +1,3 @@
-import 'local_auth_service.dart';
 
 class DemoAuthService {
   // Create demo Google user data (for when Google Sign-In is not configured)

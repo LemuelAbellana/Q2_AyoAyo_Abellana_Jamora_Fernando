@@ -17,13 +17,14 @@ class GeminiDiagnosisService {
   final AIImageAnalysisService _imageAnalysisService = AIImageAnalysisService();
   final AIKnowledgeService _knowledgeService = AIKnowledgeService();
   final AIPromptBuilderService _promptBuilderService = AIPromptBuilderService();
-  final AIResponseParserService _responseParserService = AIResponseParserService();
+  final AIResponseParserService _responseParserService =
+      AIResponseParserService();
   final AIChatbotService _chatbotService = AIChatbotService();
 
   GeminiDiagnosisService() {
     _apiKey = ApiConfig.geminiApiKey;
     _model = GenerativeModel(
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.0-flash-exp',
       apiKey: _apiKey,
       generationConfig: GenerationConfig(
         temperature: 0.5,
@@ -32,19 +33,23 @@ class GeminiDiagnosisService {
         maxOutputTokens: 2048,
       ),
     );
-    print('✅ Gemini Diagnosis Service initialized');
+
+    if (ApiConfig.isGeminiConfigured) {
+      print('✅ Diagnosis Service: Gemini 2.0 Flash ready');
+    } else {
+      print(
+        '🎭 Diagnosis Service: Demo mode (add API key to enable Gemini 2.0 Flash)',
+      );
+    }
   }
 
   Future<DiagnosisResult> diagnoseMobileDevice(
     DeviceDiagnosis diagnosis,
   ) async {
-    // Use demo mode if API key is not configured or demo mode is enabled
-    if (ApiConfig.useDemoMode || _apiKey == 'YOUR_GEMINI_API_KEY_HERE' || _apiKey.isEmpty) {
-      print('🔬 Using demo mode for device diagnosis');
-      return await _generateEnhancedDemoResponse(
-        diagnosis,
-        [],
-      );
+    // Use demo mode if API key not configured
+    if (!ApiConfig.isGeminiConfigured) {
+      print('🔬 Demo mode - Add API key to .env (see SETUP_API_KEY.md)');
+      return await _generateEnhancedDemoResponse(diagnosis, []);
     }
 
     try {
@@ -55,8 +60,12 @@ class GeminiDiagnosisService {
       String imageAnalysis = '';
       if (diagnosis.images.isNotEmpty && ApiConfig.enableImageAnalysis) {
         try {
-          print('📷 Starting image analysis for ${diagnosis.images.length} images...');
-          imageAnalysis = await _imageAnalysisService.analyzeDeviceImages(diagnosis.images);
+          print(
+            '📷 Starting image analysis for ${diagnosis.images.length} images...',
+          );
+          imageAnalysis = await _imageAnalysisService.analyzeDeviceImages(
+            diagnosis.images,
+          );
           print('📷 Image analysis completed successfully');
         } catch (e) {
           print('❌ Image analysis failed completely: $e');
@@ -100,10 +109,7 @@ class GeminiDiagnosisService {
       );
     } catch (e) {
       // Fallback response in case of API failure
-      return await _generateEnhancedDemoResponse(
-        diagnosis,
-        [],
-      );
+      return await _generateEnhancedDemoResponse(diagnosis, []);
     }
   }
 
@@ -112,7 +118,9 @@ class GeminiDiagnosisService {
     final List<String> urls = [];
     for (int i = 0; i < images.length; i++) {
       // Generate a dummy URL for each image
-      urls.add('https://storage.example.com/diagnosis/image_${DateTime.now().millisecondsSinceEpoch}_$i.jpg');
+      urls.add(
+        'https://storage.example.com/diagnosis/image_${DateTime.now().millisecondsSinceEpoch}_$i.jpg',
+      );
     }
     return urls;
   }
@@ -122,17 +130,9 @@ class GeminiDiagnosisService {
     DeviceDiagnosis diagnosis,
     List<String> imageUrls,
   ) async {
-    // If images are available, try to analyze them
-    String imageAnalysis = '';
-    if (diagnosis.images.isNotEmpty && ApiConfig.enableImageAnalysis) {
-      try {
-        imageAnalysis = await _imageAnalysisService.analyzeDeviceImages(diagnosis.images);
-      } catch (e) {
-        imageAnalysis = 'Demo mode: Image analysis simulated';
-      }
-    }
-
-    final deviceSpecs = DeviceSpecificationsService.getDeviceSpecification(diagnosis.deviceModel);
+    final deviceSpecs = DeviceSpecificationsService.getDeviceSpecification(
+      diagnosis.deviceModel,
+    );
 
     // Generate realistic demo data based on device model and user input
     final demoData = {
@@ -144,7 +144,7 @@ class GeminiDiagnosisService {
         'identifiedIssues': _extractIssuesFromInput(diagnosis.additionalInfo),
         'lifeCycleStage': 'mature_usage',
         'remainingUsefulLife': '1-2_years',
-        'environmentalImpact': 'moderate'
+        'environmentalImpact': 'moderate',
       },
       'valueEstimation': {
         'currentValue': _estimateValue(diagnosis.deviceModel),
@@ -154,7 +154,7 @@ class GeminiDiagnosisService {
         'recyclingValue': 800.0,
         'currency': '₱',
         'marketPositioning': 'good_condition',
-        'depreciationRate': '20_percent_yearly'
+        'depreciationRate': '20_percent_yearly',
       },
       'lifeCycleAnalysis': {
         'manufacturingQuality': 'standard_components',
@@ -162,13 +162,15 @@ class GeminiDiagnosisService {
         'maintenanceHistory': 'minimal',
         'failureProbability': 'medium',
         'sustainabilityScore': 6.5,
-        'carbonFootprint': '42_kg_co2_equivalent'
+        'carbonFootprint': '42_kg_co2_equivalent',
       },
       'recommendations': _generateRecommendations(diagnosis),
-      'aiAnalysis': 'Demo analysis based on device model and user input',
+      'aiAnalysis':
+          'Demo analysis based on device model and user input. Add Gemini API key for AI-powered diagnosis.',
       'confidenceScore': 0.75,
       'analysisTimestamp': DateTime.now().toIso8601String(),
-      'recommendationRationale': 'Demo analysis for testing purposes'
+      'recommendationRationale':
+          'Demo analysis - Configure API key in .env for real Gemini 2.0 Flash analysis',
     };
 
     if (deviceSpecs != null) {
@@ -181,7 +183,9 @@ class GeminiDiagnosisService {
   String _analyzeScreenFromInput(String? additionalInfo) {
     if (additionalInfo == null) return 'good';
     final info = additionalInfo.toLowerCase();
-    if (info.contains('crack') || info.contains('broken') || info.contains('damage')) {
+    if (info.contains('crack') ||
+        info.contains('broken') ||
+        info.contains('damage')) {
       return 'damaged';
     }
     return 'good';
@@ -193,8 +197,10 @@ class GeminiDiagnosisService {
 
     final info = additionalInfo.toLowerCase();
     if (info.contains('battery')) issues.add('battery_degradation');
-    if (info.contains('screen') || info.contains('crack')) issues.add('screen_damage');
-    if (info.contains('slow') || info.contains('lag')) issues.add('performance_issues');
+    if (info.contains('screen') || info.contains('crack'))
+      issues.add('screen_damage');
+    if (info.contains('slow') || info.contains('lag'))
+      issues.add('performance_issues');
     if (info.contains('overheat')) issues.add('thermal_issues');
 
     return issues.isEmpty ? ['minor_wear'] : issues;
@@ -208,16 +214,19 @@ class GeminiDiagnosisService {
     return 15000.0; // Default value
   }
 
-  List<Map<String, dynamic>> _generateRecommendations(DeviceDiagnosis diagnosis) {
+  List<Map<String, dynamic>> _generateRecommendations(
+    DeviceDiagnosis diagnosis,
+  ) {
     return [
       {
         'title': 'Device Assessment',
-        'description': 'Professional evaluation of device condition and repair options',
+        'description':
+            'Professional evaluation of device condition and repair options',
         'type': 'assessment',
         'priority': 0.9,
         'costBenefitRatio': 1.5,
         'environmentalImpact': 'positive',
-        'timeframe': 'immediate'
+        'timeframe': 'immediate',
       },
       {
         'title': 'Resale Opportunity',
@@ -225,8 +234,8 @@ class GeminiDiagnosisService {
         'type': 'sell',
         'priority': 0.7,
         'estimatedReturn': _estimateValue(diagnosis.deviceModel),
-        'marketTiming': 'favorable'
-      }
+        'marketTiming': 'favorable',
+      },
     ];
   }
 
@@ -239,22 +248,19 @@ class GeminiDiagnosisService {
   }
 
   Future<bool> validateApiKey() async {
-    if (ApiConfig.useDemoMode || _apiKey == 'YOUR_GEMINI_API_KEY_HERE' || _apiKey.isEmpty) {
-      print('⚠️ API key validation skipped - using demo mode');
-      return true;
+    if (!ApiConfig.isGeminiConfigured) {
+      print('⚠️ No API key configured - using demo mode');
+      return false;
     }
 
     try {
-      final testResponse = await _model.generateContent([
-        Content.text('Test connection')
-      ]).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception('Validation timeout'),
-      );
-      print('✅ Gemini API key validated successfully');
+      final testResponse = await _model
+          .generateContent([Content.text('Test')])
+          .timeout(const Duration(seconds: 10));
+      print('✅ Gemini 2.0 Flash API validated');
       return testResponse.text != null;
     } catch (e) {
-      print('❌ API key validation failed: $e');
+      print('❌ API validation failed: $e');
       return false;
     }
   }
@@ -330,7 +336,12 @@ class GeminiDiagnosisService {
 
     for (final testCase in testCases) {
       print('\n📝 Testing: "$testCase"');
-      final result = _analyzeScreenCondition('Test Device', testCase, false, null);
+      final result = _analyzeScreenCondition(
+        'Test Device',
+        testCase,
+        false,
+        null,
+      );
       print('🎯 Result: $result');
     }
 
