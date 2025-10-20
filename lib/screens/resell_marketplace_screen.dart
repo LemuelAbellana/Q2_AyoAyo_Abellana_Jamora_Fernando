@@ -4,8 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import '../models/resell_listing.dart';
 import '../models/marketplace.dart';
-import '../models/device_diagnosis.dart';
 import '../providers/resell_provider.dart';
+import '../widgets/resell/glassmorphic_listing_card.dart';
+import '../widgets/resell/glassmorphic_analytics_card.dart';
+import '../utils/app_theme.dart';
 
 class ResellMarketplaceScreen extends StatefulWidget {
   const ResellMarketplaceScreen({super.key});
@@ -46,85 +48,98 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          // Add the TabBar to the body
-          TabBar(
-            controller: _tabController,
-            tabs: [
-              Tab(text: 'Marketplace', icon: Icon(LucideIcons.shoppingBag)),
-              Tab(text: 'My Listings', icon: Icon(LucideIcons.package)),
-              Tab(text: 'Analytics', icon: Icon(LucideIcons.trendingUp)),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppTheme.backgroundLight,
+              Colors.blue.shade50.withValues(alpha: 0.3),
+              Colors.green.shade50.withValues(alpha: 0.3),
             ],
           ),
-          // Search and Filter Section
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                // Search bar
-                TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search listings...',
-                    prefixIcon: const Icon(LucideIcons.search),
-                    suffixIcon: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_searchController.text.isNotEmpty)
+        ),
+        child: Column(
+          children: [
+            // Add the TabBar to the body
+            TabBar(
+              controller: _tabController,
+              tabs: [
+                Tab(text: 'Marketplace', icon: Icon(LucideIcons.shoppingBag)),
+                Tab(text: 'My Listings', icon: Icon(LucideIcons.package)),
+                Tab(text: 'Analytics', icon: Icon(LucideIcons.trendingUp)),
+              ],
+            ),
+            // Search and Filter Section
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  // Search bar
+                  TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search listings...',
+                      prefixIcon: const Icon(LucideIcons.search),
+                      suffixIcon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_searchController.text.isNotEmpty)
+                            IconButton(
+                              icon: const Icon(LucideIcons.x),
+                              onPressed: () {
+                                _searchController.clear();
+                                _applyFilters();
+                              },
+                            ),
                           IconButton(
-                            icon: const Icon(LucideIcons.x),
+                            icon: Icon(
+                              _showFilters
+                                  ? Icons.filter_list_off
+                                  : Icons.filter_list,
+                            ),
                             onPressed: () {
-                              _searchController.clear();
-                              _applyFilters();
+                              setState(() {
+                                _showFilters = !_showFilters;
+                              });
                             },
                           ),
-                        IconButton(
-                          icon: Icon(
-                            _showFilters
-                                ? Icons.filter_list_off
-                                : Icons.filter_list,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _showFilters = !_showFilters;
-                            });
-                          },
-                        ),
-                      ],
+                        ],
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Theme.of(context).colorScheme.surface,
                     ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Theme.of(context).colorScheme.surface,
+                    onChanged: (value) {
+                      _applyFilters();
+                    },
                   ),
-                  onChanged: (value) {
-                    _applyFilters();
-                  },
-                ),
 
-                // Filters (expandable)
-                if (_showFilters) ...[
-                  const SizedBox(height: 16),
-                  _buildFiltersSection(),
+                  // Filters (expandable)
+                  if (_showFilters) ...[
+                    const SizedBox(height: 16),
+                    _buildFiltersSection(),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
 
-          // Tab content
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildMarketplaceTab(),
-                _buildMyListingsTab(),
-                _buildAnalyticsTab(),
-              ],
+            // Tab content
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildMarketplaceTab(),
+                  _buildMyListingsTab(),
+                  _buildAnalyticsTab(),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCreateListingDialog(context),
@@ -327,6 +342,11 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
   }
 
   Widget _buildListingCard(ResellListing listing) {
+    return GlassmorphicListingCard(
+      listing: listing,
+      onTap: () => _showListingDetails(context, listing),
+    );
+    /* OLD CARD DESIGN - Now using glassmorphic component
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
@@ -584,22 +604,10 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
         ),
       ),
     );
+    */
   }
 
-  Color _getHardwareColor(HardwareCondition condition) {
-    switch (condition) {
-      case HardwareCondition.excellent:
-      case HardwareCondition.good:
-        return Colors.green;
-      case HardwareCondition.fair:
-        return Colors.orange;
-      case HardwareCondition.poor:
-      case HardwareCondition.damaged:
-        return Colors.red;
-      case HardwareCondition.unknown:
-        return Colors.grey;
-    }
-  }
+  // Removed _getHardwareColor - now handled by glassmorphic component
 
   Widget _buildMyListingCard(ResellListing listing) {
     return Card(
@@ -714,40 +722,14 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
     IconData icon,
     Color color,
   ) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                  ),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+    return GlassmorphicAnalyticsCard(
+      title: title,
+      value: value,
+      icon: icon,
+      gradient: LinearGradient(
+        colors: [color, color.withValues(alpha: 0.7)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
       ),
     );
   }
@@ -846,20 +828,7 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
     );
   }
 
-  Color _getConditionColor(ConditionGrade condition) {
-    switch (condition) {
-      case ConditionGrade.excellent:
-        return Colors.green;
-      case ConditionGrade.good:
-        return Colors.blue;
-      case ConditionGrade.fair:
-        return Colors.orange;
-      case ConditionGrade.poor:
-        return Colors.red;
-      case ConditionGrade.damaged:
-        return Colors.grey;
-    }
-  }
+  // Removed _getConditionColor - now handled by glassmorphic component
 
   Color _getStatusColor(ListingStatus status) {
     switch (status) {

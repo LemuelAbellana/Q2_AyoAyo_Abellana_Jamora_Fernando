@@ -7,6 +7,8 @@ import '../models/device_diagnosis.dart';
 import '../providers/upcycling_provider.dart';
 import '../providers/diagnosis_provider.dart';
 import '../services/ai_upcycling_service.dart';
+import '../widgets/upcycling/glassmorphic_project_card.dart';
+import '../utils/app_theme.dart';
 
 class UpcyclingWorkspaceScreen extends StatefulWidget {
   const UpcyclingWorkspaceScreen({super.key});
@@ -40,62 +42,75 @@ class _UpcyclingWorkspaceScreenState extends State<UpcyclingWorkspaceScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          // Add the TabBar to the body
-          TabBar(
-            controller: _tabController,
-            tabs: [
-              Tab(text: 'My Projects', icon: Icon(LucideIcons.palette)),
-              Tab(text: 'Explore', icon: Icon(LucideIcons.search)),
-              Tab(text: 'Materials', icon: Icon(LucideIcons.wrench)),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppTheme.backgroundLight,
+              Colors.purple.shade50.withValues(alpha: 0.3),
+              Colors.blue.shade50.withValues(alpha: 0.3),
             ],
           ),
-          // Search bar (only show on explore tab)
-          if (_tabController.index == 1) ...[
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search projects...',
-                  prefixIcon: const Icon(LucideIcons.search),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(LucideIcons.x),
-                          onPressed: () {
-                            _searchController.clear();
-                            context.read<UpcyclingProvider>().searchProjects(
-                              '',
-                            );
-                          },
-                        )
-                      : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            // Add the TabBar to the body
+            TabBar(
+              controller: _tabController,
+              tabs: [
+                Tab(text: 'My Projects', icon: Icon(LucideIcons.palette)),
+                Tab(text: 'Explore', icon: Icon(LucideIcons.search)),
+                Tab(text: 'Materials', icon: Icon(LucideIcons.wrench)),
+              ],
+            ),
+            // Search bar (only show on explore tab)
+            if (_tabController.index == 1) ...[
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search projects...',
+                    prefixIcon: const Icon(LucideIcons.search),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(LucideIcons.x),
+                            onPressed: () {
+                              _searchController.clear();
+                              context.read<UpcyclingProvider>().searchProjects(
+                                '',
+                              );
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Theme.of(context).colorScheme.surface,
                   ),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surface,
+                  onChanged: (value) {
+                    context.read<UpcyclingProvider>().searchProjects(value);
+                  },
                 ),
-                onChanged: (value) {
-                  context.read<UpcyclingProvider>().searchProjects(value);
-                },
+              ),
+            ],
+
+            // Tab content
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildMyProjectsTab(),
+                  _buildExploreTab(),
+                  _buildMaterialsTab(),
+                ],
               ),
             ),
           ],
-
-          // Tab content
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildMyProjectsTab(),
-                _buildExploreTab(),
-                _buildMaterialsTab(),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCreateProjectDialog(context),
@@ -263,6 +278,15 @@ class _UpcyclingWorkspaceScreenState extends State<UpcyclingWorkspaceScreen>
   }
 
   Widget _buildProjectCard(UpcyclingProject project) {
+    return GlassmorphicProjectCard(
+      project: project,
+      onTap: () => _showProjectDetails(context, project),
+      onShowSteps: () => _showProjectSteps(context, project),
+      onUpdate: project.status != ProjectStatus.completed
+          ? () => _updateProjectStatus(context, project)
+          : null,
+    );
+    /* OLD CARD DESIGN - Now using glassmorphic component
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: InkWell(
@@ -369,6 +393,7 @@ class _UpcyclingWorkspaceScreenState extends State<UpcyclingWorkspaceScreen>
         ),
       ),
     );
+    */
   }
 
   Widget _buildExploreProjectCard(UpcyclingProject project) {
@@ -553,18 +578,7 @@ class _UpcyclingWorkspaceScreenState extends State<UpcyclingWorkspaceScreen>
     );
   }
 
-  Color _getStatusColor(ProjectStatus status) {
-    switch (status) {
-      case ProjectStatus.planning:
-        return Colors.grey;
-      case ProjectStatus.inProgress:
-        return Colors.blue;
-      case ProjectStatus.completed:
-        return Colors.green;
-      case ProjectStatus.paused:
-        return Colors.orange;
-    }
-  }
+  // Removed _getStatusColor - now handled by glassmorphic component
 
   Color _getDifficultyColor(DifficultyLevel difficulty) {
     switch (difficulty) {
@@ -580,8 +594,14 @@ class _UpcyclingWorkspaceScreenState extends State<UpcyclingWorkspaceScreen>
   }
 
   void _showCreateProjectDialog(BuildContext context) {
-    final diagnosisProvider = Provider.of<DiagnosisProvider>(context, listen: false);
-    final upcyclingProvider = Provider.of<UpcyclingProvider>(context, listen: false);
+    final diagnosisProvider = Provider.of<DiagnosisProvider>(
+      context,
+      listen: false,
+    );
+    final upcyclingProvider = Provider.of<UpcyclingProvider>(
+      context,
+      listen: false,
+    );
 
     // Check if we have diagnosis data
     if (diagnosisProvider.currentResult == null) {
@@ -767,7 +787,8 @@ class _AIProjectGeneratorDialog extends StatefulWidget {
   });
 
   @override
-  State<_AIProjectGeneratorDialog> createState() => _AIProjectGeneratorDialogState();
+  State<_AIProjectGeneratorDialog> createState() =>
+      _AIProjectGeneratorDialogState();
 }
 
 class _AIProjectGeneratorDialogState extends State<_AIProjectGeneratorDialog> {
@@ -893,8 +914,12 @@ class _AIProjectGeneratorDialogState extends State<_AIProjectGeneratorDialog> {
                                     idea.difficulty.name,
                                     style: const TextStyle(fontSize: 10),
                                   ),
-                                  backgroundColor: _getDifficultyColor(idea.difficulty),
-                                  labelStyle: const TextStyle(color: Colors.white),
+                                  backgroundColor: _getDifficultyColor(
+                                    idea.difficulty,
+                                  ),
+                                  labelStyle: const TextStyle(
+                                    color: Colors.white,
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
@@ -983,7 +1008,9 @@ class _AIProjectGeneratorDialogState extends State<_AIProjectGeneratorDialog> {
         lastDiagnosis: widget.diagnosisResult,
       );
 
-      final ideas = await widget.upcyclingProvider.generateProjectIdeas(devicePassport);
+      final ideas = await widget.upcyclingProvider.generateProjectIdeas(
+        devicePassport,
+      );
 
       setState(() {
         _ideas = ideas;

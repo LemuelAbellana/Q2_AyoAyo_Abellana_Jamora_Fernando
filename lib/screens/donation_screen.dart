@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import '../providers/donation_provider.dart';
 import '../models/donation.dart';
+import '../widgets/donation/glassmorphic_donation_card.dart';
+import '../utils/app_theme.dart';
 
 class DonationScreen extends StatefulWidget {
   const DonationScreen({super.key});
@@ -15,97 +17,368 @@ class _DonationScreenState extends State<DonationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Donation Dashboard'),
-        backgroundColor: Colors.pink,
-        foregroundColor: Colors.white,
-        elevation: 0,
+      appBar: AppBar(),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppTheme.backgroundLight,
+              Colors.pink.shade50.withValues(alpha: 0.3),
+              Colors.purple.shade50.withValues(alpha: 0.3),
+            ],
+          ),
+        ),
+        child: Consumer<DonationProvider>(
+          builder: (context, donationProvider, child) {
+            if (donationProvider.isLoading) {
+              return const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Loading donation requests...'),
+                  ],
+                ),
+              );
+            }
+
+            if (donationProvider.errorMessage != null) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error: ${donationProvider.errorMessage}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        donationProvider.clearError();
+                        donationProvider.fetchDonations();
+                      },
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final donations = donationProvider.donations;
+
+            if (donations.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(LucideIcons.heart, size: 64, color: Colors.grey),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'No donation requests available',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Check back later for new donation opportunities',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return RefreshIndicator(
+              onRefresh: donationProvider.fetchDonations,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: donations.length,
+                itemBuilder: (context, index) {
+                  final donation = donations[index];
+                  return GlassmorphicDonationCard(
+                    donation: donation,
+                    onDonate: () => _handleDonate(context, donation),
+                  );
+                },
+              ),
+            );
+          },
+        ),
       ),
-      body: Consumer<DonationProvider>(
-        builder: (context, donationProvider, child) {
-          if (donationProvider.isLoading) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Loading donation requests...'),
-                ],
-              ),
-            );
-          }
+    );
+  }
 
-          if (donationProvider.errorMessage != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+  Future<void> _handleDonate(BuildContext context, Donation donation) async {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error: ${donationProvider.errorMessage}',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      donationProvider.clearError();
-                      donationProvider.fetchDonations();
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final donations = donationProvider.donations;
-
-          if (donations.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(LucideIcons.heart, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No donation requests available',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey,
+                  Icon(LucideIcons.heart, color: Colors.pink, size: 24),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Connect with ${donation.name}',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.pink,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Check back later for new donation opportunities',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
                   ),
                 ],
               ),
-            );
-          }
+              const SizedBox(height: 20),
 
-          return RefreshIndicator(
-            onRefresh: donationProvider.fetchDonations,
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: donations.length,
-              itemBuilder: (context, index) {
-                final donation = donations[index];
-                return DonationCard(donation: donation);
-              },
-            ),
-          );
-        },
-      ),
+              // Student Info Card
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: Colors.pink[100],
+                          child: Icon(
+                            LucideIcons.graduationCap,
+                            color: Colors.pink,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                donation.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                              Text(
+                                donation.school,
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (donation.category != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[100],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          donation.category!,
+                          style: TextStyle(
+                            color: Colors.blue[800],
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Contact Options
+              Text(
+                'Contact Options',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+
+              if (donation.email != null)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[100],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      LucideIcons.mail,
+                      color: Colors.blue[800],
+                      size: 20,
+                    ),
+                  ),
+                  title: const Text('Email'),
+                  subtitle: Text(donation.email!),
+                  trailing: const Icon(LucideIcons.externalLink, size: 16),
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Email: ${donation.email}'),
+                        action: SnackBarAction(label: 'Copy', onPressed: () {}),
+                      ),
+                    );
+                  },
+                ),
+
+              if (donation.phone != null)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.green[100],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      LucideIcons.phone,
+                      color: Colors.green[800],
+                      size: 20,
+                    ),
+                  ),
+                  title: const Text('Phone'),
+                  subtitle: Text(donation.phone!),
+                  trailing: const Icon(LucideIcons.externalLink, size: 16),
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Phone: ${donation.phone}'),
+                        action: SnackBarAction(label: 'Copy', onPressed: () {}),
+                      ),
+                    );
+                  },
+                ),
+
+              if (donation.location != null)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[100],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      LucideIcons.mapPin,
+                      color: Colors.orange[800],
+                      size: 20,
+                    ),
+                  ),
+                  title: const Text('Location'),
+                  subtitle: Text(donation.location!),
+                  trailing: const Icon(LucideIcons.externalLink, size: 16),
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Location: ${donation.location}'),
+                        action: SnackBarAction(
+                          label: 'View Map',
+                          onPressed: () {},
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
+              const SizedBox(height: 20),
+
+              // Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(LucideIcons.x),
+                      label: const Text('Cancel'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Thank you for helping ${donation.name}!',
+                            ),
+                            backgroundColor: Colors.green,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                      icon: const Icon(LucideIcons.heart),
+                      label: const Text('Connect'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.pink,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
 
+/* OLD DonationCard CLASS - Now using glassmorphic component
 class DonationCard extends StatefulWidget {
   final Donation donation;
 
@@ -591,3 +864,4 @@ class _DonationCardState extends State<DonationCard> {
     }
   }
 }
+*/

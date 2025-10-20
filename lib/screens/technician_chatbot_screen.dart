@@ -19,9 +19,27 @@ class TechnicianChatbotScreen extends StatefulWidget {
 
 class _TechnicianChatbotScreenState extends State<TechnicianChatbotScreen> {
   final TextEditingController _messageController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   final List<ChatMessage> _chatMessages = [];
   final GeminiDiagnosisService _geminiService = GeminiDiagnosisService();
   bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
 
   void _sendMessage() async {
     final messageText = _messageController.text;
@@ -34,6 +52,9 @@ class _TechnicianChatbotScreenState extends State<TechnicianChatbotScreen> {
 
     _messageController.clear();
 
+    // Scroll to bottom after user message
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+
     try {
       final response = await _geminiService.getTechnicianChatbotResponse(
         messageText,
@@ -42,6 +63,9 @@ class _TechnicianChatbotScreenState extends State<TechnicianChatbotScreen> {
         _chatMessages.add(ChatMessage(text: response, isUser: false));
         _isLoading = false;
       });
+
+      // Scroll to bottom after bot response
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     } catch (e) {
       setState(() {
         _chatMessages.add(
@@ -55,19 +79,26 @@ class _TechnicianChatbotScreenState extends State<TechnicianChatbotScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(),
       body: Column(
         children: [
           Expanded(
             child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16),
               itemCount: _chatMessages.length,
               itemBuilder: (context, index) {
                 final message = _chatMessages[index];
-                return ListTile(
-                  title: Align(
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Align(
                     alignment: message.isUser
                         ? Alignment.centerRight
                         : Alignment.centerLeft,
                     child: Container(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.75,
+                      ),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: message.isUser
@@ -80,6 +111,7 @@ class _TechnicianChatbotScreenState extends State<TechnicianChatbotScreen> {
                         style: TextStyle(
                           color: message.isUser ? Colors.white : Colors.black,
                         ),
+                        softWrap: true,
                       ),
                     ),
                   ),
@@ -92,25 +124,49 @@ class _TechnicianChatbotScreenState extends State<TechnicianChatbotScreen> {
               padding: EdgeInsets.all(8.0),
               child: CircularProgressIndicator(),
             ),
-          Padding(
+          Container(
             padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: const InputDecoration(
-                      hintText: 'Ask a question...',
-                      border: OutlineInputBorder(),
-                    ),
-                    onSubmitted: (_) => _sendMessage(),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(LucideIcons.send),
-                  onPressed: _sendMessage,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, -2),
                 ),
               ],
+            ),
+            child: SafeArea(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _messageController,
+                      maxLines: 5,
+                      minLines: 1,
+                      decoration: const InputDecoration(
+                        hintText: 'Ask a question...',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                      ),
+                      onSubmitted: (_) => _sendMessage(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(LucideIcons.send),
+                    onPressed: _sendMessage,
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
