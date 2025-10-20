@@ -87,7 +87,7 @@ class ResultsView extends StatelessWidget {
               case Pathway.repair:
                 return const RepairDetail();
               case Pathway.resell:
-                return const ResellDetail();
+                return ResellDetail(diagnosisResult: provider.currentResult);
               case Pathway.upcycle:
                 return UpcycleDetail(diagnosisResult: provider.currentResult!);
               case Pathway.donate:
@@ -603,20 +603,19 @@ class _DevicePassportCard extends StatelessWidget {
     if (result == null) return const SizedBox();
 
     // Extract phone model from AI analysis or use provided device model
-    final recognizedModel = _extractPhoneModel(result.aiAnalysis) ?? result.deviceModel;
+    final recognizedModel =
+        _extractPhoneModel(result.aiAnalysis) ?? result.deviceModel;
     final confidence = _extractConfidence(result.aiAnalysis);
-    final manufacturer = _extractManufacturer(result.aiAnalysis) ?? _extractManufacturerFromModel(recognizedModel);
+    final manufacturer =
+        _extractManufacturer(result.aiAnalysis) ??
+        _extractManufacturerFromModel(recognizedModel);
 
     return Column(
       children: [
         // Recognized Phone Model
         Row(
           children: [
-            Icon(
-              LucideIcons.tag,
-              size: 16,
-              color: Colors.teal.shade700,
-            ),
+            Icon(LucideIcons.tag, size: 16, color: Colors.teal.shade700),
             const SizedBox(width: 8),
             Expanded(
               child: RichText(
@@ -642,11 +641,7 @@ class _DevicePassportCard extends StatelessWidget {
         // Manufacturer
         Row(
           children: [
-            Icon(
-              LucideIcons.building2,
-              size: 16,
-              color: Colors.teal.shade700,
-            ),
+            Icon(LucideIcons.building2, size: 16, color: Colors.teal.shade700),
             const SizedBox(width: 8),
             Expanded(
               child: RichText(
@@ -673,11 +668,7 @@ class _DevicePassportCard extends StatelessWidget {
         if (confidence != null) ...[
           Row(
             children: [
-              Icon(
-                LucideIcons.target,
-                size: 16,
-                color: Colors.teal.shade700,
-              ),
+              Icon(LucideIcons.target, size: 16, color: Colors.teal.shade700),
               const SizedBox(width: 8),
               Expanded(
                 child: RichText(
@@ -714,11 +705,7 @@ class _DevicePassportCard extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                LucideIcons.eye,
-                size: 14,
-                color: Colors.teal.shade700,
-              ),
+              Icon(LucideIcons.eye, size: 14, color: Colors.teal.shade700),
               const SizedBox(width: 4),
               Text(
                 'AI Vision Analysis Complete',
@@ -738,14 +725,20 @@ class _DevicePassportCard extends StatelessWidget {
   // Helper methods for extracting information from AI analysis
   String? _extractPhoneModel(String aiAnalysis) {
     // Look for phone model in the AI analysis text
-    final modelPattern = RegExp(r'Model:\s*(.+?)(?:\n|$)', caseSensitive: false);
+    final modelPattern = RegExp(
+      r'Model:\s*(.+?)(?:\n|$)',
+      caseSensitive: false,
+    );
     final match = modelPattern.firstMatch(aiAnalysis);
     return match?.group(1)?.trim();
   }
 
   String? _extractManufacturer(String aiAnalysis) {
     // Look for manufacturer in the AI analysis text
-    final manufacturerPattern = RegExp(r'Manufacturer:\s*(.+?)(?:\n|$)', caseSensitive: false);
+    final manufacturerPattern = RegExp(
+      r'Manufacturer:\s*(.+?)(?:\n|$)',
+      caseSensitive: false,
+    );
     final match = manufacturerPattern.firstMatch(aiAnalysis);
     return match?.group(1)?.trim();
   }
@@ -753,11 +746,15 @@ class _DevicePassportCard extends StatelessWidget {
   String _extractManufacturerFromModel(String model) {
     // Extract manufacturer from model name if not found in analysis
     final lowerModel = model.toLowerCase();
-    if (lowerModel.contains('iphone') || lowerModel.contains('apple')) return 'Apple';
-    if (lowerModel.contains('samsung') || lowerModel.contains('galaxy')) return 'Samsung';
-    if (lowerModel.contains('pixel') || lowerModel.contains('google')) return 'Google';
+    if (lowerModel.contains('iphone') || lowerModel.contains('apple'))
+      return 'Apple';
+    if (lowerModel.contains('samsung') || lowerModel.contains('galaxy'))
+      return 'Samsung';
+    if (lowerModel.contains('pixel') || lowerModel.contains('google'))
+      return 'Google';
     if (lowerModel.contains('huawei')) return 'Huawei';
-    if (lowerModel.contains('xiaomi') || lowerModel.contains('redmi')) return 'Xiaomi';
+    if (lowerModel.contains('xiaomi') || lowerModel.contains('redmi'))
+      return 'Xiaomi';
     if (lowerModel.contains('oneplus')) return 'OnePlus';
     if (lowerModel.contains('oppo')) return 'Oppo';
     if (lowerModel.contains('vivo')) return 'Vivo';
@@ -767,7 +764,10 @@ class _DevicePassportCard extends StatelessWidget {
 
   String? _extractConfidence(String aiAnalysis) {
     // Look for confidence level in the AI analysis text
-    final confidencePattern = RegExp(r'Confidence:\s*(.+?)(?:\n|$)', caseSensitive: false);
+    final confidencePattern = RegExp(
+      r'Confidence:\s*(.+?)(?:\n|$)',
+      caseSensitive: false,
+    );
     final match = confidencePattern.firstMatch(aiAnalysis);
     return match?.group(1)?.trim();
   }

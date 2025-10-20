@@ -242,7 +242,8 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
           return const Center(child: CircularProgressIndicator());
         }
 
-        final listings = provider.userListings;
+        // Get user's listings from all listings using current-user ID
+        final listings = provider.getUserListingsByUserId('current-user');
 
         if (listings.isEmpty) {
           return _buildEmptyState(
@@ -266,7 +267,8 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
   Widget _buildAnalyticsTab() {
     return Consumer<ResellProvider>(
       builder: (context, provider, child) {
-        final listings = provider.userListings;
+        // Get user's listings from all listings
+        final listings = provider.getUserListingsByUserId('current-user');
         final activeListings = listings
             .where((l) => l.status == ListingStatus.active)
             .length;
@@ -647,54 +649,57 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
                 style: TextStyle(color: Colors.grey[600], fontSize: 14),
               ),
               const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  // Status management buttons
-                  if (listing.status == ListingStatus.draft)
-                    TextButton.icon(
-                      onPressed: () => _activateListing(context, listing),
-                      icon: const Icon(LucideIcons.play, size: 16),
-                      label: const Text('Activate'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.green,
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    // Status management buttons
+                    if (listing.status == ListingStatus.draft)
+                      TextButton.icon(
+                        onPressed: () => _activateListing(context, listing),
+                        icon: const Icon(LucideIcons.play, size: 16),
+                        label: const Text('Activate'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.green,
+                        ),
+                      )
+                    else if (listing.status == ListingStatus.active)
+                      TextButton.icon(
+                        onPressed: () => _deactivateListing(context, listing),
+                        icon: const Icon(LucideIcons.pause, size: 16),
+                        label: const Text('Deactivate'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.orange,
+                        ),
                       ),
-                    )
-                  else if (listing.status == ListingStatus.active)
+
+                    const SizedBox(width: 8),
+
                     TextButton.icon(
-                      onPressed: () => _deactivateListing(context, listing),
-                      icon: const Icon(LucideIcons.pause, size: 16),
-                      label: const Text('Deactivate'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.orange,
-                      ),
+                      onPressed: () => _showSalesTips(context, listing),
+                      icon: const Icon(LucideIcons.lightbulb, size: 16),
+                      label: const Text('AI Tips'),
                     ),
 
-                  const SizedBox(width: 8),
+                    const SizedBox(width: 8),
 
-                  TextButton.icon(
-                    onPressed: () => _showSalesTips(context, listing),
-                    icon: const Icon(LucideIcons.lightbulb, size: 16),
-                    label: const Text('AI Tips'),
-                  ),
+                    TextButton.icon(
+                      onPressed: () => _markAsSold(context, listing),
+                      icon: const Icon(LucideIcons.check, size: 16),
+                      label: const Text('Mark Sold'),
+                      style: TextButton.styleFrom(foregroundColor: Colors.blue),
+                    ),
 
-                  const SizedBox(width: 8),
+                    const SizedBox(width: 8),
 
-                  TextButton.icon(
-                    onPressed: () => _markAsSold(context, listing),
-                    icon: const Icon(LucideIcons.check, size: 16),
-                    label: const Text('Mark Sold'),
-                    style: TextButton.styleFrom(foregroundColor: Colors.blue),
-                  ),
-
-                  const SizedBox(width: 8),
-
-                  TextButton.icon(
-                    onPressed: () => _showEditListingDialog(context, listing),
-                    icon: Icon(LucideIcons.pencil, size: 16),
-                    label: const Text('Edit'),
-                  ),
-                ],
+                    TextButton.icon(
+                      onPressed: () => _showEditListingDialog(context, listing),
+                      icon: const Icon(LucideIcons.pencil, size: 16),
+                      label: const Text('Edit'),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -872,12 +877,17 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
   }
 
   void _showCreateListingDialog(BuildContext context) {
+    // For now, navigate to full create listing screen
+    // In a future update, we could check for recent diagnosis results and pre-fill
     Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => const CreateListingScreen()),
     );
   }
 
   void _showListingDetails(BuildContext context, ResellListing listing) {
+    // Check if this is the current user's listing
+    final isOwnListing = listing.sellerId == 'current-user';
+
     // Implementation for showing listing details
     showDialog(
       context: context,
@@ -890,6 +900,28 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
             Text('Price: ₱${listing.askingPrice.toStringAsFixed(0)}'),
             Text('Condition: ${listing.condition.toString().split('.').last}'),
             Text('Device: ${listing.devicePassport.deviceModel}'),
+            if (isOwnListing) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'This is your listing',
+                        style: TextStyle(color: Colors.blue[700], fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
         actions: [
@@ -897,10 +929,21 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
             onPressed: () => Navigator.of(context).pop(),
             child: Text('Close'),
           ),
-          ElevatedButton(
-            onPressed: () => _showContactSellerDialog(context, listing),
-            child: const Text('Contact Seller'),
-          ),
+          if (!isOwnListing)
+            ElevatedButton(
+              onPressed: () => _showContactSellerDialog(context, listing),
+              child: const Text('Contact Seller'),
+            )
+          else
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Switch to My Listings tab
+                _tabController.animateTo(1);
+              },
+              icon: const Icon(LucideIcons.settings, size: 16),
+              label: const Text('Manage Listing'),
+            ),
         ],
       ),
     );
@@ -966,18 +1009,177 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
   }
 
   void _showEditListingDialog(BuildContext context, ResellListing listing) {
-    // Implementation for editing listing
+    final titleController = TextEditingController(text: listing.title);
+    final descriptionController = TextEditingController(
+      text: listing.description,
+    );
+    final priceController = TextEditingController(
+      text: listing.askingPrice.toStringAsFixed(0),
+    );
+    ConditionGrade selectedCondition = listing.condition;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Listing'),
-        content: const Text('Listing edit form will be implemented here.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Edit Listing'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Device info (read-only)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        LucideIcons.smartphone,
+                        color: Colors.blue[700],
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          listing.devicePassport.deviceModel,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue[700],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Title
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Listing Title',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(LucideIcons.text),
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 12),
+
+                // Description
+                TextField(
+                  controller: descriptionController,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(LucideIcons.fileText),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Price
+                TextField(
+                  controller: priceController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Asking Price (₱)',
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(LucideIcons.dollarSign),
+                    prefixText: '₱ ',
+                    helperText: listing.aiSuggestedPrice != null
+                        ? 'AI suggests: ₱${listing.aiSuggestedPrice!.toStringAsFixed(0)}'
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Condition
+                DropdownButtonFormField<ConditionGrade>(
+                  value: selectedCondition,
+                  decoration: const InputDecoration(
+                    labelText: 'Device Condition',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(LucideIcons.info),
+                  ),
+                  items: ConditionGrade.values.map((grade) {
+                    return DropdownMenuItem(
+                      value: grade,
+                      child: Text(_getConditionDisplayName(grade)),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => selectedCondition = value);
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () {
+                titleController.dispose();
+                descriptionController.dispose();
+                priceController.dispose();
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () async {
+                final price = double.tryParse(priceController.text);
+                if (price == null || titleController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please fill all fields correctly'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                final provider = context.read<ResellProvider>();
+                final success = await provider.updateListing(
+                  listing.id,
+                  title: titleController.text,
+                  description: descriptionController.text,
+                  askingPrice: price,
+                  condition: selectedCondition,
+                );
+
+                titleController.dispose();
+                descriptionController.dispose();
+                priceController.dispose();
+
+                if (success) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Listing updated successfully!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        provider.errorMessage ?? 'Failed to update listing',
+                      ),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              icon: const Icon(LucideIcons.check, size: 16),
+              label: const Text('Save Changes'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1397,9 +1599,7 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
   }
 
   void _applyFilters() {
-    final provider = context.read<ResellProvider>();
-    // For now, we'll just trigger a rebuild
-    // In a real implementation, you'd pass filters to the provider
+    // Trigger a rebuild to apply filters
     setState(() {});
   }
 

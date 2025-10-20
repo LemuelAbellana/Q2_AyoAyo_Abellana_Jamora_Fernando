@@ -5,6 +5,7 @@ import 'package:ayoayo/models/device_diagnosis.dart';
 import 'package:ayoayo/models/device_passport.dart';
 import 'package:ayoayo/models/resell_listing.dart';
 import 'package:ayoayo/providers/resell_provider.dart';
+import 'package:ayoayo/providers/device_provider.dart';
 import 'package:ayoayo/services/ai_resell_service.dart';
 
 class ResellDetail extends StatelessWidget {
@@ -329,27 +330,189 @@ class ResellDetail extends StatelessWidget {
     // Get condition grade for the listing
     final condition = _getConditionGrade(diagnosisResult!);
 
+    // Show quick listing form
+    _showQuickListingForm(context, condition);
+  }
+
+  void _showQuickListingForm(BuildContext context, ConditionGrade condition) {
+    final titleController = TextEditingController(
+      text:
+          '${diagnosisResult!.deviceModel} - ${condition.toString().split('.').last}',
+    );
+    final descriptionController = TextEditingController(
+      text:
+          'Device in ${condition.toString().split('.').last} condition. ${diagnosisResult!.aiAnalysis}',
+    );
+    final priceController = TextEditingController(
+      text: diagnosisResult!.valueEstimation.currentValue.toStringAsFixed(0),
+    );
+    ConditionGrade selectedCondition = condition;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Create Listing'),
-        content: const Text(
-          'This will create an AI-optimized listing for your device on our marketplace.',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Create Marketplace Listing'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Device info (read-only)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '📱 ${diagnosisResult!.deviceModel}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        'Value: ₱${diagnosisResult!.valueEstimation.currentValue.toStringAsFixed(0)}',
+                        style: TextStyle(color: Colors.grey[700]),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Title
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Listing Title',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Description
+                TextField(
+                  controller: descriptionController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Price
+                TextField(
+                  controller: priceController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Asking Price (₱)',
+                    border: OutlineInputBorder(),
+                    prefixText: '₱ ',
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Condition
+                DropdownButtonFormField<ConditionGrade>(
+                  value: selectedCondition,
+                  decoration: const InputDecoration(
+                    labelText: 'Device Condition',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: ConditionGrade.values.map((grade) {
+                    return DropdownMenuItem(
+                      value: grade,
+                      child: Text(grade.toString().split('.').last),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => selectedCondition = value);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                titleController.dispose();
+                descriptionController.dispose();
+                priceController.dispose();
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final price = double.tryParse(priceController.text);
+                if (price == null || titleController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please fill all fields')),
+                  );
+                  return;
+                }
+
+                // Create device passport from diagnosis result
+                final devicePassport = DevicePassport(
+                  id: 'device-${DateTime.now().millisecondsSinceEpoch}',
+                  userId: 'current-user',
+                  deviceModel: diagnosisResult!.deviceModel,
+                  manufacturer:
+                      diagnosisResult!.deviceSpecifications?.manufacturer ??
+                      'Unknown',
+                  yearOfRelease:
+                      diagnosisResult!.deviceSpecifications?.releaseYear ??
+                      DateTime.now().year,
+                  operatingSystem:
+                      diagnosisResult!.deviceSpecifications?.operatingSystem ??
+                      'Unknown',
+                  imageUrls: diagnosisResult!.imageUrls,
+                  lastDiagnosis: diagnosisResult!,
+                );
+
+                // Save device passport first
+                final deviceProvider = Provider.of<DeviceProvider>(
+                  context,
+                  listen: false,
+                );
+                print('💾 Saving device passport to database...');
+                await deviceProvider.addDevice(devicePassport);
+                print('✅ Device passport saved to database');
+
+                // Then create listing
+                final resellProvider = Provider.of<ResellProvider>(
+                  context,
+                  listen: false,
+                );
+                await resellProvider.createListingFromDiagnosis(
+                  diagnosisResult!,
+                  titleController.text,
+                  descriptionController.text,
+                  price,
+                  selectedCondition,
+                );
+
+                titleController.dispose();
+                descriptionController.dispose();
+                priceController.dispose();
+
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Listing created successfully! Device saved to passport.',
+                    ),
+                  ),
+                );
+              },
+              child: const Text('Create Listing'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              // Navigate to resell screen to complete listing
-              Navigator.pushNamed(context, '/resell');
-            },
-            child: const Text('Continue'),
-          ),
-        ],
       ),
     );
   }
@@ -388,7 +551,6 @@ class ResellDetail extends StatelessWidget {
     }
   }
 
-
   Color _getHardwareColor(HardwareCondition condition) {
     switch (condition) {
       case HardwareCondition.excellent:
@@ -405,10 +567,12 @@ class ResellDetail extends StatelessWidget {
   }
 
   Color _getOverallHealthColor(DeviceHealth deviceHealth) {
-    final screenGood = deviceHealth.screenCondition == ScreenCondition.excellent ||
-                      deviceHealth.screenCondition == ScreenCondition.good;
-    final hardwareGood = deviceHealth.hardwareCondition == HardwareCondition.excellent ||
-                        deviceHealth.hardwareCondition == HardwareCondition.good;
+    final screenGood =
+        deviceHealth.screenCondition == ScreenCondition.excellent ||
+        deviceHealth.screenCondition == ScreenCondition.good;
+    final hardwareGood =
+        deviceHealth.hardwareCondition == HardwareCondition.excellent ||
+        deviceHealth.hardwareCondition == HardwareCondition.good;
 
     if (screenGood && hardwareGood) {
       return Colors.green;

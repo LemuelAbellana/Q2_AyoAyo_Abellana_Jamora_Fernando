@@ -7,31 +7,39 @@ class ResellListingDao {
   final dbService = DatabaseService();
 
   Future<int> createListing(ResellListing listing) async {
+    print('💾 [DAO] Fetching current listings from database...');
     final currentListings = await dbService.getWebListings();
+    print('💾 [DAO] Current listings count: ${currentListings.length}');
+
     final data = _listingToMap(listing);
     currentListings.add(data);
+
+    print('💾 [DAO] Saving ${currentListings.length} listings to database...');
     await dbService.saveWebListings(currentListings);
+    print('✅ [DAO] Listing saved successfully');
     return 1;
   }
 
   Future<List<ResellListing>> getActiveListings() async {
     final listings = await dbService.getWebListings();
-    final activeListings = listings.where((listing) =>
-      listing['status'] == 'ListingStatus.active'
-    ).toList();
+    final activeListings = listings
+        .where((listing) => listing['status'] == 'ListingStatus.active')
+        .toList();
     return activeListings.map((map) => _mapToListing(map)).toList();
   }
 
   Future<List<ResellListing>> getUserListings(String sellerId) async {
     final listings = await dbService.getWebListings();
-    final userListings = listings.where((listing) =>
-      listing['seller_id'] == sellerId
-    ).toList();
+    final userListings = listings
+        .where((listing) => listing['seller_id'] == sellerId)
+        .toList();
     return userListings.map((map) => _mapToListing(map)).toList();
   }
 
   Future<List<ResellListing>> getAllListings() async {
+    print('📂 [DAO] Loading all listings from database...');
     final listings = await dbService.getWebListings();
+    print('📂 [DAO] Found ${listings.length} listings in database');
     return listings.map((map) => _mapToListing(map)).toList();
   }
 
@@ -48,9 +56,9 @@ class ResellListingDao {
 
   Future<int> deleteListing(String id) async {
     final currentListings = await dbService.getWebListings();
-    final filteredListings = currentListings.where((listing) =>
-      listing['id'] != id
-    ).toList();
+    final filteredListings = currentListings
+        .where((listing) => listing['id'] != id)
+        .toList();
     if (filteredListings.length != currentListings.length) {
       await dbService.saveWebListings(filteredListings);
       return 1;

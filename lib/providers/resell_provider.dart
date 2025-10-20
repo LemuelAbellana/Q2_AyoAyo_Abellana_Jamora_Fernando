@@ -37,17 +37,22 @@ class ResellProvider extends ChangeNotifier {
   Future<void> loadListings() async {
     _setLoading(true);
     try {
+      print('📂 Loading listings from database...');
       _listings = await _resellListingDao.getAllListings();
+      print('✅ Loaded ${_listings.length} listings from database');
 
       // If no listings exist on web, create some sample data
       if (kIsWeb && _listings.isEmpty) {
+        print('📝 No listings found, creating sample data...');
         await _createSampleListings();
         _listings = await _resellListingDao.getAllListings();
+        print('✅ Sample listings created: ${_listings.length}');
       }
 
       _errorMessage = null;
     } catch (e) {
       _errorMessage = 'Failed to load listings: $e';
+      print('❌ Error loading listings: $e');
     } finally {
       _setLoading(false);
     }
@@ -166,10 +171,84 @@ class ResellProvider extends ChangeNotifier {
   Future<void> loadUserListings(String userId) async {
     _setLoading(true);
     try {
+      print('📂 Loading user listings for: $userId');
       _userListings = await _resellListingDao.getUserListings(userId);
+      print('✅ Loaded ${_userListings.length} user listings');
       _errorMessage = null;
     } catch (e) {
       _errorMessage = 'Failed to load user listings: $e';
+      print('❌ Error loading user listings: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Get user's listings from all listings (fallback)
+  List<ResellListing> getUserListingsByUserId(String userId) {
+    return _listings.where((listing) => listing.sellerId == userId).toList();
+  }
+
+  // Simplified method to create listing from diagnosis result
+  Future<bool> createListingFromDiagnosis(
+    DiagnosisResult diagnosisResult,
+    String title,
+    String description,
+    double askingPrice,
+    ConditionGrade condition,
+  ) async {
+    _setLoading(true);
+    try {
+      print('📝 Creating listing from diagnosis...');
+
+      // Create device passport from diagnosis result
+      final devicePassport = DevicePassport(
+        id: 'device-${DateTime.now().millisecondsSinceEpoch}',
+        userId: 'current-user', // Will be replaced with actual user ID
+        deviceModel: diagnosisResult.deviceModel,
+        manufacturer:
+            diagnosisResult.deviceSpecifications?.manufacturer ?? 'Unknown',
+        yearOfRelease:
+            diagnosisResult.deviceSpecifications?.releaseYear ??
+            DateTime.now().year,
+        operatingSystem:
+            diagnosisResult.deviceSpecifications?.operatingSystem ?? 'Unknown',
+        imageUrls: diagnosisResult.imageUrls,
+        lastDiagnosis: diagnosisResult,
+      );
+
+      // Create listing
+      final listing = ResellListing(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        sellerId: 'current-user', // Will be replaced with actual user ID
+        devicePassport: devicePassport,
+        category: _determineCategory(diagnosisResult.deviceModel),
+        condition: condition,
+        askingPrice: askingPrice,
+        aiSuggestedPrice: diagnosisResult.valueEstimation.currentValue,
+        title: title,
+        description: description,
+        location: 'Online Marketplace',
+        imageUrls: diagnosisResult.imageUrls,
+        status: ListingStatus.active, // Make it active immediately
+        createdAt: DateTime.now(),
+      );
+
+      print('💾 Saving listing to database...');
+      await _resellListingDao.createListing(listing);
+      print('✅ Listing saved to database');
+
+      // Refresh listings
+      print('🔄 Refreshing listings from database...');
+      await loadListings();
+      print('✅ Listings refreshed. Total: ${_listings.length}');
+
+      _errorMessage = null;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Failed to create listing: $e';
+      print('❌ Error creating listing: $e');
+      return false;
     } finally {
       _setLoading(false);
     }
@@ -232,6 +311,53 @@ class ResellProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       _errorMessage = 'Failed to create listing: $e';
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> updateListing(
+    String listingId, {
+    String? title,
+    String? description,
+    double? askingPrice,
+    ConditionGrade? condition,
+  }) async {
+    _setLoading(true);
+    try {
+      print('📝 Updating listing: $listingId');
+
+      // Find existing listing
+      final existingListing = _listings.firstWhere(
+        (listing) => listing.id == listingId,
+        orElse: () => throw Exception('Listing not found'),
+      );
+
+      // Create updated listing with new values
+      final updatedListing = existingListing.copyWith(
+        title: title ?? existingListing.title,
+        description: description ?? existingListing.description,
+        askingPrice: askingPrice ?? existingListing.askingPrice,
+        condition: condition ?? existingListing.condition,
+        updatedAt: DateTime.now(),
+      );
+
+      print('💾 Saving updated listing to database...');
+      await _resellListingDao.updateListing(updatedListing);
+      print('✅ Listing updated in database');
+
+      // Refresh listings
+      print('🔄 Refreshing listings from database...');
+      await loadListings();
+      print('✅ Listings refreshed');
+
+      _errorMessage = null;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Failed to update listing: $e';
+      print('❌ Error updating listing: $e');
       return false;
     } finally {
       _setLoading(false);
