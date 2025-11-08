@@ -7,6 +7,7 @@ import 'package:ayoayo/models/resell_listing.dart';
 import 'package:ayoayo/providers/resell_provider.dart';
 import 'package:ayoayo/providers/device_provider.dart';
 import 'package:ayoayo/services/ai_resell_service.dart';
+import '../../utils/enum_helpers.dart';
 
 class ResellDetail extends StatelessWidget {
   final DiagnosisResult? diagnosisResult; // AI diagnostics result
@@ -112,17 +113,17 @@ class ResellDetail extends StatelessWidget {
           const SizedBox(height: 12),
           _buildConditionRow(
             "Screen Condition",
-            diagnosisResult!.deviceHealth.screenCondition.name,
+            getEnumName(diagnosisResult!.deviceHealth.screenCondition),
             _getConditionColor(diagnosisResult!.deviceHealth.screenCondition),
           ),
           _buildConditionRow(
             "Overall Health",
-            "${diagnosisResult!.deviceHealth.screenCondition.name} • ${diagnosisResult!.deviceHealth.hardwareCondition.name}",
+            "${getEnumName(diagnosisResult!.deviceHealth.screenCondition)} • ${getEnumName(diagnosisResult!.deviceHealth.hardwareCondition)}",
             _getOverallHealthColor(diagnosisResult!.deviceHealth),
           ),
           _buildConditionRow(
             "Hardware Condition",
-            diagnosisResult!.deviceHealth.hardwareCondition.name,
+            getEnumName(diagnosisResult!.deviceHealth.hardwareCondition),
             _getHardwareColor(diagnosisResult!.deviceHealth.hardwareCondition),
           ),
           const Divider(height: 16),
@@ -337,11 +338,11 @@ class ResellDetail extends StatelessWidget {
   void _showQuickListingForm(BuildContext context, ConditionGrade condition) {
     final titleController = TextEditingController(
       text:
-          '${diagnosisResult!.deviceModel} - ${condition.toString().split('.').last}',
+          '${diagnosisResult!.deviceModel} - ${getEnumName(condition)}',
     );
     final descriptionController = TextEditingController(
       text:
-          'Device in ${condition.toString().split('.').last} condition. ${diagnosisResult!.aiAnalysis}',
+          'Device in ${getEnumName(condition)} condition. ${diagnosisResult!.aiAnalysis}',
     );
     final priceController = TextEditingController(
       text: diagnosisResult!.valueEstimation.currentValue.toStringAsFixed(0),
@@ -424,7 +425,7 @@ class ResellDetail extends StatelessWidget {
                   items: ConditionGrade.values.map((grade) {
                     return DropdownMenuItem(
                       value: grade,
-                      child: Text(grade.toString().split('.').last),
+                      child: Text(getEnumName(grade)),
                     );
                   }).toList(),
                   onChanged: (value) {

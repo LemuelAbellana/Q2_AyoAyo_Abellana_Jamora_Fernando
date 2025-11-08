@@ -1,4 +1,5 @@
 import 'package:ayoayo/models/device_passport.dart';
+import '../utils/enum_helpers.dart';
 
 enum ProjectStatus { planning, inProgress, completed, paused }
 
@@ -64,13 +65,15 @@ class UpcyclingProject {
       id: json['id'] ?? '',
       creatorId: json['creatorId'] ?? '',
       sourceDevice: DevicePassport.fromJson(json['sourceDevice'] ?? {}),
-      category: ProjectCategory.values.firstWhere(
-        (e) => e.toString() == json['category'],
-        orElse: () => ProjectCategory.other,
+      category: parseEnumWithFallback(
+        ProjectCategory.values,
+        json['category'],
+        ProjectCategory.other,
       ),
-      difficulty: DifficultyLevel.values.firstWhere(
-        (e) => e.toString() == json['difficulty'],
-        orElse: () => DifficultyLevel.intermediate,
+      difficulty: parseEnumWithFallback(
+        DifficultyLevel.values,
+        json['difficulty'],
+        DifficultyLevel.intermediate,
       ),
       title: json['title'] ?? '',
       description: json['description'] ?? '',
@@ -83,9 +86,10 @@ class UpcyclingProject {
               ?.map((step) => ProjectStep.fromJson(step))
               .toList() ??
           [],
-      status: ProjectStatus.values.firstWhere(
-        (e) => e.toString() == json['status'],
-        orElse: () => ProjectStatus.planning,
+      status: parseEnumWithFallback(
+        ProjectStatus.values,
+        json['status'],
+        ProjectStatus.planning,
       ),
       createdAt: DateTime.parse(
         json['createdAt'] ?? DateTime.now().toIso8601String(),
@@ -112,8 +116,8 @@ class UpcyclingProject {
       'id': id,
       'creatorId': creatorId,
       'sourceDevice': sourceDevice.toJson(),
-      'category': category.toString(),
-      'difficulty': difficulty.toString(),
+      'category': getEnumName(category),
+      'difficulty': getEnumName(difficulty),
       'title': title,
       'description': description,
       'aiGeneratedDescription': aiGeneratedDescription,
@@ -121,7 +125,7 @@ class UpcyclingProject {
       'materialsNeeded': materialsNeeded,
       'toolsRequired': toolsRequired,
       'steps': steps.map((step) => step.toJson()).toList(),
-      'status': status.toString(),
+      'status': getEnumName(status),
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'completedAt': completedAt?.toIso8601String(),

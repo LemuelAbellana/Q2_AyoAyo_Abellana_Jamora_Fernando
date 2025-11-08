@@ -9,7 +9,11 @@
       "Bash(git check-ignore:*)",
       "Bash(del /F /Q \"lib\\providers\\device_provider.dart\")",
       "Bash(cat:*)",
-      "Bash(del .env)"
+      "Bash(del .env)",
+      "Bash(dart --version:*)",
+      "Bash(dart run:*)",
+      "Bash(del test_enum_parsing.dart)",
+      "Bash(dart test_enum_fixes.dart:*)"
     ],
     "deny": [],
     "ask": []

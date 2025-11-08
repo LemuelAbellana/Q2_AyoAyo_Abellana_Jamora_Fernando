@@ -9,6 +9,7 @@ import '../providers/diagnosis_provider.dart';
 import '../services/ai_upcycling_service.dart';
 import '../widgets/upcycling/glassmorphic_project_card.dart';
 import '../utils/app_theme.dart';
+import '../utils/enum_helpers.dart';
 
 class UpcyclingWorkspaceScreen extends StatefulWidget {
   const UpcyclingWorkspaceScreen({super.key});
@@ -320,7 +321,7 @@ class _UpcyclingWorkspaceScreenState extends State<UpcyclingWorkspaceScreen>
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      project.status.toString().split('.').last,
+                      getEnumName(project.status),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
@@ -332,7 +333,7 @@ class _UpcyclingWorkspaceScreenState extends State<UpcyclingWorkspaceScreen>
               ),
               const SizedBox(height: 8),
               Text(
-                project.difficulty.toString().split('.').last,
+                getEnumName(project.difficulty),
                 style: TextStyle(color: Colors.grey[600], fontSize: 14),
               ),
               const SizedBox(height: 8),
@@ -457,7 +458,7 @@ class _UpcyclingWorkspaceScreenState extends State<UpcyclingWorkspaceScreen>
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      project.difficulty.toString().split('.').last,
+                      getEnumName(project.difficulty),
                       style: const TextStyle(color: Colors.white, fontSize: 12),
                     ),
                   ),
@@ -654,11 +655,11 @@ class _UpcyclingWorkspaceScreenState extends State<UpcyclingWorkspaceScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Difficulty: ${project.difficulty.toString().split('.').last}',
+              'Difficulty: ${getEnumName(project.difficulty)}',
             ),
             Text('Time: ${project.estimatedHours} hours'),
             Text('Cost: ₱${project.estimatedCost.toStringAsFixed(0)}'),
-            Text('Status: ${project.status.toString().split('.').last}'),
+            Text('Status: ${getEnumName(project.status)}'),
           ],
         ),
         actions: [
@@ -824,11 +825,11 @@ class _AIProjectGeneratorDialogState extends State<_AIProjectGeneratorDialog> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Screen: ${widget.diagnosisResult.deviceHealth.screenCondition.name}',
+                    'Screen: ${getEnumName(widget.diagnosisResult.deviceHealth.screenCondition)}',
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   Text(
-                    'Hardware: ${widget.diagnosisResult.deviceHealth.hardwareCondition.name}',
+                    'Hardware: ${getEnumName(widget.diagnosisResult.deviceHealth.hardwareCondition)}',
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                 ],
@@ -911,7 +912,7 @@ class _AIProjectGeneratorDialogState extends State<_AIProjectGeneratorDialog> {
                               children: [
                                 Chip(
                                   label: Text(
-                                    idea.difficulty.name,
+                                    getEnumName(idea.difficulty),
                                     style: const TextStyle(fontSize: 10),
                                   ),
                                   backgroundColor: _getDifficultyColor(

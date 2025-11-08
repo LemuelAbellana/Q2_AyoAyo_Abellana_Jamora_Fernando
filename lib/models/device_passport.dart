@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ayoayo/models/device_diagnosis.dart';
+import '../utils/enum_helpers.dart';
 
 class DevicePassport {
   final String id;
@@ -178,7 +179,7 @@ class DevicePassport {
             ),
             _buildPassportRow(
               'Hardware Condition',
-              lastDiagnosis.deviceHealth.hardwareCondition.name,
+              getEnumName(lastDiagnosis.deviceHealth.hardwareCondition),
             ),
             if (lastDiagnosis.deviceHealth.identifiedIssues.isNotEmpty)
               Column(
@@ -210,7 +211,7 @@ class DevicePassport {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${action.title} (${action.type.name})',
+                      '${action.title} (${getEnumName(action.type)})',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     Text(action.description),

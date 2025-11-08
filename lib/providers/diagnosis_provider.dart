@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '/models/device_diagnosis.dart';
 import '/services/gemini_diagnosis_service.dart';
 import '/models/pathway.dart'; // Added import for Pathway
+import '/utils/enum_helpers.dart';
 
 class DiagnosisProvider extends ChangeNotifier {
   final GeminiDiagnosisService _diagnosisService = GeminiDiagnosisService();
@@ -152,7 +153,7 @@ class DiagnosisProvider extends ChangeNotifier {
     final additionalInfo = _additionalInfo;
 
     return '''
-    Current Screen Condition: ${condition.toString().split('.').last}
+    Current Screen Condition: ${getEnumName(condition)}
     User Input: "${additionalInfo.isEmpty ? 'None' : additionalInfo}"
     Device Model: $_deviceModel
     Images Uploaded: ${selectedImages.length}
@@ -185,8 +186,8 @@ class DiagnosisProvider extends ChangeNotifier {
 
       return '''
       TEST RESULT:
-      Screen Condition: ${testResult.deviceHealth.screenCondition.toString().split('.').last}
-      Hardware Condition: ${testResult.deviceHealth.hardwareCondition.toString().split('.').last}
+      Screen Condition: ${getEnumName(testResult.deviceHealth.screenCondition)}
+      Hardware Condition: ${getEnumName(testResult.deviceHealth.hardwareCondition)}
 
       Values:
       - Current: ₱${testResult.valueEstimation.currentValue.toStringAsFixed(0)}
@@ -223,7 +224,7 @@ class DiagnosisProvider extends ChangeNotifier {
   String getDeviceHealthSummary() {
     if (_currentResult?.deviceHealth != null) {
       final deviceHealth = _currentResult!.deviceHealth;
-      return 'Screen: ${deviceHealth.screenCondition.name}, Hardware: ${deviceHealth.hardwareCondition.name}';
+      return 'Screen: ${getEnumName(deviceHealth.screenCondition)}, Hardware: ${getEnumName(deviceHealth.hardwareCondition)}';
     }
     return 'Unknown';
   }

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:ayoayo/models/resell_listing.dart';
 import 'package:ayoayo/models/device_passport.dart';
 import 'package:ayoayo/services/database_service.dart';
+import 'package:ayoayo/utils/enum_helpers.dart';
 
 class ResellListingDao {
   final dbService = DatabaseService();
@@ -72,15 +73,15 @@ class ResellListingDao {
       'id': listing.id,
       'seller_id': listing.sellerId,
       'device_passport': jsonEncode(listing.devicePassport.toJson()),
-      'category': listing.category.toString(),
-      'condition': listing.condition.toString(),
+      'category': getEnumName(listing.category),
+      'condition': getEnumName(listing.condition),
       'asking_price': listing.askingPrice,
       'ai_suggested_price': listing.aiSuggestedPrice,
       'title': listing.title,
       'description': listing.description,
       'location': listing.location,
       'image_urls': jsonEncode(listing.imageUrls),
-      'status': listing.status.toString(),
+      'status': getEnumName(listing.status),
       'created_at': listing.createdAt.toIso8601String(),
       'updated_at': listing.updatedAt?.toIso8601String(),
       'sold_at': listing.soldAt?.toIso8601String(),
@@ -106,13 +107,15 @@ class ResellListingDao {
       devicePassport: DevicePassport.fromJson(
         jsonDecode(map['device_passport']),
       ),
-      category: ListingCategory.values.firstWhere(
-        (e) => e.toString() == map['category'],
-        orElse: () => ListingCategory.other,
+      category: parseEnumWithFallback(
+        ListingCategory.values,
+        map['category'],
+        ListingCategory.other,
       ),
-      condition: ConditionGrade.values.firstWhere(
-        (e) => e.toString() == map['condition'],
-        orElse: () => ConditionGrade.good,
+      condition: parseEnumWithFallback(
+        ConditionGrade.values,
+        map['condition'],
+        ConditionGrade.good,
       ),
       askingPrice: map['asking_price'].toDouble(),
       aiSuggestedPrice: map['ai_suggested_price']?.toDouble(),
@@ -120,9 +123,10 @@ class ResellListingDao {
       description: map['description'],
       location: map['location'],
       imageUrls: List<String>.from(jsonDecode(map['image_urls'] ?? '[]')),
-      status: ListingStatus.values.firstWhere(
-        (e) => e.toString() == map['status'],
-        orElse: () => ListingStatus.draft,
+      status: parseEnumWithFallback(
+        ListingStatus.values,
+        map['status'],
+        ListingStatus.draft,
       ),
       createdAt: DateTime.parse(map['created_at']),
       updatedAt: map['updated_at'] != null

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../models/device_diagnosis.dart';
 import '../../providers/upcycling_provider.dart';
 import '../../services/upcycle_steps_service.dart';
+import '../../utils/enum_helpers.dart';
 
 // Removed local UpcycleProject class - using the one from upcycle_steps_service.dart
 
@@ -105,12 +106,12 @@ class UpcycleDetail extends StatelessWidget {
           const SizedBox(height: 12),
           _buildConditionRow(
             "Screen Condition",
-            diagnosisResult.deviceHealth.screenCondition.name,
+            getEnumName(diagnosisResult.deviceHealth.screenCondition),
             _getConditionColor(diagnosisResult.deviceHealth.screenCondition),
           ),
           _buildConditionRow(
             "Hardware Condition",
-            diagnosisResult.deviceHealth.hardwareCondition.name,
+            getEnumName(diagnosisResult.deviceHealth.hardwareCondition),
             _getHardwareColor(diagnosisResult.deviceHealth.hardwareCondition),
           ),
           const Divider(height: 16),

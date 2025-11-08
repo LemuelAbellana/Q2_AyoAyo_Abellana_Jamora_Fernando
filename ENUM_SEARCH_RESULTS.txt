@@ -1,0 +1,172 @@
+FLUTTER ENUM SERIALIZATION SEARCH RESULTS
+===========================================
+
+PROJECT: MobileDev_AyoAyo
+DATE: 2025-11-08
+SEARCH FOCUS: toJson() methods, enum serialization, toString() usage
+
+CRITICAL FINDINGS
+=================
+
+1. DIRECT .name PROPERTY (WEB-BREAKING)
+   ===================================
+   
+   File: F:\Downloads\MobileDev_AyoAyo\lib\screens\upcycling_workspace_screen.dart
+   Line: 915
+   Code snippet:
+       913:  Chip(
+       914:    label: Text(
+       915:      idea.difficulty.name,  // BREAKS ON WEB!
+       916:      style: const TextStyle(fontSize: 10),
+   
+   Issue: Using .name property crashes on Flutter Web with _Namespace error
+   Fix: Replace with getEnumName(idea.difficulty)
+
+2. DAO LAYER ENUM MISMATCH
+   =======================
+   
+   File: F:\Downloads\MobileDev_AyoAyo\lib\services\resell_listing_dao.dart
+   
+   Problem A - Storage (lines 75-76, 83):
+   Code:
+       75:  'category': listing.category.toString(),
+       76:  'condition': listing.condition.toString(),
+       83:  'status': listing.status.toString(),
+   
+   Produces: "ListingCategory.smartphone", "ConditionGrade.excellent", "ListingStatus.active"
+   Should be: "smartphone", "excellent", "active"
+   Fix: Use getEnumName() instead of .toString()
+   
+   Problem B - Retrieval (lines 110, 114, 124):
+   Code:
+       110: category: ListingCategory.values.firstWhere(
+              (e) => e.toString() == map['category'],
+       114: condition: ConditionGrade.values.firstWhere(
+              (e) => e.toString() == map['condition'],
+       124: status: ListingStatus.values.firstWhere(
+              (e) => e.toString() == map['status'],
+   
+   Issue: Compares full toString() format instead of just the enum name
+   Fix: Use getEnumName(e) in comparisons
+   
+   Data Format Conflict:
+   - Model toJson() sends: {"status": "active"}
+   - DAO storage expects: "ListingStatus.active"
+   - API expects: {"status": "active"}
+   Result: Data serialization mismatch
+
+WORKING IMPLEMENTATIONS (Reference)
+====================================
+
+1. lib\models\device_diagnosis.dart
+   Line 140-141: Correctly uses getEnumName()
+   Line 257: Correctly uses getEnumName()
+
+2. lib\models\donation.dart
+   Line 98: Correctly uses getEnumName()
+
+3. lib\models\resell_listing.dart
+   Lines 103-104, 111: Correctly uses getEnumName()
+
+4. lib\models\upcycling_project.dart
+   Lines 119-120, 128: Correctly uses getEnumName()
+
+INCONSISTENT IMPLEMENTATIONS (Display Code)
+=============================================
+
+These use .toString().split('.').last pattern (works for UI but inconsistent):
+
+File: F:\Downloads\MobileDev_AyoAyo\lib\services\ai_resell_service.dart
+Lines: 27, 28, 29, 74, 103, 158, 301, 304
+
+File: F:\Downloads\MobileDev_AyoAyo\lib\services\ai_upcycling_service.dart
+Lines: 24, 25, 73, 171
+
+File: F:\Downloads\MobileDev_AyoAyo\lib\screens\resell_marketplace_screen.dart
+Lines: 637, 768, 902, 964
+
+File: F:\Downloads\MobileDev_AyoAyo\lib\screens\upcycling_workspace_screen.dart
+Lines: 324, 336, 461, 658, 662
+
+File: F:\Downloads\MobileDev_AyoAyo\lib\screens\create_listing_screen.dart
+Line: 1001
+
+File: F:\Downloads\MobileDev_AyoAyo\lib\widgets\pathways\resell_detail.dart
+Lines: 341, 345, 428
+
+File: F:\Downloads\MobileDev_AyoAyo\lib\widgets\upcycling\glassmorphic_project_card.dart
+Lines: 109, 156
+
+File: F:\Downloads\MobileDev_AyoAyo\lib\providers\diagnosis_provider.dart
+Multiple locations
+
+Total: ~36 occurrences of .toString().split('.').last pattern
+
+ALL ENUMS FOUND IN CODEBASE
+============================
+
+1. lib\models\device_diagnosis.dart
+   - ScreenCondition { excellent, good, fair, poor, cracked, unknown }
+   - HardwareCondition { excellent, good, fair, poor, damaged, unknown }
+   - ActionType { repair, replace, donate, recycle, sell, other }
+
+2. lib\models\donation.dart
+   - DonationStatus { active, fulfilled, expired, cancelled }
+
+3. lib\models\resell_listing.dart
+   - ListingStatus { draft, active, sold, expired, cancelled }
+   - ListingCategory { smartphone, tablet, laptop, wearable, accessory, other }
+   - ConditionGrade { excellent, good, fair, poor, damaged }
+
+4. lib\models\upcycling_project.dart
+   - ProjectStatus { planning, inProgress, completed, paused }
+   - DifficultyLevel { beginner, intermediate, advanced, expert }
+   - ProjectCategory { decor, functional, wearable, art, tech, other }
+
+5. lib\models\pathway.dart
+   - Pathway { none, repair, resell, upcycle, donate }
+
+6. lib\widgets\diagnosis\diagnosis_flow_container.dart
+   - DiagnosisState { form, loading, results }
+
+ENUM HELPER FUNCTION
+====================
+
+File: F:\Downloads\MobileDev_AyoAyo\lib\utils\enum_helpers.dart
+
+Functions available:
+- getEnumName<T extends Enum>(T enumValue) -> String
+- parseEnum<T extends Enum>(List<T> values, String? value) -> T?
+- parseEnumWithFallback<T extends Enum>(List<T> values, String? value, T fallback) -> T
+- getEnumDisplayName<T extends Enum>(T enumValue) -> String
+
+These are already imported and used correctly in model classes.
+
+ACTION ITEMS SUMMARY
+====================
+
+CRITICAL (Breaks on web):
+1. Fix lib\screens\upcycling_workspace_screen.dart line 915
+   Change: idea.difficulty.name
+   To: getEnumName(idea.difficulty)
+
+2. Fix lib\services\resell_listing_dao.dart
+   Lines 75, 76, 83: Change enum.toString() to getEnumName(enum)
+   Lines 110, 114, 124: Change e.toString() comparisons to getEnumName(e)
+
+IMPORTANT (Data compatibility):
+3. Ensure database format matches model toJson() format
+   Database: Use getEnumName() to store just enum names
+   Retrieval: Use getEnumName() for comparison
+
+OPTIONAL (Code consistency):
+4. Replace ~36 occurrences of .toString().split('.').last with getEnumName()
+   in display/UI code for consistency and maintainability
+
+RECOMMENDATION
+==============
+1. Fix critical issues first (items 1-2 above)
+2. Update DAO to use getEnumName() for data compatibility
+3. Gradually replace inconsistent patterns in display code
+4. Consider creating lint rule to prevent future .name usage
+

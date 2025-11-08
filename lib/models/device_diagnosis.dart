@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import '../services/device_specifications_service.dart';
+import '../utils/enum_helpers.dart';
 
 class DeviceDiagnosis {
   final String deviceModel;
@@ -101,14 +102,8 @@ class DeviceHealth {
 
   factory DeviceHealth.fromJson(Map<String, dynamic> json) {
     return DeviceHealth(
-      screenCondition: ScreenCondition.values.firstWhere(
-        (e) => e.name == json['screenCondition'],
-        orElse: () => ScreenCondition.unknown,
-      ),
-      hardwareCondition: HardwareCondition.values.firstWhere(
-        (e) => e.name == json['hardwareCondition'],
-        orElse: () => HardwareCondition.unknown,
-      ),
+      screenCondition: _parseScreenCondition(json['screenCondition']),
+      hardwareCondition: _parseHardwareCondition(json['hardwareCondition']),
       identifiedIssues: List<String>.from(json['identifiedIssues'] ?? []),
       lifeCycleStage: json['lifeCycleStage'] ?? 'unknown',
       remainingUsefulLife: json['remainingUsefulLife'] ?? 'unknown',
@@ -116,10 +111,34 @@ class DeviceHealth {
     );
   }
 
+  static ScreenCondition _parseScreenCondition(dynamic value) {
+    if (value == null) return ScreenCondition.unknown;
+    final valueStr = value.toString().toLowerCase();
+
+    for (final condition in ScreenCondition.values) {
+      if (getEnumName(condition).toLowerCase() == valueStr) {
+        return condition;
+      }
+    }
+    return ScreenCondition.unknown;
+  }
+
+  static HardwareCondition _parseHardwareCondition(dynamic value) {
+    if (value == null) return HardwareCondition.unknown;
+    final valueStr = value.toString().toLowerCase();
+
+    for (final condition in HardwareCondition.values) {
+      if (getEnumName(condition).toLowerCase() == valueStr) {
+        return condition;
+      }
+    }
+    return HardwareCondition.unknown;
+  }
+
   Map<String, dynamic> toJson() {
     return {
-      'screenCondition': screenCondition.name,
-      'hardwareCondition': hardwareCondition.name,
+      'screenCondition': getEnumName(screenCondition),
+      'hardwareCondition': getEnumName(hardwareCondition),
       'identifiedIssues': identifiedIssues,
       'lifeCycleStage': lifeCycleStage,
       'remainingUsefulLife': remainingUsefulLife,
@@ -207,10 +226,7 @@ class RecommendedAction {
     return RecommendedAction(
       title: json['title'] ?? '',
       description: json['description'] ?? '',
-      type: ActionType.values.firstWhere(
-        (e) => e.name == json['type'],
-        orElse: () => ActionType.other,
-      ),
+      type: _parseActionType(json['type']),
       priority: (json['priority'] ?? 0.0).toDouble(),
       costBenefitRatio: (json['costBenefitRatio'] ?? 0.0).toDouble(),
       environmentalImpact: json['environmentalImpact'] ?? 'neutral',
@@ -222,11 +238,23 @@ class RecommendedAction {
     );
   }
 
+  static ActionType _parseActionType(dynamic value) {
+    if (value == null) return ActionType.other;
+    final valueStr = value.toString().toLowerCase();
+
+    for (final type in ActionType.values) {
+      if (getEnumName(type).toLowerCase() == valueStr) {
+        return type;
+      }
+    }
+    return ActionType.other;
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'title': title,
       'description': description,
-      'type': type.name,
+      'type': getEnumName(type),
       'priority': priority,
       'costBenefitRatio': costBenefitRatio,
       'environmentalImpact': environmentalImpact,

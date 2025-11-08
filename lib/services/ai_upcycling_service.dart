@@ -1,6 +1,7 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:ayoayo/models/upcycling_project.dart';
 import 'package:ayoayo/models/device_passport.dart';
+import '../utils/enum_helpers.dart';
 
 class AIUpcyclingService {
   final GenerativeModel _model;
@@ -21,8 +22,8 @@ Device Analysis:
 - Manufacturer: ${devicePassport.manufacturer}
 - Year: ${devicePassport.yearOfRelease}
 - OS: ${devicePassport.operatingSystem}
-- Screen Condition: ${devicePassport.lastDiagnosis.deviceHealth.screenCondition.toString().split('.').last}
-- Hardware Condition: ${devicePassport.lastDiagnosis.deviceHealth.hardwareCondition.toString().split('.').last}
+- Screen Condition: ${getEnumName(devicePassport.lastDiagnosis.deviceHealth.screenCondition)}
+- Hardware Condition: ${getEnumName(devicePassport.lastDiagnosis.deviceHealth.hardwareCondition)}
 - Hardware Issues: ${devicePassport.lastDiagnosis.deviceHealth.identifiedIssues.join(', ')}
 
 Available Components:
@@ -70,7 +71,7 @@ For each idea, provide:
 Create a detailed upcycling project plan for: "$projectIdea"
 
 Device: ${devicePassport.deviceModel}
-Difficulty Level: ${difficulty.toString().split('.').last}
+Difficulty Level: ${getEnumName(difficulty)}
 
 Provide a complete project specification including:
 1. Project title and description
@@ -168,7 +169,7 @@ Create comprehensive documentation for sharing this upcycling project:
 
 Project: ${project.title}
 Description: ${project.description}
-Difficulty: ${project.difficulty.toString().split('.').last}
+Difficulty: ${getEnumName(project.difficulty)}
 Time: ${project.estimatedHours} hours
 Cost: ₱${project.estimatedCost}
 

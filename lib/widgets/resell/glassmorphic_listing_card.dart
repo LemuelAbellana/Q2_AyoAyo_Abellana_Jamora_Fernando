@@ -4,6 +4,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../models/resell_listing.dart';
 import '../../models/device_diagnosis.dart';
 import '../../utils/app_theme.dart';
+import '../../utils/enum_helpers.dart';
 
 class GlassmorphicListingCard extends StatelessWidget {
   final ResellListing listing;
@@ -189,7 +190,7 @@ class GlassmorphicListingCard extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  '${listing.devicePassport.lastDiagnosis.deviceHealth.hardwareCondition.name} Hardware',
+                                  '${getEnumName(listing.devicePassport.lastDiagnosis.deviceHealth.hardwareCondition)} Hardware',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: _getHardwareColor(

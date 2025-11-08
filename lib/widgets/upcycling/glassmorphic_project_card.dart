@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../models/upcycling_project.dart';
 import '../../utils/app_theme.dart';
+import '../../utils/enum_helpers.dart';
 
 class GlassmorphicProjectCard extends StatelessWidget {
   final UpcyclingProject project;
@@ -106,7 +107,7 @@ class GlassmorphicProjectCard extends StatelessWidget {
                               ],
                             ),
                             child: Text(
-                              project.status.toString().split('.').last,
+                              getEnumName(project.status),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -153,7 +154,7 @@ class GlassmorphicProjectCard extends StatelessWidget {
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              project.difficulty.toString().split('.').last,
+                              getEnumName(project.difficulty),
                               style: TextStyle(
                                 color: _getDifficultyColor(project.difficulty),
                                 fontSize: 13,

@@ -1,5 +1,6 @@
 import 'package:ayoayo/services/knowledge_base.dart';
 import 'package:ayoayo/models/device_diagnosis.dart';
+import 'package:ayoayo/utils/enum_helpers.dart';
 
 class AIValueEngine {
   // AI-powered device valuation with market intelligence
@@ -48,8 +49,8 @@ class AIValueEngine {
     Map<String, dynamic>? deviceData
   ) {
     final conditions = {
-      'screenCondition': deviceHealth.screenCondition.toString().split('.').last,
-      'hardwareCondition': deviceHealth.hardwareCondition.toString().split('.').last,
+      'screenCondition': getEnumName(deviceHealth.screenCondition),
+      'hardwareCondition': getEnumName(deviceHealth.hardwareCondition),
     };
     
     double value = KnowledgeBase.calculatePreciseValue(deviceModel, conditions);

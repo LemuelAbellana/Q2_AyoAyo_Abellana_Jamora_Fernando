@@ -1,5 +1,10 @@
 import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:image_picker/image_picker.dart';
+
 import 'package:ayoayo/config/api_config.dart';
 import 'package:ayoayo/services/database_service.dart';
 import 'package:ayoayo/services/api_service.dart';
@@ -78,12 +83,15 @@ class CameraDeviceRecognitionService {
     }
 
     try {
-      final bytes = await imageFile.readAsBytes();
+      final payload = await _prepareImagePayload(imageFile);
 
       final prompt = _buildDeviceRecognitionPrompt();
 
       final response = await _model.generateContent([
-        Content.multi([TextPart(prompt), DataPart('image/jpeg', bytes)]),
+        Content.multi([
+          TextPart(prompt),
+          DataPart(payload.mimeType, payload.bytes),
+        ]),
       ]);
 
       final analysisText = response.text ?? '';
@@ -113,8 +121,8 @@ class CameraDeviceRecognitionService {
       final contentParts = <Part>[TextPart(prompt)];
 
       for (final imageFile in imageFiles.take(4)) {
-        final bytes = await imageFile.readAsBytes();
-        contentParts.add(DataPart('image/jpeg', bytes));
+        final payload = await _prepareImagePayload(imageFile);
+        contentParts.add(DataPart(payload.mimeType, payload.bytes));
       }
 
       final response = await _model.generateContent([
@@ -400,6 +408,55 @@ Use multiple images to increase accuracy and confidence in identification.
     );
   }
 
+  Future<_ImagePayload> _prepareImagePayload(File imageFile) async {
+    if (kIsWeb) {
+      final xFile = XFile(imageFile.path);
+      final bytes = await xFile.readAsBytes();
+      final mimeType = xFile.mimeType ?? _detectMimeType(xFile.path);
+      return _ImagePayload(bytes, mimeType);
+    }
+
+    try {
+      final bytes = await imageFile.readAsBytes();
+      return _ImagePayload(bytes, _detectMimeType(imageFile.path));
+    } catch (error) {
+      if (_isNamespaceUnsupported(error)) {
+        final xFile = XFile(imageFile.path);
+        final bytes = await xFile.readAsBytes();
+        final mimeType = xFile.mimeType ?? _detectMimeType(xFile.path);
+
+        if (kDebugMode) {
+          print(
+            'ℹ️ Falling back to XFile bytes for image ${imageFile.path}: $error',
+          );
+        }
+
+        return _ImagePayload(bytes, mimeType);
+      }
+      rethrow;
+    }
+  }
+
+  String _detectMimeType(String path) {
+    final lowerPath = path.toLowerCase();
+
+    if (lowerPath.endsWith('.png')) return 'image/png';
+    if (lowerPath.endsWith('.webp')) return 'image/webp';
+    if (lowerPath.endsWith('.gif')) return 'image/gif';
+    if (lowerPath.endsWith('.heic') || lowerPath.endsWith('.heif')) {
+      return 'image/heic';
+    }
+
+    // Default to JPEG for most camera captures and blob URIs
+    return 'image/jpeg';
+  }
+
+  bool _isNamespaceUnsupported(Object error) {
+    final message = error.toString().toLowerCase();
+    return message.contains('_namespace') ||
+        (error is UnsupportedError &&
+            (error.message?.toLowerCase().contains('_namespace') ?? false));
+  }
   Future<String> saveRecognizedDevice(
     DeviceRecognitionResult result,
     String userId,
@@ -545,4 +602,11 @@ Use multiple images to increase accuracy and confidence in identification.
       return false;
     }
   }
+}
+
+class _ImagePayload {
+  final Uint8List bytes;
+  final String mimeType;
+
+  _ImagePayload(this.bytes, this.mimeType);
 }

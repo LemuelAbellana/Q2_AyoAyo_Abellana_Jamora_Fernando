@@ -6,6 +6,7 @@ import '../models/resell_listing.dart';
 import '../models/marketplace.dart';
 import '../models/device_diagnosis.dart';
 import '../providers/resell_provider.dart';
+import '../utils/enum_helpers.dart';
 
 class ResellMarketplaceScreen extends StatefulWidget {
   const ResellMarketplaceScreen({super.key});
@@ -563,7 +564,7 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    '${listing.devicePassport.lastDiagnosis.deviceHealth.hardwareCondition.name} Hardware',
+                    '${getEnumName(listing.devicePassport.lastDiagnosis.deviceHealth.hardwareCondition)} Hardware',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[600],
@@ -633,7 +634,7 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      listing.status.toString().split('.').last,
+                      getEnumName(listing.status),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
@@ -764,7 +765,7 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
       ),
       title: Text(listing.title),
       subtitle: Text(
-        '${listing.status.toString().split('.').last} • ₱${listing.askingPrice.toStringAsFixed(0)}',
+        '${getEnumName(listing.status)} • ₱${listing.askingPrice.toStringAsFixed(0)}',
       ),
       trailing: Text(
         '${listing.daysActive}d ago',
@@ -898,7 +899,7 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Price: ₱${listing.askingPrice.toStringAsFixed(0)}'),
-            Text('Condition: ${listing.condition.toString().split('.').last}'),
+            Text('Condition: ${getEnumName(listing.condition)}'),
             Text('Device: ${listing.devicePassport.deviceModel}'),
             if (isOwnListing) ...[
               const SizedBox(height: 12),
@@ -960,7 +961,7 @@ class _ResellMarketplaceScreenState extends State<ResellMarketplaceScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Price: ₱${listing.askingPrice.toStringAsFixed(0)}'),
-            Text('Status: ${listing.status.toString().split('.').last}'),
+            Text('Status: ${getEnumName(listing.status)}'),
             Text('Views: ${listing.daysActive * 10}'), // Mock data
           ],
         ),

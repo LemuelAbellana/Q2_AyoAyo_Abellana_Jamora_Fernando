@@ -5,6 +5,7 @@ import 'package:ayoayo/models/device_passport.dart';
 import 'package:ayoayo/models/device_diagnosis.dart';
 import 'package:ayoayo/services/ai_upcycling_service.dart';
 import 'package:ayoayo/services/database_service.dart';
+import 'package:ayoayo/utils/enum_helpers.dart';
 
 class UpcyclingProvider extends ChangeNotifier {
   final AIUpcyclingService _aiService;
@@ -379,9 +380,9 @@ class UpcyclingProvider extends ChangeNotifier {
       'device_passport_id': 1, // Default for now
       'title': project.title,
       'description': project.description,
-      'difficulty_level': project.difficulty.name,
-      'category': project.category.name,
-      'status': project.status.name,
+      'difficulty_level': getEnumName(project.difficulty),
+      'category': getEnumName(project.category),
+      'status': getEnumName(project.status),
       'materials_needed': project.materialsNeeded,
       'tools_required': project.toolsRequired,
       'estimated_hours': project.estimatedHours,

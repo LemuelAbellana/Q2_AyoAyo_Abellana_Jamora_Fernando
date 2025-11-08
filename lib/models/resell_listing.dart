@@ -1,4 +1,5 @@
 import 'package:ayoayo/models/device_passport.dart';
+import '../utils/enum_helpers.dart';
 
 enum ListingStatus { draft, active, sold, expired, cancelled }
 
@@ -56,13 +57,15 @@ class ResellListing {
       id: json['id'] ?? '',
       sellerId: json['sellerId'] ?? '',
       devicePassport: DevicePassport.fromJson(json['devicePassport'] ?? {}),
-      category: ListingCategory.values.firstWhere(
-        (e) => e.toString() == json['category'],
-        orElse: () => ListingCategory.other,
+      category: parseEnumWithFallback(
+        ListingCategory.values,
+        json['category'],
+        ListingCategory.other,
       ),
-      condition: ConditionGrade.values.firstWhere(
-        (e) => e.toString() == json['condition'],
-        orElse: () => ConditionGrade.good,
+      condition: parseEnumWithFallback(
+        ConditionGrade.values,
+        json['condition'],
+        ConditionGrade.good,
       ),
       askingPrice: (json['askingPrice'] ?? 0).toDouble(),
       aiSuggestedPrice: json['aiSuggestedPrice']?.toDouble(),
@@ -70,9 +73,10 @@ class ResellListing {
       description: json['description'] ?? '',
       location: json['location'],
       imageUrls: List<String>.from(json['imageUrls'] ?? []),
-      status: ListingStatus.values.firstWhere(
-        (e) => e.toString() == json['status'],
-        orElse: () => ListingStatus.draft,
+      status: parseEnumWithFallback(
+        ListingStatus.values,
+        json['status'],
+        ListingStatus.draft,
       ),
       createdAt: DateTime.parse(
         json['createdAt'] ?? DateTime.now().toIso8601String(),
@@ -96,15 +100,15 @@ class ResellListing {
       'id': id,
       'sellerId': sellerId,
       'devicePassport': devicePassport.toJson(),
-      'category': category.toString(),
-      'condition': condition.toString(),
+      'category': getEnumName(category),
+      'condition': getEnumName(condition),
       'askingPrice': askingPrice,
       'aiSuggestedPrice': aiSuggestedPrice,
       'title': title,
       'description': description,
       'location': location,
       'imageUrls': imageUrls,
-      'status': status.toString(),
+      'status': getEnumName(status),
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'soldAt': soldAt?.toIso8601String(),

@@ -1,0 +1,17 @@
+ENUM SERIALIZATION SEARCH - FINAL REPORT
+
+CRITICAL ISSUES FOUND:
+
+1. Line 915 in lib/screens/upcycling_workspace_screen.dart
+   Uses .name property - BREAKS ON WEB
+   Code: idea.difficulty.name
+   Fix: getEnumName(idea.difficulty)
+
+2. lib/services/resell_listing_dao.dart
+   Lines 75-76, 83: Wrong enum serialization format
+   Lines 110, 114, 124: Wrong enum comparison
+   Stores: 'ListingStatus.active' instead of 'active'
+
+3. 36+ occurrences of .toString().split('.').last
+   In display/UI code - WORKS but INCONSISTENT
+

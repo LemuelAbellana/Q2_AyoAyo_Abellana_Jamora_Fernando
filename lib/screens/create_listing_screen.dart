@@ -4,6 +4,7 @@ import 'package:ayoayo/models/marketplace.dart';
 import 'package:ayoayo/models/resell_listing.dart';
 import 'package:ayoayo/providers/resell_provider.dart';
 import 'package:ayoayo/utils/app_theme.dart';
+import 'package:ayoayo/utils/enum_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
@@ -998,7 +999,7 @@ class CreateListingScreenState extends State<CreateListingScreen> {
           ),
           recommendations: [],
           aiAnalysis:
-              'User-defined device with ${_selectedCondition.toString().split('.').last} condition',
+              'User-defined device with ${getEnumName(_selectedCondition)} condition',
           confidenceScore: 0.9,
           imageUrls: [
             'https://via.placeholder.com/300x300?text=${_deviceModelController.text.trim()}',

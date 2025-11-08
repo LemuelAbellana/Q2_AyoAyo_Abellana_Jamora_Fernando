@@ -1,5 +1,10 @@
 import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:image_picker/image_picker.dart';
+
 import 'package:ayoayo/config/api_config.dart';
 
 class AIImageAnalysisService {
@@ -45,7 +50,7 @@ class AIImageAnalysisService {
         final image = images[i];
 
         try {
-          final bytes = await image.readAsBytes();
+          final bytes = await _loadImageBytes(image);
           print('📷 Processing image ${i + 1} (${bytes.length} bytes)');
 
           // Create enhanced prompt for phone recognition and condition analysis
@@ -108,7 +113,7 @@ Analyze the device thoroughly and be as specific as possible with the model iden
             final response = await _visionModel!.generateContent([
               Content.multi([
                 TextPart(imagePrompt),
-                DataPart('image/jpeg', bytes),
+                DataPart(_detectMimeType(image.path), bytes),
               ]),
             ]);
 
@@ -238,4 +243,44 @@ ${error != null ? 'Error: $error' : 'AI recognition failed'}
 • Consider manual device model entry
     ''';
   }
+
+    Future<Uint8List> _loadImageBytes(File image) async {
+      if (kIsWeb) {
+        return await XFile(image.path).readAsBytes();
+      }
+
+      try {
+        return await image.readAsBytes();
+      } catch (error) {
+        if (_isNamespaceUnsupported(error)) {
+          if (kDebugMode) {
+            print(
+              'ℹ️ Falling back to XFile bytes for image ${image.path}: $error',
+            );
+          }
+          return await XFile(image.path).readAsBytes();
+        }
+        rethrow;
+      }
+    }
+
+    String _detectMimeType(String path) {
+      final lowerPath = path.toLowerCase();
+
+      if (lowerPath.endsWith('.png')) return 'image/png';
+      if (lowerPath.endsWith('.webp')) return 'image/webp';
+      if (lowerPath.endsWith('.gif')) return 'image/gif';
+      if (lowerPath.endsWith('.heic') || lowerPath.endsWith('.heif')) {
+        return 'image/heic';
+      }
+
+      return 'image/jpeg';
+    }
+
+    bool _isNamespaceUnsupported(Object error) {
+      final message = error.toString().toLowerCase();
+      return message.contains('_namespace') ||
+          (error is UnsupportedError &&
+              (error.message?.toLowerCase().contains('_namespace') ?? false));
+    }
 }

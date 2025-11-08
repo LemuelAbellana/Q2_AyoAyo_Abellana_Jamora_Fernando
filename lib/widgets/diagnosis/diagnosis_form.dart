@@ -4,7 +4,7 @@ import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:provider/provider.dart';
 import '/widgets/diagnosis/image_upload_placeholder.dart';
 import '/providers/diagnosis_provider.dart';
-import '/services/device_specifications_service.dart';
+import '/services/camera_device_recognition_service.dart';
 
 class DiagnosisForm extends StatefulWidget {
   const DiagnosisForm({super.key});
@@ -335,41 +335,29 @@ class _DiagnosisFormState extends State<DiagnosisForm> {
     }
 
     try {
-      // Simulate AI device identification process
-      await Future.delayed(const Duration(milliseconds: 1500));
+      // Use real AI service for device recognition
+      final recognitionService = CameraDeviceRecognitionService();
+      final result = imageFiles.length == 1
+          ? await recognitionService.recognizeDeviceFromImage(imageFiles.first)
+          : await recognitionService.recognizeDeviceFromImages(imageFiles);
 
-      // In a real implementation, this would analyze the images using AI
-      // For now, we'll simulate device identification
-      final deviceSpec = _simulateDeviceIdentification();
-
-      if (mounted && deviceSpec != null) {
+      if (mounted) {
         setState(() {
-          _identifiedDevice = deviceSpec.deviceModel;
-          _identifiedSpecs = 'RAM: ${deviceSpec.ram} • Storage: ${deviceSpec.storage} • Processor: ${deviceSpec.processor}';
+          _identifiedDevice = result.deviceModel;
+          _identifiedSpecs = 'Brand: ${result.manufacturer} • Confidence: ${(result.confidence * 100).toStringAsFixed(0)}% • ${result.operatingSystem}';
         });
 
-        // Set the identified device model in the provider
-        context.read<DiagnosisProvider>().setDeviceModel(deviceSpec.deviceModel);
+        // Set the AI-identified device model in the provider
+        context.read<DiagnosisProvider>().setDeviceModel(result.deviceModel);
       }
     } catch (e) {
       // Handle identification error
       if (mounted) {
         setState(() {
           _identifiedDevice = 'Unable to identify device';
-          _identifiedSpecs = 'Please ensure images are clear and well-lit';
+          _identifiedSpecs = 'Error: ${e.toString()}';
         });
       }
     }
-  }
-
-  DeviceSpecification? _simulateDeviceIdentification() {
-    // This simulates AI device identification
-    // In reality, this would send the images to Gemini for analysis
-    final supportedDevices = DeviceSpecificationsService.getSupportedDeviceModels();
-    if (supportedDevices.isNotEmpty) {
-      // Simulate identifying a Samsung S21 Ultra for demonstration
-      return DeviceSpecificationsService.getDeviceSpecification('samsung galaxy s21 ultra');
-    }
-    return null;
   }
 }

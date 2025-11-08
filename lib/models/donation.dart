@@ -1,3 +1,5 @@
+import '../utils/enum_helpers.dart';
+
 enum DonationStatus { active, fulfilled, expired, cancelled }
 
 class Donation {
@@ -61,9 +63,10 @@ class Donation {
           ? (json['amount_raised'] as num).toDouble()
           : null,
       category: json['category'],
-      status: DonationStatus.values.firstWhere(
-        (e) => e.toString() == 'DonationStatus.${json['status']}',
-        orElse: () => DonationStatus.active,
+      status: parseEnumWithFallback(
+        DonationStatus.values,
+        json['status'],
+        DonationStatus.active,
       ),
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
@@ -92,7 +95,7 @@ class Donation {
       'target_amount': targetAmount,
       'amount_raised': amountRaised,
       'category': category,
-      'status': status.toString().split('.').last,
+      'status': getEnumName(status),
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
       'deadline': deadline?.toIso8601String(),

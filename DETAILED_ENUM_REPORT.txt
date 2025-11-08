@@ -1,0 +1,74 @@
+ENUM SERIALIZATION ISSUES - DETAILED REPORT
+=============================================
+
+CRITICAL ISSUES FOUND:
+======================
+
+1. DIRECT .name USAGE (CRASHES ON WEB)
+   File: lib/screens/upcycling_workspace_screen.dart
+   Line: 915
+   Code: idea.difficulty.name
+   Fix: getEnumName(idea.difficulty)
+   
+   Error on Chrome: "Unsupported operation: _Namespace"
+
+2. DAO ENUM SERIALIZATION (DATA FORMAT MISMATCH)
+   File: lib/services/resell_listing_dao.dart
+   
+   Storage Lines 75-76, 83:
+   'category': listing.category.toString()      -> Stores "ListingCategory.smartphone"
+   'condition': listing.condition.toString()    -> Stores "ConditionGrade.excellent"
+   'status': listing.status.toString()          -> Stores "ListingStatus.active"
+   
+   Should be:
+   'category': getEnumName(listing.category)    -> Stores "smartphone"
+   'condition': getEnumName(listing.condition)  -> Stores "excellent"
+   'status': getEnumName(listing.status)        -> Stores "active"
+   
+   Retrieval Lines 110, 114, 124:
+   (e) => e.toString() == map['category']
+   
+   Should be:
+   (e) => getEnumName(e) == map['category']
+   
+   CONFLICT: Model.toJson() serializes as "active" but DAO stores "ListingStatus.active"
+
+3. INCONSISTENT DISPLAY CODE (36+ occurrences)
+   Pattern: enum.toString().split('.').last
+   These are safe but should use getEnumName() for consistency
+   
+   Files affected:
+   - lib/services/ai_resell_service.dart (Lines 27-29, 74, 103, 158, 301, 304)
+   - lib/services/ai_upcycling_service.dart (Lines 24-25, 73, 171)
+   - lib/screens/resell_marketplace_screen.dart (Lines 637, 768, 902, 964)
+   - lib/screens/upcycling_workspace_screen.dart (Lines 324, 336, 461, 658, 662)
+   - lib/screens/create_listing_screen.dart (Line 1001)
+   - lib/widgets/pathways/resell_detail.dart (Lines 341, 345, 428)
+   - lib/widgets/upcycling/glassmorphic_project_card.dart (Lines 109, 156)
+   - lib/providers/diagnosis_provider.dart (Various lines)
+
+MODELS USING getEnumName() CORRECTLY:
+====================================
+- lib/models/device_diagnosis.dart (Lines 140-141, 257)
+- lib/models/donation.dart (Line 98)
+- lib/models/resell_listing.dart (Lines 103-104, 111)
+- lib/models/upcycling_project.dart (Lines 119-120, 128)
+
+HELPER FUNCTION AVAILABLE:
+==========================
+File: lib/utils/enum_helpers.dart
+
+String getEnumName<T extends Enum>(T enumValue) {
+  return enumValue.toString().split('.').last;
+}
+
+PRIORITY FIX LIST:
+==================
+
+HIGH (Will break on web):
+1. lib/screens/upcycling_workspace_screen.dart:915
+2. lib/services/resell_listing_dao.dart:75,76,83,110,114,124
+
+MEDIUM (Consistency):
+3. Replace ~36 occurrences of .toString().split('.').last with getEnumName()
+

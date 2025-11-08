@@ -4,6 +4,7 @@ import 'package:ayoayo/models/resell_listing.dart';
 import 'package:ayoayo/models/device_passport.dart';
 import 'package:ayoayo/models/device_diagnosis.dart';
 import 'package:ayoayo/services/ai_resell_service.dart';
+import 'package:ayoayo/utils/enum_helpers.dart';
 
 class ResellProvider extends ChangeNotifier {
   final AIResellService _aiService;
@@ -279,9 +280,9 @@ class ResellProvider extends ChangeNotifier {
 
       final description = customDescription?.trim().isNotEmpty == true
           ? customDescription!
-          : 'Quality device in ${condition.toString().split('.').last} condition. '
-                'Screen: ${devicePassport.lastDiagnosis.deviceHealth.screenCondition.name}, '
-                'Hardware: ${devicePassport.lastDiagnosis.deviceHealth.hardwareCondition.name}. '
+          : 'Quality device in ${getEnumName(condition)} condition. '
+                'Screen: ${getEnumName(devicePassport.lastDiagnosis.deviceHealth.screenCondition)}, '
+                'Hardware: ${getEnumName(devicePassport.lastDiagnosis.deviceHealth.hardwareCondition)}. '
                 'Help reduce e-waste by giving this device a second life!';
 
       // Create new listing

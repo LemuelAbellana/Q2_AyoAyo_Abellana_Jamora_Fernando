@@ -2,6 +2,7 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:ayoayo/models/resell_listing.dart';
 import 'package:ayoayo/models/device_passport.dart';
 import 'package:ayoayo/services/ai_value_engine.dart';
+import '../utils/enum_helpers.dart';
 
 class AIResellService {
   final GenerativeModel _model;
@@ -23,9 +24,9 @@ Device Details:
 - Manufacturer: ${devicePassport.manufacturer}
 - Year: ${devicePassport.yearOfRelease}
 - OS: ${devicePassport.operatingSystem}
-- Condition: ${condition.toString().split('.').last}
-- Screen Condition: ${devicePassport.lastDiagnosis.deviceHealth.screenCondition.toString().split('.').last}
-- Hardware Condition: ${devicePassport.lastDiagnosis.deviceHealth.hardwareCondition.toString().split('.').last}
+- Condition: ${getEnumName(condition)}
+- Screen Condition: ${getEnumName(devicePassport.lastDiagnosis.deviceHealth.screenCondition)}
+- Hardware Condition: ${getEnumName(devicePassport.lastDiagnosis.deviceHealth.hardwareCondition)}
 - Issues: ${devicePassport.lastDiagnosis.deviceHealth.identifiedIssues.join(', ')}
 
 Create:
@@ -70,7 +71,7 @@ Analyze this device's market position for optimal pricing strategy:
 
 Device: ${devicePassport.deviceModel}
 Base Value: ₱${baseValue.toStringAsFixed(2)}
-Condition: ${condition.toString().split('.').last}
+Condition: ${getEnumName(condition)}
 Market Demand: ${marketAnalysis.marketAnalysis.currentDemand}
 Market Velocity: ${(marketAnalysis.marketAnalysis.marketVelocity * 100).toStringAsFixed(0)}%
 
@@ -99,7 +100,7 @@ Based on this device listing, identify potential buyer profiles and matching str
 Listing: ${listing.title}
 Device: ${listing.devicePassport.deviceModel}
 Price: ₱${listing.askingPrice.toStringAsFixed(2)}
-Condition: ${listing.condition.toString().split('.').last}
+Condition: ${getEnumName(listing.condition)}
 
 Suggest:
 1. Target buyer demographics
@@ -154,7 +155,7 @@ Generate actionable tips to improve sales for this listing:
 
 Device: ${listing.devicePassport.deviceModel}
 Current Price: ₱${listing.askingPrice.toStringAsFixed(2)}
-Condition: ${listing.condition.toString().split('.').last}
+Condition: ${getEnumName(listing.condition)}
 Days Listed: ${listing.daysActive}
 
 Provide 5-7 specific, actionable tips to increase sale probability.
@@ -297,18 +298,18 @@ Provide 5-7 specific, actionable tips to increase sale probability.
   ) {
     return ListingContent(
       title:
-          'Refurbished ${device.deviceModel} - ${condition.toString().split('.').last} Condition',
+          'Refurbished ${device.deviceModel} - ${getEnumName(condition)} Condition',
       description:
           'Quality refurbished ${device.deviceModel} from ${device.manufacturer}. '
-          'This device is in ${condition.toString().split('.').last} condition and offers great value. '
+          'This device is in ${getEnumName(condition)} condition and offers great value. '
           'Help reduce e-waste by giving this device a second life!',
       keySellingPoints: [
         'Fully functional with ${device.operatingSystem}',
         'Transparent condition reporting',
         'Environmentally friendly purchase',
         'Competitive pricing',
-        '${device.lastDiagnosis.deviceHealth.screenCondition.name} screen condition',
-        '${device.lastDiagnosis.deviceHealth.hardwareCondition.name} hardware',
+        '${getEnumName(device.lastDiagnosis.deviceHealth.screenCondition)} screen condition',
+        '${getEnumName(device.lastDiagnosis.deviceHealth.hardwareCondition)} hardware',
       ],
       seoKeywords: _generateSEOKeywords(device),
     );
