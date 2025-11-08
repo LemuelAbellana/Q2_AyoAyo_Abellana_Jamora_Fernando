@@ -244,43 +244,43 @@ ${error != null ? 'Error: $error' : 'AI recognition failed'}
     ''';
   }
 
-    Future<Uint8List> _loadImageBytes(File image) async {
-      if (kIsWeb) {
+  Future<Uint8List> _loadImageBytes(File image) async {
+    if (kIsWeb) {
+      return await XFile(image.path).readAsBytes();
+    }
+
+    try {
+      return await image.readAsBytes();
+    } catch (error) {
+      if (_isNamespaceUnsupported(error)) {
+        if (kDebugMode) {
+          print(
+            'ℹ️ Falling back to XFile bytes for image ${image.path}: $error',
+          );
+        }
         return await XFile(image.path).readAsBytes();
       }
+      rethrow;
+    }
+  }
 
-      try {
-        return await image.readAsBytes();
-      } catch (error) {
-        if (_isNamespaceUnsupported(error)) {
-          if (kDebugMode) {
-            print(
-              'ℹ️ Falling back to XFile bytes for image ${image.path}: $error',
-            );
-          }
-          return await XFile(image.path).readAsBytes();
-        }
-        rethrow;
-      }
+  String _detectMimeType(String path) {
+    final lowerPath = path.toLowerCase();
+
+    if (lowerPath.endsWith('.png')) return 'image/png';
+    if (lowerPath.endsWith('.webp')) return 'image/webp';
+    if (lowerPath.endsWith('.gif')) return 'image/gif';
+    if (lowerPath.endsWith('.heic') || lowerPath.endsWith('.heif')) {
+      return 'image/heic';
     }
 
-    String _detectMimeType(String path) {
-      final lowerPath = path.toLowerCase();
+    return 'image/jpeg';
+  }
 
-      if (lowerPath.endsWith('.png')) return 'image/png';
-      if (lowerPath.endsWith('.webp')) return 'image/webp';
-      if (lowerPath.endsWith('.gif')) return 'image/gif';
-      if (lowerPath.endsWith('.heic') || lowerPath.endsWith('.heif')) {
-        return 'image/heic';
-      }
-
-      return 'image/jpeg';
-    }
-
-    bool _isNamespaceUnsupported(Object error) {
-      final message = error.toString().toLowerCase();
-      return message.contains('_namespace') ||
-          (error is UnsupportedError &&
-              (error.message?.toLowerCase().contains('_namespace') ?? false));
-    }
+  bool _isNamespaceUnsupported(Object error) {
+    final message = error.toString().toLowerCase();
+    return message.contains('_namespace') ||
+        (error is UnsupportedError &&
+            (error.message?.toLowerCase().contains('_namespace') ?? false));
+  }
 }

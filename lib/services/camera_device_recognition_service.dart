@@ -457,6 +457,7 @@ Use multiple images to increase accuracy and confidence in identification.
         (error is UnsupportedError &&
             (error.message?.toLowerCase().contains('_namespace') ?? false));
   }
+
   Future<String> saveRecognizedDevice(
     DeviceRecognitionResult result,
     String userId,
