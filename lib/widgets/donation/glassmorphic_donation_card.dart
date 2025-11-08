@@ -99,6 +99,53 @@ class GlassmorphicDonationCard extends StatelessWidget {
                                   ),
                                 ),
                               ),
+                              // Verification badge
+                              if (donation.isVerified)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  margin: const EdgeInsets.only(right: 6),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Colors.blue.shade500,
+                                        Colors.blue.shade700,
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.blue.withValues(
+                                          alpha: 0.3,
+                                        ),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        LucideIcons.badgeCheck,
+                                        color: Colors.white,
+                                        size: 12,
+                                      ),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'VERIFIED',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               if (donation.isUrgent)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
@@ -313,11 +360,11 @@ class GlassmorphicDonationCard extends StatelessWidget {
                     ),
                   ),
 
-                // Deadline
-                if (donation.deadline != null) ...[
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
+                // Deadline and donation history
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    if (donation.deadline != null) ...[
                       Icon(
                         LucideIcons.calendar,
                         size: 16,
@@ -333,6 +380,77 @@ class GlassmorphicDonationCard extends StatelessWidget {
                         ),
                       ),
                     ],
+                  ],
+                ),
+
+                // Donation history info
+                if (donation.totalDonationsReceived > 0) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.blue.shade200,
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              LucideIcons.history,
+                              size: 14,
+                              color: Colors.blue.shade700,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Donation History',
+                              style: TextStyle(
+                                color: Colors.blue.shade700,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Total donations: ${donation.totalDonationsReceived}',
+                              style: const TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            if (donation.lastDonationDate != null)
+                              Text(
+                                'Last: ${_formatLastDonation(donation.lastDonationDate!)}',
+                                style: const TextStyle(
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Total received: ₱${donation.totalAmountReceived.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            color: Colors.green.shade700,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
 
@@ -421,6 +539,25 @@ class GlassmorphicDonationCard extends StatelessWidget {
       return '$difference days left';
     } else {
       return '${date.day}/${date.month}/${date.year}';
+    }
+  }
+
+  String _formatLastDonation(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date).inDays;
+
+    if (difference == 0) {
+      return 'today';
+    } else if (difference == 1) {
+      return '1 day ago';
+    } else if (difference < 7) {
+      return '$difference days ago';
+    } else if (difference < 30) {
+      final weeks = (difference / 7).floor();
+      return '$weeks ${weeks == 1 ? "week" : "weeks"} ago';
+    } else {
+      final months = (difference / 30).floor();
+      return '$months ${months == 1 ? "month" : "months"} ago';
     }
   }
 }

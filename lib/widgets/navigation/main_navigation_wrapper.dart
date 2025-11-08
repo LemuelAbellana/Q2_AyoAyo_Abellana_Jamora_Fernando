@@ -5,9 +5,7 @@ import '../../screens/home_screen.dart';
 import '../../screens/resell_marketplace_screen.dart';
 import '../../screens/upcycling_workspace_screen.dart';
 import '../../screens/technician_chatbot_screen.dart';
-import '../../screens/devices_overview_screen.dart';
 import '../../screens/donation_screen.dart';
-import '../../screens/device_scanner_screen.dart';
 import '../../utils/app_theme.dart';
 
 class NavigationItem {
@@ -70,12 +68,6 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper>
         icon: LucideIcons.messageCircle,
         screen: const TechnicianChatbotScreen(),
         route: '/chatbot',
-      ),
-      NavigationItem(
-        label: 'Devices',
-        icon: LucideIcons.smartphone,
-        screen: const DevicesOverviewScreen(),
-        route: '/devices',
       ),
       NavigationItem(
         label: 'Donation',
@@ -310,35 +302,6 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper>
                         padding: EdgeInsets.all(8.0),
                         child: Icon(
                           LucideIcons.settings,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ),
-                )
-              else if (_selectedIndex == 4) // Devices
-                Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.primaryGradient,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const DeviceScannerScreen(),
-                          ),
-                        );
-                      },
-                      child: const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Icon(
-                          LucideIcons.scanLine,
                           color: Colors.white,
                           size: 20,
                         ),

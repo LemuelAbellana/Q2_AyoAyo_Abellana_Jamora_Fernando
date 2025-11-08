@@ -180,6 +180,68 @@ class DatabaseService {
     }
   }
 
+  // Donation transactions methods
+  Future<List<Map<String, dynamic>>> getDonationTransactions({int? donationId}) async {
+    final prefs = await database;
+    final transactionsJson = prefs.getStringList('donation_transactions') ?? [];
+    var transactions = transactionsJson
+        .map((json) => jsonDecode(json) as Map<String, dynamic>)
+        .toList();
+
+    if (donationId != null) {
+      transactions = transactions.where((t) => t['donation_id'] == donationId).toList();
+    }
+
+    // Sort by date descending
+    transactions.sort((a, b) {
+      final dateA = DateTime.parse(a['transaction_date'] ?? DateTime.now().toIso8601String());
+      final dateB = DateTime.parse(b['transaction_date'] ?? DateTime.now().toIso8601String());
+      return dateB.compareTo(dateA);
+    });
+
+    return transactions;
+  }
+
+  Future<int> saveDonationTransaction(Map<String, dynamic> transaction) async {
+    final prefs = await database;
+    final transactions = await getDonationTransactions();
+
+    final newId = DateTime.now().millisecondsSinceEpoch;
+    transaction['id'] = newId;
+
+    transactions.add(transaction);
+    final transactionsJson = transactions.map((t) => jsonEncode(t)).toList();
+    await prefs.setStringList('donation_transactions', transactionsJson);
+
+    return newId;
+  }
+
+  // Donation receipts methods
+  Future<List<Map<String, dynamic>>> getDonationReceipts({String? userEmail}) async {
+    final prefs = await database;
+    final receiptsJson = prefs.getStringList('donation_receipts') ?? [];
+    var receipts = receiptsJson
+        .map((json) => jsonDecode(json) as Map<String, dynamic>)
+        .toList();
+
+    if (userEmail != null) {
+      receipts = receipts.where((r) =>
+        r['donor_email'] == userEmail || r['recipient_email'] == userEmail
+      ).toList();
+    }
+
+    return receipts;
+  }
+
+  Future<void> saveDonationReceipt(Map<String, dynamic> receipt) async {
+    final prefs = await database;
+    final receipts = await getDonationReceipts();
+
+    receipts.add(receipt);
+    final receiptsJson = receipts.map((r) => jsonEncode(r)).toList();
+    await prefs.setStringList('donation_receipts', receiptsJson);
+  }
+
   // Create sample donations
   List<Map<String, dynamic>> _createSampleDonations() {
     final now = DateTime.now();
@@ -201,6 +263,10 @@ class DatabaseService {
         'is_urgent': 0,
         'location': 'Davao City',
         'is_active': 1,
+        'verification_status': 'verified',
+        'total_donations_received': 2,
+        'last_donation_date': now.subtract(const Duration(days: 5)).toIso8601String(),
+        'total_amount_received': 8500,
       },
       {
         'id': now.millisecondsSinceEpoch + 1,
@@ -219,6 +285,10 @@ class DatabaseService {
         'is_urgent': 1,
         'location': 'Mandaluyong City',
         'is_active': 1,
+        'verification_status': 'verified',
+        'total_donations_received': 3,
+        'last_donation_date': now.subtract(const Duration(days: 2)).toIso8601String(),
+        'total_amount_received': 12000,
       },
     ];
   }
