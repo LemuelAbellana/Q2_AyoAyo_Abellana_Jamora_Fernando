@@ -13,7 +13,9 @@
       "Bash(dart --version:*)",
       "Bash(dart run:*)",
       "Bash(del test_enum_parsing.dart)",
-      "Bash(dart test_enum_fixes.dart:*)"
+      "Bash(dart test_enum_fixes.dart:*)",
+      "Bash(php artisan tinker --execute=\"echo json_encode(DB::select(''SHOW TABLES''));\")",
+      "Bash(php artisan tinker:*)"
     ],
     "deny": [],
     "ask": []
